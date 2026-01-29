@@ -1,0 +1,923 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FB Auto Poster{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+    
+    <!-- Sidebar Overlay (for mobile) -->
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            <span>FB Auto Poster</span>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item active">
+                <a href="/dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/groups">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Manage Groups
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/post">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Create Post
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/history">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    Post History
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/templates">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Templates
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/media">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    Media Library
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/accounts">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Accounts
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/analytics">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Analytics
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <a href="/logout" class="btn-logout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+            </a>
+        </div>
+    </nav>
+    
+    <main class="main-content">
+        <header class="content-header">
+            <h2>Dashboard Overview</h2>
+            <span class="badge badge-primary">Live</span>
+        </header>
+        
+        <!-- Facebook Session Status Card -->
+        <div id="fbSessionCard" class="session-card" style="display: none; margin-bottom: 30px; padding: 20px; border-radius: 12px; border-left: 4px solid; background: #f0f7ff;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div id="sessionIcon" style="font-size: 32px;">⚠️</div>
+                <div style="flex: 1;">
+                    <h3 id="sessionTitle" style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600;">Facebook Session Status</h3>
+                    <p id="sessionMessage" style="margin: 0; color: #65676b; font-size: 14px;"></p>
+                </div>
+                <button id="sessionActionBtn" type="button" class="btn btn-primary" style="display: none;"></button>
+            </div>
+        </div>
+        
+        <!-- Quick Setup Section -->
+        <div class="quick-setup-card" id="quickSetupSection" style="display:none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: white;">Quick Setup Guide</h3>
+                <button onclick="dismissQuickSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Dismiss</button>
+            </div>
+            <div class="setup-steps" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                <div class="step" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">1</div>
+                    <p style="margin: 0; font-weight: 500;">Discover Groups</p>
+                    <a href="/groups" style="color: white; text-decoration: underline; font-size: 13px;">Go to Groups</a>
+                </div>
+                <div class="step" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">2</div>
+                    <p style="margin: 0; font-weight: 500;">Create Content</p>
+                    <a href="/templates" style="color: white; text-decoration: underline; font-size: 13px;">Create Template</a>
+                </div>
+                <div class="step" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">3</div>
+                    <p style="margin: 0; font-weight: 500;">Start Posting</p>
+                    <a href="/post" style="color: white; text-decoration: underline; font-size: 13px;">Create Post</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(79, 70, 229, 0.15) 100%);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalGroups">0</h3>
+                    <p>Total Groups</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3 id="sessionStatus">✓</h3>
+                    <p>FB Session</p>
+                </div>
+            </div>
+            <div class="stat-card" id="postingIndicatorCard" style="display:none;">
+                <div class="stat-icon" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(79, 70, 229, 0.15) 100%);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3 id="postingCount">0</h3>
+                    <p>Posting…</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #fff3e0;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#f57c00" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3 id="recentPosts">0</h3>
+                    <p>Recent Posts</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #ede7f6;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#6a1b9a" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3 id="scheduledCount">0</h3>
+                    <p>Scheduled</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h3>Facebook Session</h3>
+            </div>
+            <div class="session-status" id="sessionStatusBox">
+                <div class="loading">Checking session...</div>
+            </div>
+            
+            <div class="fb-login-form" id="fbLoginForm" style="display: none; margin-top: 20px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+                <h4 style="margin-top: 0;">🔐 Login to Facebook</h4>
+                <p style="color: #666; font-size: 14px;">Choose your preferred login method:</p>
+                
+                <!-- Auto Login Form -->
+                <div id="autoLoginSection" style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 6px;">
+                    <h5 style="margin-top: 0;">Option 1: Auto-Login (Quick)</h5>
+                    <form id="autoLoginForm">
+                        <div class="form-group">
+                            <label for="fbEmail">Facebook Email/Phone</label>
+                            <input type="text" id="fbEmail" required placeholder="Enter your email or phone" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label for="fbPassword">Facebook Password</label>
+                            <input type="password" id="fbPassword" required placeholder="Enter your password" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <div style="margin-top: 8px;">
+                                <label style="font-size: 13px; color: #666;">
+                                    <input type="checkbox" id="rememberMe" style="margin-right: 5px;">
+                                    Remember my credentials (saved in browser only)
+                                </label>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <button type="submit" class="btn btn-primary" id="autoLoginBtn" style="width: 100%;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                    <polyline points="10 17 15 12 10 7"></polyline>
+                                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                                </svg>
+                                Auto-Login
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Manual Login Option -->
+                <div style="padding: 15px; background: white; border-radius: 6px;">
+                    <h5 style="margin-top: 0;">Option 2: Manual Login (Recommended)</h5>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Opens a browser where you login yourself - more reliable!</p>
+                    <button type="button" class="btn btn-success" id="manualLoginBtn" style="width: 100%;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        Open Browser & Login Manually
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h3>Quick Actions</h3>
+            </div>
+            <div class="quick-actions">
+                <a href="/groups" class="action-card">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <h4>Manage Groups</h4>
+                    <p>Add, edit, or remove Facebook groups</p>
+                </a>
+                
+                <a href="/post" class="action-card">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <h4>Create Post</h4>
+                    <p>Write and post to all groups</p>
+                </a>
+                
+                <a href="/history" class="action-card">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    <h4>View History</h4>
+                    <p>See all previous posts</p>
+                </a>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h3>Scheduled Posts</h3>
+                <a href="/post" class="btn btn-sm btn-secondary">Create / Schedule</a>
+            </div>
+            <div id="scheduleList" class="schedules-list">
+                <div class="loading">Loading schedules...</div>
+            </div>
+        </div>
+
+        <div class="dashboard-section" id="activePostingSection" style="display:none;">
+            <div class="section-header">
+                <h3>Active Posting</h3>
+            </div>
+            <div id="activePostingList"></div>
+        </div>
+
+        <!-- Analytics Charts Section -->
+        <div class="dashboard-section" id="analyticsSection">
+            <div class="section-header">
+                <h3>📊 Analytics</h3>
+                <button class="btn btn-sm btn-secondary" onclick="exportAnalytics()">Export CSV</button>
+            </div>
+            <div class="analytics-grid">
+                <div class="chart-card">
+                    <h4>Posts Last 7 Days</h4>
+                    <canvas id="dailyChart" height="200"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4>Success Rate</h4>
+                    <canvas id="successChart" height="200"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4>Top Groups</h4>
+                    <div id="topGroupsList" class="top-groups-list"></div>
+                </div>
+                <div class="chart-card">
+                    <h4>Best Posting Times</h4>
+                    <div id="bestTimesList" class="best-times-list"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="card" style="margin-top: 20px;">
+    <div class="card-body">
+        <h3>Facebook Session</h3>
+        <p id="dashSessionStatus">Checking...</p>
+        <a href="/manual-login" class="btn btn-secondary">Open Manual Login Instructions</a>
+    </div>
+    <script>
+        (async () => {
+            try {
+                const res = await fetch('/api/session-status');
+                const data = await res.json();
+                const p = document.getElementById('dashSessionStatus');
+                if (!data.success) { p.textContent = 'Error checking session'; return; }
+                if (data.has_session && data.valid) p.textContent = 'Session valid — ready to post.';
+                else if (data.has_session) p.textContent = 'Session invalid — please login manually.';
+                else p.textContent = 'No session — please login manually.';
+            } catch (e) {
+                document.getElementById('dashSessionStatus').textContent = 'Error: ' + e.message;
+            }
+        })();
+    </script>
+</div>
+
+<script>
+// Load saved credentials from localStorage
+function loadSavedCredentials() {
+    const savedEmail = localStorage.getItem('fb_email');
+    const savedPassword = localStorage.getItem('fb_password');
+    const rememberMe = localStorage.getItem('fb_remember') === 'true';
+    
+    if (rememberMe && savedEmail) {
+        document.getElementById('fbEmail').value = savedEmail;
+        document.getElementById('rememberMe').checked = true;
+    }
+    if (rememberMe && savedPassword) {
+        document.getElementById('fbPassword').value = savedPassword;
+    }
+}
+
+async function loadDashboardStats() {
+    try {
+        // Load saved credentials
+        loadSavedCredentials();
+        
+        // Load groups count
+        const groupsRes = await fetch('/api/groups');
+        const groupsData = await groupsRes.json();
+        if (groupsData.success) {
+            document.getElementById('totalGroups').textContent = groupsData.groups.length;
+        }
+        
+        // Check session status
+        const sessionRes = await fetch('/api/session-status');
+        const sessionData = await sessionRes.json();
+        const statusBox = document.getElementById('sessionStatusBox');
+        const statusText = document.getElementById('sessionStatus');
+        
+        if (sessionData.has_session && sessionData.valid) {
+            statusBox.innerHTML = '<div class="status-active">✓ Facebook session is active and valid</div>';
+            statusText.textContent = '✓ Active';
+            statusText.parentElement.parentElement.style.background = '#e8f5e9';
+            document.getElementById('fbLoginForm').style.display = 'none';
+        } else if (sessionData.has_session && !sessionData.valid) {
+            statusBox.innerHTML = '<div class="status-inactive">⚠ Session expired. Please login again.</div>';
+            statusText.textContent = '✗ Expired';
+            statusText.parentElement.parentElement.style.background = '#fff3e0';
+            document.getElementById('fbLoginForm').style.display = 'block';
+        } else {
+            statusBox.innerHTML = '<div class="status-inactive">⚠ No Facebook session. Click below to login.</div>';
+            statusText.textContent = '✗ Inactive';
+            statusText.parentElement.parentElement.style.background = '#ffebee';
+            document.getElementById('fbLoginForm').style.display = 'block';
+        }
+        
+        // Load recent posts
+        const historyRes = await fetch('/api/history');
+        const historyData = await historyRes.json();
+        if (historyData.success) {
+            document.getElementById('recentPosts').textContent = historyData.posts.length;
+        }
+
+        // Load scheduled count
+        try {
+            const schedRes = await fetch('/api/schedule');
+            const schedData = await schedRes.json();
+            if (schedData.success) {
+                document.getElementById('scheduledCount').textContent = (schedData.schedules || []).length;
+            }
+        } catch (_) {}
+    } catch (error) {
+        console.error('Failed to load stats:', error);
+    }
+}
+
+document.getElementById('manualLoginBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('manualLoginBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Opening browser...';
+
+    try {
+        const response = await fbAutoPoster.csrfFetch('/api/fb-manual-login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ start: true })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert('✓ Browser is opening!\n\nSteps:\n1. Login to Facebook in the browser\n2. Complete any security checks\n3. Wait until you see your Facebook feed\n4. The browser will save your session automatically');
+            btn.innerHTML = '<span class="spinner"></span> Waiting for login...';
+
+            const statusEl = document.getElementById('sessionStatus');
+            const poll = setInterval(async () => {
+                try {
+                    const statusRes = await fetch('/api/session-status');
+                    const statusData = await statusRes.json();
+                    if (statusEl) {
+                        statusEl.textContent = (statusData.has_session && statusData.valid) ? '✓ Active' : '✗ Inactive';
+                    }
+                    if (statusData.has_session && statusData.valid) {
+                        clearInterval(poll);
+                        alert('✓ Login successful! Your session has been saved.');
+                        window.location.reload();
+                    }
+                } catch (_) {}
+            }, 5000);
+
+            setTimeout(() => {
+                clearInterval(poll);
+                btn.disabled = false;
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg> Open Browser & Login Manually';
+            }, 300000);
+        } else {
+            alert('Failed to start manual login');
+            btn.disabled = false;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg> Open Browser & Login Manually';
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg> Open Browser & Login Manually';
+    }
+});
+
+document.getElementById('autoLoginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const btn = document.getElementById('autoLoginBtn');
+    const email = document.getElementById('fbEmail').value;
+    const password = document.getElementById('fbPassword').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    
+    if (!email || !password) {
+        alert('Please enter both email and password');
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Logging in to Facebook...';
+    
+    try {
+        const response = await fbAutoPoster.csrfFetch('/api/fb-auto-login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Save credentials if remember me is checked
+            if (rememberMe) {
+                localStorage.setItem('fb_email', email);
+                localStorage.setItem('fb_password', password);
+                localStorage.setItem('fb_remember', 'true');
+            } else {
+                localStorage.removeItem('fb_email');
+                localStorage.removeItem('fb_password');
+                localStorage.removeItem('fb_remember');
+            }
+            alert('✓ Successfully logged in to Facebook!\n\nYour session has been saved. You can now post to groups.');
+            window.location.reload();
+        } else {
+            alert('✗ Login failed: ' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Auto-Login to Facebook';
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Auto-Login to Facebook';
+    }
+});
+
+loadDashboardStats();
+// Poll posting status and update indicator
+async function pollPostingStatus() {
+    try {
+        const res = await fetch('/api/posting-status');
+        const data = await res.json();
+        const card = document.getElementById('postingIndicatorCard');
+        const countEl = document.getElementById('postingCount');
+        const listEl = document.getElementById('activePostingList');
+        if (data.success && data.is_posting) {
+            card.style.display = 'flex';
+            countEl.textContent = data.posting_count;
+            if (listEl) {
+                listEl.innerHTML = (data.active_posts || []).map(p => {
+                    const total = Math.max(1, p.total || 1);
+                    const completed = Math.min(total, p.completed || 0);
+                    const percent = Math.round((completed / total) * 100);
+                    const eta = p.eta_ms ? formatEta(p.eta_ms) : '—';
+                    const last = p.last_group ? escapeHtml(p.last_group) : '—';
+                    const groupsBrief = (p.groups || []).map(g => `<span class="group-tag ${g.status==='failed'?'badge-danger':''}">${escapeHtml(g.name || g.username || '')}</span>`).join('');
+                    return `
+                        <div class="progress-item">
+                            <div class="progress-label">Post #${p.post_id} — ${percent}% — ETA: ${eta} — Last: ${last}</div>
+                            <div class="progress-bar"><div class="progress-fill" style="width:${percent}%;"></div></div>
+                            <div class="progress-groups">${groupsBrief}</div>
+                            <div class="progress-actions" style="margin-top:8px;">
+                                <button class="btn btn-sm btn-danger" onclick="cancelPost(${p.post_id})">Cancel</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } else {
+            card.style.display = 'none';
+            if (listEl) listEl.innerHTML = '';
+        }
+    function formatEta(ms) {
+        const mins = Math.floor(ms/60000);
+        const hrs = Math.floor(mins/60);
+        const rem = mins%60;
+        if (hrs >= 24) {
+            const days = Math.floor(hrs/24);
+            return `${days}d`;
+        } else if (hrs > 0) {
+            return `${hrs}h ${rem}m`;
+        } else {
+            return `${mins}m`;
+        }
+    }
+    } catch (_) {}
+}
+
+pollPostingStatus();
+setInterval(pollPostingStatus, 5000);
+
+// Load scheduled posts
+async function loadSchedules() {
+    try {
+        const res = await fetch('/api/schedule');
+        const data = await res.json();
+        const list = document.getElementById('scheduleList');
+        if (!data.success) { list.innerHTML = '<div class="error">Failed to load schedules</div>'; return; }
+        const schedules = data.schedules || [];
+        if (schedules.length === 0) { list.innerHTML = '<div class="empty-state"><h3>No scheduled posts</h3><p>Create a scheduled post from the Post page.</p></div>'; return; }
+        list.innerHTML = schedules.map(s => `
+            <div class="schedule-card">
+                <div class="schedule-main">
+                    <div class="schedule-time">
+                        <strong>${new Date(s.schedule_time).toLocaleString()}</strong>
+                        ${s.recurring ? `<span class="badge badge-warning">Every ${s.interval_hours}h</span>` : ''}
+                        ${s.status === 'paused' ? `<span class="badge badge-inactive" style="margin-left:8px;">Paused</span>` : ''}
+                    </div>
+                    <div class="schedule-content">${escapeHtml(s.content).slice(0, 200)}${s.content.length > 200 ? '…' : ''}</div>
+                    <div class="schedule-groups">${(s.groups||[]).map(g => `<span class="group-tag">${escapeHtml(g)}</span>`).join('')}</div>
+                </div>
+                <div class="schedule-actions">
+                    ${s.status === 'paused'
+                        ? `<button class="btn btn-sm btn-success" onclick="resumeSchedule(${s.id})">Resume</button>`
+                        : `<button class="btn btn-sm btn-warning" onclick="pauseSchedule(${s.id})">Pause</button>`}
+                    <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${s.id})">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        document.getElementById('scheduleList').innerHTML = '<div class="error">Error loading schedules</div>';
+    }
+}
+
+function escapeHtml(text) {
+    const map = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+async function deleteSchedule(id) {
+    try {
+        const res = await fbAutoPoster.csrfFetch(`/api/schedule/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            fbAutoPoster.showNotification('Schedule deleted', 'success');
+            loadSchedules();
+        } else {
+            fbAutoPoster.showNotification('Failed to delete schedule', 'error');
+        }
+    } catch (e) {
+        fbAutoPoster.showNotification('Error deleting schedule', 'error');
+    }
+}
+
+async function pauseSchedule(id) {
+    try {
+        const res = await fbAutoPoster.csrfFetch(`/api/schedule/${id}/pause`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            fbAutoPoster.showNotification('Schedule paused', 'success');
+            loadSchedules();
+        } else {
+            fbAutoPoster.showNotification('Failed to pause schedule', 'error');
+        }
+    } catch (e) {
+        fbAutoPoster.showNotification('Error pausing schedule', 'error');
+    }
+}
+
+async function resumeSchedule(id) {
+    try {
+        const res = await fbAutoPoster.csrfFetch(`/api/schedule/${id}/resume`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            fbAutoPoster.showNotification('Schedule resumed', 'success');
+            loadSchedules();
+        } else {
+            fbAutoPoster.showNotification('Failed to resume schedule', 'error');
+        }
+    } catch (e) {
+        fbAutoPoster.showNotification('Error resuming schedule', 'error');
+    }
+}
+
+async function cancelPost(postId) {
+    if (!confirm('Cancel this active posting job?')) return;
+    try {
+        const res = await fbAutoPoster.csrfFetch(`/api/post/cancel/${postId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            fbAutoPoster.showNotification('Posting job cancelled', 'success');
+            pollPostingStatus();
+        } else {
+            fbAutoPoster.showNotification('Failed to cancel job', 'error');
+        }
+    } catch (e) {
+        fbAutoPoster.showNotification('Error cancelling job', 'error');
+    }
+}
+
+loadSchedules();
+
+// Analytics Charts
+let dailyChart = null;
+let successChart = null;
+
+async function loadAnalytics() {
+    try {
+        const res = await fetch('/api/analytics');
+        const data = await res.json();
+        if (!data.success) return;
+
+        // Daily posts chart
+        const dailyData = data.daily_posts || [];
+        const ctx1 = document.getElementById('dailyChart');
+        if (ctx1 && typeof Chart !== 'undefined') {
+            if (dailyChart) dailyChart.destroy();
+            dailyChart = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: dailyData.map(d => d.date),
+                    datasets: [{
+                        label: 'Posts',
+                        data: dailyData.map(d => d.count),
+                        backgroundColor: '#1976d2',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Success rate chart
+        const statusCounts = data.status_counts || {};
+        const posted = statusCounts.posted || 0;
+        const failed = statusCounts.failed || 0;
+        const total = posted + failed;
+        const ctx2 = document.getElementById('successChart');
+        if (ctx2 && typeof Chart !== 'undefined' && total > 0) {
+            if (successChart) successChart.destroy();
+            successChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Success', 'Failed'],
+                    datasets: [{
+                        data: [posted, failed],
+                        backgroundColor: ['#388e3c', '#d32f2f']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Top groups
+        const topGroups = data.top_groups || [];
+        const groupsList = document.getElementById('topGroupsList');
+        if (groupsList) {
+            if (topGroups.length === 0) {
+                groupsList.innerHTML = '<p class="text-muted">No data yet</p>';
+            } else {
+                groupsList.innerHTML = topGroups.slice(0, 5).map((g, i) => `
+                    <div class="top-group-item">
+                        <span class="rank">#${i + 1}</span>
+                        <span class="name">${escapeHtml(g.name)}</span>
+                        <span class="count">${g.posts} posts</span>
+                    </div>
+                `).join('');
+            }
+        }
+    } catch (e) {
+        console.error('Analytics error:', e);
+    }
+}
+
+async function loadBestTimes() {
+    try {
+        const res = await fetch('/api/analytics/best-times');
+        const data = await res.json();
+        const list = document.getElementById('bestTimesList');
+        if (!list) return;
+        
+        if (!data.success || !data.best_times || data.best_times.length === 0) {
+            list.innerHTML = '<p class="text-muted">Post more to see best times</p>';
+            return;
+        }
+        
+        list.innerHTML = data.best_times.slice(0, 5).map(t => `
+            <div class="best-time-item">
+                <span class="time">${t.hour}:00</span>
+                <span class="rate">${Math.round(t.success_rate * 100)}% success</span>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('Best times error:', e);
+    }
+}
+
+// Quick Setup Functions
+function dismissQuickSetup() {
+    const section = document.getElementById('quickSetupSection');
+    if (section) {
+        section.style.display = 'none';
+        localStorage.setItem('quickSetupDismissed', 'true');
+    }
+}
+
+// Check Facebook Session Status
+async function checkFacebookSession() {
+    try {
+        const response = await fetch('/api/login-status', {
+            headers: { 'X-CSRF-Token': (window.csrfToken || '') }
+        });
+        const data = await response.json();
+        
+        const card = document.getElementById('fbSessionCard');
+        const icon = document.getElementById('sessionIcon');
+        const title = document.getElementById('sessionTitle');
+        const message = document.getElementById('sessionMessage');
+        const btn = document.getElementById('sessionActionBtn');
+        
+        if (data.logged_in) {
+            card.style.borderLeftColor = '#10b981';
+            card.style.background = '#f0fdf4';
+            icon.textContent = '✓';
+            title.style.color = '#166534';
+            title.textContent = 'Facebook Session Active';
+            message.style.color = '#15803d';
+            message.textContent = `Logged in as user ${data.user_id}. You can now discover and post to groups.`;
+            btn.style.display = 'none';
+        } else {
+            card.style.borderLeftColor = '#ef4444';
+            card.style.background = '#fef2f2';
+            icon.textContent = '⚠️';
+            title.style.color = '#991b1b';
+            title.textContent = 'Facebook Session Expired or Not Set';
+            message.style.color = '#dc2626';
+            message.textContent = 'Please login to Facebook to discover groups and create posts.';
+            btn.style.display = 'inline-block';
+            btn.textContent = 'Login to Facebook';
+            btn.onclick = () => window.location.href = '/groups';
+        }
+        card.style.display = 'block';
+    } catch (e) {
+        console.error('Failed to check session:', e);
+    }
+}
+
+function showQuickSetupIfNeeded() {
+    const dismissed = localStorage.getItem('quickSetupDismissed');
+    if (!dismissed) {
+        const section = document.getElementById('quickSetupSection');
+        if (section) {
+            section.style.display = 'block';
+        }
+    }
+}
+        if (section) {
+            section.style.display = 'block';
+        }
+    }
+}
+
+// Show quick setup on first visit
+document.addEventListener('DOMContentLoaded', showQuickSetupIfNeeded);
+
+function exportAnalytics() {
+    window.location.href = '/api/analytics/export?days=30';
+}
+
+// Load Chart.js dynamically
+function loadChartJs() {
+    if (typeof Chart !== 'undefined') {
+        loadAnalytics();
+        loadBestTimes();
+        return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    script.onload = () => {
+        loadAnalytics();
+        loadBestTimes();
+    };
+    document.head.appendChild(script);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    showQuickSetupIfNeeded();
+    checkFacebookSession();
+    loadChartJs();
+});
+</script>
+{% endblock %}

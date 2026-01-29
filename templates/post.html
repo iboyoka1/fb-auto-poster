@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+
+{% block title %}Create Post - FB Auto Poster{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+    
+    <!-- Sidebar Overlay (for mobile) -->
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            <span>FB Auto Poster</span>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/groups">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Manage Groups
+                </a>
+            </li>
+            <li class="nav-item active">
+                <a href="/post">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Create Post
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/history">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    Post History
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/templates">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Templates
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/media">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    Media Library
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/accounts">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Accounts
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/analytics">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Analytics
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <a href="/logout" class="btn-logout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+            </a>
+        </div>
+    </nav>
+    
+    <main class="main-content">
+        <header class="content-header">
+            <h2>Create New Post</h2>
+        </header>
+        
+        <div class="post-creator">
+            <div class="post-form-container">
+                <form id="postForm">
+                    <div class="form-group">
+                        <label for="postContent">Post Content * 
+                            <span class="badge" style="background: #1877f2; color: white; margin-left: 10px;">NEW: Spintax Supported!</span>
+                        </label>
+                        <textarea id="postContent" rows="10" required placeholder="Write your post content here...
+
+✨ NEW FEATURES:
+- Spintax: {Hello|Hi|Hey} for unique variations
+- Add images (see below)
+- Schedule for later
+
+Example: {Hey|Hello} everyone! Check out our {amazing|incredible} {new|latest} product!"></textarea>
+                        <div class="char-count">
+                            <span id="charCount">0</span> characters
+                            <button type="button" onclick="previewSpintax()" class="btn-link" style="margin-left: 15px;">
+                                🔄 Preview Variations
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="border: 2px dashed #1877f2; padding: 20px; border-radius: 8px; background: #f0f8ff;">
+                        <label for="postMedia">📸🎥 Upload Media (Multiple Images/Videos Supported!)</label>
+                        <input type="file" id="postMedia" accept="image/*,video/*" multiple onchange="previewMedia(event)">
+                        <p style="color: #666; font-size: 12px; margin-top: 5px;">Select multiple files: Images (JPG, PNG, GIF) or Videos (MP4, MOV)</p>
+                        <div id="mediaPreview" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
+                            <!-- Media previews will appear here -->
+                        </div>
+                        <button type="button" onclick="clearAllMedia()" style="margin-top: 10px; padding: 5px 10px; display: none;" id="clearMediaBtn">Clear All</button>
+                    </div>
+                    
+                    <div class="form-group" style="background: #fff4e6; padding: 15px; border-radius: 12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label style="font-weight:600;">
+                                <input type="checkbox" id="schedulePost" onchange="toggleSchedule()" style="margin-right:8px;"> 
+                                📅 Schedule This Post (NEW!)
+                            </label>
+                            <span id="nextRunLabel" class="badge badge-warning" style="display:none;">Next run: —</span>
+                        </div>
+                        <div id="scheduleOptions" style="display: none; margin-top: 12px; background:#fff; border:2px solid #ffe2bf; border-radius:12px; padding:12px;">
+                            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                                <div style="flex:1; min-width:240px;">
+                                    <label style="display:block; font-size:13px; color:#666;">Pick date & time</label>
+                                    <input type="datetime-local" id="scheduleTime" style="width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:8px;">
+                                    <small id="scheduleHelper" class="text-muted">Tip: you can also enter formats like "30m" or "2025-12-31 14:30"</small>
+                                </div>
+                                <div>
+                                    <label style="display:flex; align-items:center; gap:8px;">
+                                        <input type="checkbox" id="recurring"> Recurring
+                                        <input type="number" id="intervalHours" placeholder="Hours" min="1" value="24" style="width:90px; padding:10px; border:2px solid #e5e7eb; border-radius:8px;">
+                                    </label>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="previewNextRun()">Preview Next Run</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="target-groups">
+                        <h4 style="display: flex; align-items: center; gap: 10px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px;">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Post to Groups/Pages
+                            <span id="selectedCount" style="background: #1877f2; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: bold;">0</span>
+                        </h4>
+                        
+                        <div id="groupsList" class="groups-selector">
+                            <div class="loading">Loading your groups...</div>
+                        </div>
+                        
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e5e5;">
+                            <button type="button" class="btn btn-outline" onclick="selectAllGroups()" style="margin-right: 8px; font-size: 13px;">
+                                ✓ Select All
+                            </button>
+                            <button type="button" class="btn btn-outline" onclick="deselectAllGroups()" style="font-size: 13px;">
+                                ✕ Deselect All
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="previewPost()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            Preview
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="postBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                            Post to All Groups
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="post-preview">
+                <h3>Preview</h3>
+                <div class="preview-card">
+                    <div class="preview-header">
+                        <div class="preview-avatar"></div>
+                        <div>
+                            <strong>Your Name</strong>
+                            <p class="text-muted">Just now</p>
+                        </div>
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <p class="text-muted">Your post content will appear here...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+let groups = [];
+let selectedMedia = [];
+
+function toggleSchedule() {
+    const checkbox = document.getElementById('schedulePost');
+    const options = document.getElementById('scheduleOptions');
+    options.style.display = checkbox.checked ? 'block' : 'none';
+    document.getElementById('nextRunLabel').style.display = checkbox.checked ? 'inline-flex' : 'none';
+}
+
+function previewMedia(event) {
+    const files = Array.from(event.target.files);
+    selectedMedia = files;
+    
+    const container = document.getElementById('mediaPreview');
+    container.innerHTML = '';
+    
+    files.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const isVideo = file.type.startsWith('video/');
+            const preview = document.createElement('div');
+            preview.style.cssText = 'position: relative; display: inline-block;';
+            
+            if (isVideo) {
+                preview.innerHTML = `
+                    <video src="${e.target.result}" style="max-width: 150px; max-height: 150px; border-radius: 8px;" controls></video>
+                    <button onclick="removeMedia(${index})" style="position: absolute; top: 5px; right: 5px; background: red; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer;">✕</button>
+                `;
+            } else {
+                preview.innerHTML = `
+                    <img src="${e.target.result}" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover;">
+                    <button onclick="removeMedia(${index})" style="position: absolute; top: 5px; right: 5px; background: red; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer;">✕</button>
+                `;
+            }
+            container.appendChild(preview);
+        }
+        reader.readAsDataURL(file);
+    });
+    
+    document.getElementById('clearMediaBtn').style.display = files.length > 0 ? 'block' : 'none';
+}
+
+function removeMedia(index) {
+    selectedMedia.splice(index, 1);
+    const dt = new DataTransfer();
+    selectedMedia.forEach(file => dt.items.add(file));
+    document.getElementById('postMedia').files = dt.files;
+    previewMedia({target: {files: dt.files}});
+}
+
+function clearAllMedia() {
+    selectedMedia = [];
+    document.getElementById('postMedia').value = '';
+    document.getElementById('mediaPreview').innerHTML = '';
+    document.getElementById('clearMediaBtn').style.display = 'none';
+}
+
+async function previewSpintax() {
+    const content = textarea.value;
+    if (!content.includes('{')) {
+        alert('No spintax found in your content. Use {option1|option2} syntax.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/spintax-preview', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ content })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert('5 Variations:\\n\\n' + data.variations.join('\\n\\n---\\n\\n'));
+        }
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+function previewNextRun() {
+    const raw = document.getElementById('scheduleTime').value.trim();
+    const label = document.getElementById('nextRunLabel');
+    if (!raw) { label.textContent = 'Next run: —'; return; }
+    try {
+        // Client-side relative preview
+        let target;
+        if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+            target = new Date(raw.replace(' ', 'T'));
+        } else if (/^\d{1,2}:\d{2}$/.test(raw)) {
+            const today = new Date();
+            const [hh, mm] = raw.split(':').map(Number);
+            target = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hh, mm);
+        } else if (/^\d+[mhd]$/.test(raw)) {
+            const num = parseInt(raw, 10);
+            const unit = raw.slice(-1);
+            const ms = unit === 'm' ? num*60000 : unit === 'h' ? num*3600000 : num*86400000;
+            target = new Date(Date.now() + ms);
+        } else {
+            label.textContent = 'Next run: invalid format';
+            return;
+        }
+        const diffMs = target.getTime() - Date.now();
+        if (diffMs <= 0) { label.textContent = 'Next run: now (overdue)'; return; }
+        const mins = Math.floor(diffMs/60000);
+        const hrs = Math.floor(mins/60);
+        const rem = mins%60;
+        if (hrs >= 24) {
+            const days = Math.floor(hrs/24);
+            label.textContent = `Next run: in ${days} day(s)`;
+        } else if (hrs > 0) {
+            label.textContent = `Next run: in ${hrs}h ${rem}m`;
+        } else {
+            label.textContent = `Next run: in ${mins} minutes`;
+        }
+    } catch (_) {
+        label.textContent = 'Next run: —';
+    }
+}
+
+async function loadGroups() {
+    try {
+        const response = await fetch('/api/groups');
+        const data = await response.json();
+        
+        if (data.success) {
+            groups = data.groups.filter(g => g.status === 'straight');
+            
+            const container = document.getElementById('groupsList');
+            if (groups.length === 0) {
+                container.innerHTML = '<p class="text-muted" style="padding: 20px; text-align: center;">No active groups. <a href="/groups">Add groups</a> first.</p>';
+            } else {
+                container.innerHTML = `
+                    <div class="groups-grid">
+                        ${groups.map((g, idx) => `
+                            <label class="group-checkbox">
+                                <input type="checkbox" value="${g.username}" onchange="updateGroupCount()" checked style="margin-right: 10px; cursor: pointer;">
+                                <span class="checkbox-custom"></span>
+                                <div class="group-info">
+                                    <strong>${escapeHtml(g.name)}</strong>
+                                    <small style="color: #65676b; display: block; margin-top: 3px;">
+                                        ${g.type || 'group'} • ${g.status}
+                                    </small>
+                                </div>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+                updateGroupCount();
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load groups:', error);
+        document.getElementById('groupsList').innerHTML = '<p class="error" style="padding: 20px; text-align: center;">Failed to load groups</p>';
+    }
+}
+
+function updateGroupCount() {
+    const checked = document.querySelectorAll('.group-checkbox input:checked').length;
+    document.getElementById('selectedCount').textContent = checked;
+}
+
+function selectAllGroups() {
+    document.querySelectorAll('.group-checkbox input').forEach(cb => cb.checked = true);
+    updateGroupCount();
+}
+
+function deselectAllGroups() {
+    document.querySelectorAll('.group-checkbox input').forEach(cb => cb.checked = false);
+    updateGroupCount();
+}
+
+const textarea = document.getElementById('postContent');
+const charCount = document.getElementById('charCount');
+const previewContent = document.getElementById('previewContent');
+
+textarea.addEventListener('input', () => {
+    const count = textarea.value.length;
+    charCount.textContent = count;
+    updatePreview();
+});
+
+function updatePreview() {
+    const content = textarea.value;
+    if (content.trim()) {
+        previewContent.innerHTML = escapeHtml(content).replace(/\n/g, '<br>');
+    } else {
+        previewContent.innerHTML = '<p class="text-muted">Your post content will appear here...</p>';
+    }
+}
+
+function previewPost() {
+    updatePreview();
+    document.querySelector('.post-preview').scrollIntoView({ behavior: 'smooth' });
+}
+
+document.getElementById('postForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const content = textarea.value.trim();
+    if (!content) {
+        alert('Please enter post content');
+        return;
+    }
+    
+    if (groups.length === 0) {
+        alert('No active groups found. Please add groups first.');
+        return;
+    }
+    
+    const schedulePost = document.getElementById('schedulePost').checked;
+    
+    if (schedulePost) {
+        // Schedule the post
+        const scheduleTime = document.getElementById('scheduleTime').value;
+        if (!scheduleTime) {
+            alert('Please select a schedule time');
+            return;
+        }
+        
+        const btn = document.getElementById('postBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Scheduling...';
+        
+        try {
+            const response = await fbAutoPoster.csrfFetch('/api/schedule', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    content,
+                    groups: groups.map(g => g.username),
+                    schedule_time: scheduleTime,
+                    recurring: document.getElementById('recurring').checked,
+                    interval_hours: parseInt(document.getElementById('intervalHours').value) || 24
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                fbAutoPoster.showNotification('Post scheduled successfully!', 'success');
+                textarea.value = '';
+                updatePreview();
+                previewNextRun();
+            } else {
+                fbAutoPoster.showNotification('Failed to schedule: ' + (data.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            fbAutoPoster.showNotification('Error: ' + error.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Post to All Groups';
+        }
+        return;
+    }
+    
+    // Post with media if selected
+    if (selectedMedia.length > 0) {
+        const formData = new FormData();
+        formData.append('content', content);
+        selectedMedia.forEach(file => {
+            formData.append('media', file);
+        });
+        formData.append('groups', JSON.stringify([]));
+        
+        const btn = document.getElementById('postBtn');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Posting with ${selectedMedia.length} media file(s)...`;
+        
+        try {
+            const response = await fbAutoPoster.csrfFetch('/api/post-with-image', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert(`Posted successfully to ${data.posted_to} groups!`);
+                textarea.value = '';
+                clearAllMedia();
+                updatePreview();
+            } else {
+                alert('Failed: ' + data.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Post to All Groups';
+        }
+        return;
+    }
+    
+    // Regular post
+    if (!confirm(`Post this content to ${groups.length} group(s)?`)) {
+        return;
+    }
+    
+    const btn = document.getElementById('postBtn');
+    btn.disabled = true;
+    btn.innerHTML = `
+        <span class="spinner"></span>
+        Posting...
+    `;
+    
+    try {
+        // Use FormData to send both text and files
+        const formData = new FormData();
+        formData.append('content', content);
+        
+        // Add selected groups
+        groups.forEach(g => formData.append('groups[]', g));
+        
+        // Add media files if any
+        const mediaInput = document.getElementById('postMedia');
+        if (mediaInput.files && mediaInput.files.length > 0) {
+            for (let i = 0; i < mediaInput.files.length; i++) {
+                formData.append('media', mediaInput.files[i]);
+            }
+        }
+        
+        const response = await fbAutoPoster.csrfFetch('/api/post', {
+            method: 'POST',
+            body: formData  // Don't set Content-Type header, browser will set it automatically with boundary
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Post created successfully! Check History for details.');
+            textarea.value = '';
+            updatePreview();
+            charCount.textContent = '0';
+        } else {
+            alert('Failed to create post: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error creating post: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            Post to All Groups
+        `;
+    }
+});
+
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+loadGroups();
+</script>
+{% endblock %}

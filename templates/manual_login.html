@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Manual Login - FB Auto Poster{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+      <span>FB Auto Poster</span>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item"><a href="/dashboard">Dashboard</a></li>
+      <li class="nav-item"><a href="/groups">Manage Groups</a></li>
+      <li class="nav-item"><a href="/post">Create Post</a></li>
+      <li class="nav-item"><a href="/history">Post History</a></li>
+      <li class="nav-item active"><a href="/manual-login">Manual Login</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <header class="content-header">
+      <h2>Manual Facebook Login</h2>
+      <button id="startManualLogin" class="btn btn-primary">Start Manual Login</button>
+    </header>
+
+    <div class="card">
+      <div class="card-body">
+        <h3>Steps</h3>
+        <ol>
+          <li>A browser window will open.</li>
+          <li>Login to Facebook with your account.</li>
+          <li>Complete any 2FA or security checks.</li>
+          <li>Wait until you see your Facebook home/feed.</li>
+          <li>Return to this page; your session will be saved automatically.</li>
+        </ol>
+        <div id="statusBox" class="status-box">
+          <p><strong>Status:</strong> <span id="sessionStatus">Checking...</span></p>
+          <p class="hint">Tip: After login completes in the opened browser, return here. Status updates every few seconds.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let sessionCheckInterval = null;
+
+async function checkSession() {
+  try {
+    const res = await fetch('/api/session-status');
+    const data = await res.json();
+    const el = document.getElementById('sessionStatus');
+    if (!data.success) {
+      el.textContent = 'Error checking session';
+      return;
+    }
+    if (data.has_session && data.valid) {
+      el.textContent = 'Session valid. You can start posting.';
+      if (sessionCheckInterval) { clearInterval(sessionCheckInterval); sessionCheckInterval = null; }
+    } else if (data.has_session && !data.valid) {
+      el.textContent = 'Session found but invalid. Please login manually.';
+    } else {
+      el.textContent = 'No session found. Please login manually.';
+    }
+  } catch (e) {
+    document.getElementById('sessionStatus').textContent = 'Error: ' + e.message;
+  }
+}
+
+async function startManualLogin() {
+  const btn = document.getElementById('startManualLogin');
+  btn.disabled = true;
+  btn.textContent = 'Opening browser...';
+  try {
+    const res = await fetch('/api/fb-manual-login', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      btn.textContent = 'Browser opened — complete login';
+    } else {
+      btn.textContent = 'Failed to start manual login';
+      alert('Error: ' + (data.error || 'Unknown error'));
+    }
+  } catch (e) {
+    btn.textContent = 'Failed to start manual login';
+    alert('Error: ' + e.message);
+  } finally {
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Start Manual Login'; }, 5000);
+    // Start periodic session polling while user completes login
+    if (!sessionCheckInterval) {
+      sessionCheckInterval = setInterval(checkSession, 5000);
+    }
+  }
+}
+
+document.getElementById('startManualLogin').addEventListener('click', startManualLogin);
+checkSession();
+sessionCheckInterval = setInterval(checkSession, 8000);
+</script>
+{% endblock %}

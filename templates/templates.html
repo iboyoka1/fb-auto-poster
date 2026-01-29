@@ -1,0 +1,558 @@
+{% extends "base.html" %}
+
+{% block title %}Content Templates - FB Auto Poster{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            <span>FB Auto Poster</span>
+        </div>
+        
+        <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+        
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/groups">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Manage Groups
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/post">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Create Post
+                </a>
+            </li>
+            <li class="nav-item active">
+                <a href="/templates">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Templates
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/media">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    Media Library
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/accounts">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Accounts
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/analytics">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Analytics
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/history">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    Post History
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <a href="/logout" class="btn-logout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+            </a>
+        </div>
+    </nav>
+    
+    <main class="main-content">
+        <header class="content-header">
+            <h2>Content Templates</h2>
+            <button class="btn btn-primary" onclick="showCreateTemplateModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Template
+            </button>
+        </header>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h3>Your Templates</h3>
+                <div class="template-filters">
+                    <select id="categoryFilter" onchange="filterTemplates()">
+                        <option value="">All Categories</option>
+                        <option value="promotion">Promotion</option>
+                        <option value="announcement">Announcement</option>
+                        <option value="engagement">Engagement</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div id="templatesList" class="templates-grid">
+                <div class="loading">Loading templates...</div>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h3>Drafts</h3>
+            </div>
+            <div id="draftsList" class="drafts-list">
+                <div class="loading">Loading drafts...</div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Create/Edit Template Modal -->
+<div id="templateModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3 id="templateModalTitle">Create Template</h3>
+            <button class="btn-close" onclick="closeTemplateModal()">&times;</button>
+        </div>
+        <form id="templateForm">
+            <input type="hidden" id="templateId">
+            <div class="form-group">
+                <label for="templateName">Template Name *</label>
+                <input type="text" id="templateName" required placeholder="e.g., Weekly Promotion">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="templateCategory">Category</label>
+                    <select id="templateCategory">
+                        <option value="">Select category</option>
+                        <option value="promotion">Promotion</option>
+                        <option value="announcement">Announcement</option>
+                        <option value="engagement">Engagement</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="templateTags">Tags (comma-separated)</label>
+                    <input type="text" id="templateTags" placeholder="sale, discount, weekly">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="templateContent">Content *</label>
+                <textarea id="templateContent" rows="8" required placeholder="Write your template content here...
+
+Use {{variable}} for dynamic values
+Use {option1|option2|option3} for spintax variations"></textarea>
+                <div class="form-help">
+                    <strong>Variables:</strong> <code>{{name}}</code>, <code>{{date}}</code>, <code>{{price}}</code><br>
+                    <strong>Spintax:</strong> <code>{Hello|Hi|Hey}</code> will randomly pick one
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Variables (optional)</label>
+                <div id="variablesList" class="variables-editor">
+                    <div class="variable-row">
+                        <input type="text" placeholder="Variable name" class="var-name">
+                        <input type="text" placeholder="Default value" class="var-value">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeVariable(this)">×</button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="addVariable()">+ Add Variable</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeTemplateModal()">Cancel</button>
+                <button type="button" class="btn btn-secondary" onclick="previewTemplate()">Preview</button>
+                <button type="submit" class="btn btn-primary">Save Template</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div id="previewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Template Preview</h3>
+            <button class="btn-close" onclick="closePreviewModal()">&times;</button>
+        </div>
+        <div id="previewContent" class="preview-box"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closePreviewModal()">Close</button>
+            <button class="btn btn-primary" onclick="useTemplate()">Use Template</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let templates = [];
+let drafts = [];
+let editingTemplateId = null;
+
+async function loadTemplates() {
+    try {
+        const res = await fetch('/api/templates');
+        const data = await res.json();
+        const list = document.getElementById('templatesList');
+        
+        if (!data.success) {
+            list.innerHTML = '<div class="empty-state"><p>Templates feature not enabled</p></div>';
+            return;
+        }
+        
+        templates = data.templates || [];
+        renderTemplates();
+    } catch (e) {
+        document.getElementById('templatesList').innerHTML = '<div class="error">Failed to load templates</div>';
+    }
+}
+
+function renderTemplates() {
+    const list = document.getElementById('templatesList');
+    const filter = document.getElementById('categoryFilter').value;
+    
+    let filtered = templates;
+    if (filter) {
+        filtered = templates.filter(t => t.category === filter);
+    }
+    
+    if (filtered.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:16px;opacity:0.5;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <h3>No templates yet</h3>
+                <p>Create reusable content templates to speed up your posting</p>
+                <button class="btn btn-primary" onclick="showCreateTemplateModal()">Create First Template</button>
+            </div>
+        `;
+        return;
+    }
+    
+    list.innerHTML = filtered.map(t => `
+        <div class="template-card" data-id="${t.id}">
+            <div class="template-header">
+                <h4>${escapeHtml(t.name)}</h4>
+                ${t.category ? `<span class="badge badge-info">${escapeHtml(t.category)}</span>` : ''}
+            </div>
+            <div class="template-content">${escapeHtml(t.content).slice(0, 150)}${t.content.length > 150 ? '...' : ''}</div>
+            ${t.tags && t.tags.length ? `<div class="template-tags">${t.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+            <div class="template-actions">
+                <button class="btn btn-sm btn-primary" onclick="useTemplateById(${t.id})">Use</button>
+                <button class="btn btn-sm btn-secondary" onclick="editTemplate(${t.id})">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteTemplate(${t.id})">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterTemplates() {
+    renderTemplates();
+}
+
+async function loadDrafts() {
+    try {
+        const res = await fetch('/api/drafts');
+        const data = await res.json();
+        const list = document.getElementById('draftsList');
+        
+        if (!data.success) {
+            list.innerHTML = '<div class="empty-state"><p>Drafts feature not enabled</p></div>';
+            return;
+        }
+        
+        drafts = data.drafts || [];
+        
+        if (drafts.length === 0) {
+            list.innerHTML = '<div class="empty-state"><p>No drafts saved</p></div>';
+            return;
+        }
+        
+        list.innerHTML = drafts.map(d => `
+            <div class="draft-card">
+                <div class="draft-content">
+                    <h4>${d.title || 'Untitled Draft'}</h4>
+                    <p>${escapeHtml(d.content).slice(0, 100)}...</p>
+                    <span class="draft-date">${new Date(d.created_at).toLocaleDateString()}</span>
+                </div>
+                <div class="draft-actions">
+                    <button class="btn btn-sm btn-primary" onclick="useDraft(${d.id})">Use</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteDraft(${d.id})">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        document.getElementById('draftsList').innerHTML = '<div class="error">Failed to load drafts</div>';
+    }
+}
+
+function showCreateTemplateModal() {
+    editingTemplateId = null;
+    document.getElementById('templateModalTitle').textContent = 'Create Template';
+    document.getElementById('templateForm').reset();
+    document.getElementById('templateId').value = '';
+    document.getElementById('variablesList').innerHTML = `
+        <div class="variable-row">
+            <input type="text" placeholder="Variable name" class="var-name">
+            <input type="text" placeholder="Default value" class="var-value">
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeVariable(this)">×</button>
+        </div>
+    `;
+    document.getElementById('templateModal').classList.add('active');
+}
+
+function closeTemplateModal() {
+    document.getElementById('templateModal').classList.remove('active');
+}
+
+function editTemplate(id) {
+    const template = templates.find(t => t.id === id);
+    if (!template) return;
+    
+    editingTemplateId = id;
+    document.getElementById('templateModalTitle').textContent = 'Edit Template';
+    document.getElementById('templateId').value = id;
+    document.getElementById('templateName').value = template.name;
+    document.getElementById('templateCategory').value = template.category || '';
+    document.getElementById('templateTags').value = (template.tags || []).join(', ');
+    document.getElementById('templateContent').value = template.content;
+    
+    // Populate variables
+    const varList = document.getElementById('variablesList');
+    const vars = template.variables || {};
+    const varEntries = Object.entries(vars);
+    
+    if (varEntries.length === 0) {
+        varList.innerHTML = `
+            <div class="variable-row">
+                <input type="text" placeholder="Variable name" class="var-name">
+                <input type="text" placeholder="Default value" class="var-value">
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeVariable(this)">×</button>
+            </div>
+        `;
+    } else {
+        varList.innerHTML = varEntries.map(([name, value]) => `
+            <div class="variable-row">
+                <input type="text" placeholder="Variable name" class="var-name" value="${escapeHtml(name)}">
+                <input type="text" placeholder="Default value" class="var-value" value="${escapeHtml(value)}">
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeVariable(this)">×</button>
+            </div>
+        `).join('');
+    }
+    
+    document.getElementById('templateModal').classList.add('active');
+}
+
+function addVariable() {
+    const varList = document.getElementById('variablesList');
+    const row = document.createElement('div');
+    row.className = 'variable-row';
+    row.innerHTML = `
+        <input type="text" placeholder="Variable name" class="var-name">
+        <input type="text" placeholder="Default value" class="var-value">
+        <button type="button" class="btn btn-sm btn-danger" onclick="removeVariable(this)">×</button>
+    `;
+    varList.appendChild(row);
+}
+
+function removeVariable(btn) {
+    btn.closest('.variable-row').remove();
+}
+
+function getVariablesFromForm() {
+    const rows = document.querySelectorAll('#variablesList .variable-row');
+    const vars = {};
+    rows.forEach(row => {
+        const name = row.querySelector('.var-name').value.trim();
+        const value = row.querySelector('.var-value').value;
+        if (name) vars[name] = value;
+    });
+    return vars;
+}
+
+document.getElementById('templateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const data = {
+        name: document.getElementById('templateName').value,
+        content: document.getElementById('templateContent').value,
+        category: document.getElementById('templateCategory').value,
+        tags: document.getElementById('templateTags').value.split(',').map(t => t.trim()).filter(Boolean),
+        variables: getVariablesFromForm()
+    };
+    
+    try {
+        const url = editingTemplateId ? `/api/templates/${editingTemplateId}` : '/api/templates';
+        const method = editingTemplateId ? 'PUT' : 'POST';
+        
+        const res = await fbAutoPoster.csrfFetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+            fbAutoPoster.showNotification('Template saved!', 'success');
+            closeTemplateModal();
+            loadTemplates();
+        } else {
+            fbAutoPoster.showNotification('Failed to save: ' + result.error, 'error');
+        }
+    } catch (e) {
+        fbAutoPoster.showNotification('Error saving template', 'error');
+    }
+});
+
+async function deleteTemplate(id) {
+    if (!confirm('Delete this template?')) return;
+    
+    try {
+        const res = await fbAutoPoster.csrfFetch(`/api/templates/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        
+        if (data.success) {
+            fbAutoPoster.showNotification('Template deleted', 'success');
+            loadTemplates();
+        } else {
+            fbAutoPoster.showNotification('Failed to delete', 'error');
+        }
+    } catch (e) {
+        fbAutoPoster.showNotification('Error deleting template', 'error');
+    }
+}
+
+async function previewTemplate() {
+    const content = document.getElementById('templateContent').value;
+    const vars = getVariablesFromForm();
+    
+    try {
+        const res = await fbAutoPoster.csrfFetch('/api/spintax-preview', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ content })
+        });
+        const data = await res.json();
+        
+        let preview = content;
+        // Apply variables
+        for (const [name, value] of Object.entries(vars)) {
+            preview = preview.replace(new RegExp(`{{${name}}}`, 'g'), value || `[${name}]`);
+        }
+        
+        document.getElementById('previewContent').innerHTML = `
+            <h4>With Variables Applied:</h4>
+            <div class="preview-text">${escapeHtml(preview)}</div>
+            <h4 style="margin-top:16px;">Spintax Variations:</h4>
+            ${(data.variations || []).map(v => `<div class="preview-text">${escapeHtml(v)}</div>`).join('')}
+        `;
+        document.getElementById('previewModal').classList.add('active');
+    } catch (e) {
+        fbAutoPoster.showNotification('Error generating preview', 'error');
+    }
+}
+
+function closePreviewModal() {
+    document.getElementById('previewModal').classList.remove('active');
+}
+
+function useTemplateById(id) {
+    const template = templates.find(t => t.id === id);
+    if (template) {
+        localStorage.setItem('pendingPostContent', template.content);
+        window.location.href = '/post';
+    }
+}
+
+function useDraft(id) {
+    const draft = drafts.find(d => d.id === id);
+    if (draft) {
+        localStorage.setItem('pendingPostContent', draft.content);
+        window.location.href = '/post';
+    }
+}
+
+async function deleteDraft(id) {
+    if (!confirm('Delete this draft?')) return;
+    
+    try {
+        const res = await fbAutoPoster.csrfFetch(`/api/drafts/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        
+        if (data.success) {
+            fbAutoPoster.showNotification('Draft deleted', 'success');
+            loadDrafts();
+        }
+    } catch (e) {
+        fbAutoPoster.showNotification('Error deleting draft', 'error');
+    }
+}
+
+function useTemplate() {
+    closePreviewModal();
+    const content = document.getElementById('templateContent').value;
+    localStorage.setItem('pendingPostContent', content);
+    window.location.href = '/post';
+}
+
+function escapeHtml(text) {
+    const map = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' };
+    return String(text || '').replace(/[&<>"']/g, m => map[m]);
+}
+
+// Initialize
+loadTemplates();
+loadDrafts();
+</script>
+{% endblock %}

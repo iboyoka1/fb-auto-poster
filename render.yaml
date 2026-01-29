@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: fb-auto-poster
+    runtime: python
+    pythonVersion: 3.12
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+    startCommand: python run_server.py
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: FLASK_ENV
+        value: production
+    healthCheckPath: /api/health
+    domains:
+      - fb-auto-poster.onrender.com

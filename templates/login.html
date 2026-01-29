@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Login - FB Auto Poster{% endblock %}
+
+{% block body %}
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <svg class="facebook-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            <h1>Facebook Auto Poster</h1>
+            <p>Dashboard & Facebook Login</p>
+        </div>
+        
+        <!-- Facebook Session Status -->
+        <div id="fbSessionStatus" class="session-status" style="display: none; margin-bottom: 20px; padding: 16px; border-radius: 8px; text-align: center;">
+            <div id="fbSessionMessage"></div>
+            <button id="fbLoginBtn" type="button" class="btn btn-success" style="margin-top: 12px; display: none;">
+                Login to Facebook
+            </button>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="login-tabs">
+            <button type="button" class="login-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Dashboard
+            </button>
+            <button type="button" class="login-tab" data-tab="facebook" onclick="switchTab('facebook')">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                Facebook
+            </button>
+        </div>
+        
+        <!-- Dashboard Login Tab -->
+        <div id="tab-dashboard" class="login-tab-content active">
+            <form id="loginForm" class="login-form" method="POST" action="/login">
+                <input type="hidden" name="csrf_token_value" id="csrf_token_value" value="">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" value="admin" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Leave blank for demo mode">
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span class="btn-text">Login to Dashboard</span>
+                    <span class="btn-loader" style="display: none;">
+                        <span class="spinner"></span> Logging in...
+                    </span>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Facebook Login Tab -->
+        <div id="tab-facebook" class="login-tab-content">
+            <div class="fb-login-info">
+                <div class="info-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: #1877f2; margin-bottom: 8px;">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    <h4>Step 1: Login to Dashboard</h4>
+                    <p>First, login with your dashboard credentials above</p>
+                </div>
+                
+                <div class="info-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: #1877f2; margin-bottom: 8px;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <h4>Step 2: Auto-Discover Groups</h4>
+                    <p>Once logged in, use "Auto-Discover Groups" to find your Facebook groups</p>
+                </div>
+                
+                <div class="info-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: #1877f2; margin-bottom: 8px;">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    <h4>Step 3: Create & Post</h4>
+                    <p>Create posts and distribute them to all your groups at once</p>
+                </div>
+            </div>
+            
+            <button type="button" class="btn btn-primary btn-block" onclick="goToDashboard()">
+                Login to Dashboard First
+            </button>
+        </div>
+        
+        <div class="login-footer">
+            <p class="text-muted">🔒 Your Facebook session is secure. Credentials are not stored.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.login-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e5e5;
+}
+
+.login-tab {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #65676b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.login-tab:hover {
+    color: #050505;
+}
+
+.login-tab.active {
+    color: #1877f2;
+    border-bottom-color: #1877f2;
+}
+
+.login-tab-content {
+    display: none;
+}
+
+.login-tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fb-login-info {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.info-box {
+    padding: 16px;
+    background: #f0f7ff;
+    border-radius: 8px;
+    border-left: 4px solid #1877f2;
+    text-align: center;
+}
+
+.info-box h4 {
+    margin-top: 8px;
+    margin-bottom: 4px;
+    color: #050505;
+    font-size: 14px;
+}
+
+.info-box p {
+    color: #65676b;
+    font-size: 13px;
+    margin: 0;
+}
+
+.session-status {
+    border-left: 4px solid #1877f2;
+    background: #f0f7ff;
+}
+
+.session-status.error {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
+.session-status.error #fbSessionMessage {
+    color: #991b1b;
+}
+
+.session-status.success {
+    border-left-color: #10b981;
+    background: #f0fdf4;
+}
+
+.session-status.success #fbSessionMessage {
+    color: #166534;
+}
+</style>
+
+<script>
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.login-tab-content').forEach(t => {
+        t.classList.remove('active');
+    });
+    document.querySelectorAll('.login-tab').forEach(t => {
+        t.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById('tab-' + tabName).classList.add('active');
+    event.target.closest('.login-tab').classList.add('active');
+}
+
+function goToDashboard() {
+    switchTab('dashboard');
+}
+
+// Check Facebook session status on load
+document.addEventListener('DOMContentLoaded', async () => {
+    // Set CSRF token in form
+    if (window.csrfToken) {
+        document.getElementById('csrf_token_value').value = window.csrfToken;
+    }
+    
+    try {
+        const response = await fetch('/api/login-status', {
+            headers: { 'X-CSRF-Token': (window.csrfToken || '') }
+        });
+        const data = await response.json();
+        
+        const statusEl = document.getElementById('fbSessionStatus');
+        const msgEl = document.getElementById('fbSessionMessage');
+        const btnEl = document.getElementById('fbLoginBtn');
+        
+        if (data.logged_in) {
+            statusEl.classList.add('success');
+            statusEl.classList.remove('error');
+            msgEl.innerHTML = `
+                <div style="font-size: 14px;">
+                    <svg style="width: 24px; height: 24px; color: #10b981; margin-bottom: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <p style="margin: 8px 0 0 0;">✓ Facebook session is active!</p>
+                </div>
+            `;
+            btnEl.style.display = 'none';
+        } else {
+            statusEl.classList.add('error');
+            statusEl.classList.remove('success');
+            msgEl.innerHTML = `
+                <div style="font-size: 14px;">
+                    <svg style="width: 24px; height: 24px; color: #ef4444; margin-bottom: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    <p style="margin: 8px 0 0 0;">✗ No Facebook session found</p>
+                    <p style="margin: 4px 0 0 0; font-size: 12px;">Please login to discover your groups</p>
+                </div>
+            `;
+            btnEl.style.display = 'block';
+        }
+        statusEl.style.display = 'block';
+    } catch (e) {
+        console.error('Failed to check session:', e);
+    }
+});
+
+// Dashboard login handler
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoader = btn.querySelector('.btn-loader');
+    
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'inline-flex';
+    
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': (window.csrfToken || '')
+            },
+            body: JSON.stringify({
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            alert('Login failed: ' + (data.error || 'Unknown error'));
+            btn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoader.style.display = 'none';
+        }
+    } catch (error) {
+        alert('Login error: ' + error.message);
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+    }
+});
+
+// Facebook login button handler
+document.getElementById('fbLoginBtn')?.addEventListener('click', async () => {
+    alert('Please login to the dashboard first, then use "Auto-Discover Groups" from the Groups page');
+});
+</script>
+{% endblock %}
