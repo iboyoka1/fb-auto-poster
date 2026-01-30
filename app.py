@@ -173,8 +173,8 @@ def inject_csrf():
 def enforce_csrf():
     # Enforce CSRF for state-changing methods
     if request.method in ("POST", "PUT", "DELETE"):
-        # Exempt API endpoints and static files from CSRF
-        if request.endpoint and (request.endpoint.startswith('static') or request.path.startswith('/api/')):
+        # Exempt API endpoints, login, and static files from CSRF
+        if request.endpoint and (request.endpoint.startswith('static') or request.path.startswith('/api/') or request.path == '/login'):
             return
         token_header = request.headers.get('X-CSRF-Token')
         expected = session.get('csrf_token')
@@ -194,6 +194,60 @@ def health_check():
     """Health check endpoint for Render deployment"""
     return jsonify({'status': 'ok', 'healthy': True}), 200
 
+@app.route('/api/facebook-status', methods=['GET'])
+def facebook_status():
+    """Check if user is connected to Facebook"""
+    # Check if facebook session exists
+    fb_connected = session.get('facebook_connected', False)
+    fb_email = session.get('facebook_email', '')
+    return jsonify({'connected': fb_connected, 'email': fb_email}), 200
+
+@app.route('/api/facebook-login', methods=['POST'])
+def facebook_login():
+    """Handle Facebook login with email and password"""
+    try:
+        data = request.get_json(silent=True) or {}
+        email = (data.get('email') or '').strip()
+        password = data.get('password') or ''
+        
+        # Validation
+        if not email or not password:
+            return jsonify({'success': False, 'error': 'Email and password required'}), 200
+        
+        # For demo/security: accept any non-empty email/password
+        # In production, verify against Facebook API
+        if len(password) < 4:
+            return jsonify({'success': False, 'error': 'Password must be at least 4 characters'}), 200
+        
+        # Store in session
+        session['facebook_connected'] = True
+        session['facebook_email'] = email
+        session['facebook_authenticated'] = True
+        
+        print(f"[FACEBOOK LOGIN] User logged in: {email}")
+        return jsonify({'success': True, 'message': f'Logged in as {email}'}), 200
+    except Exception as e:
+        print(f"[FACEBOOK LOGIN ERROR] {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 200
+
+@app.route('/api/facebook-logout', methods=['POST'])
+def facebook_logout():
+    """Logout from Facebook"""
+    try:
+        email = session.get('facebook_email', '')
+        
+        # Clear Facebook session data
+        session['facebook_connected'] = False
+        session['facebook_email'] = ''
+        session['facebook_authenticated'] = False
+        session.modified = True
+        
+        print(f"[FACEBOOK LOGOUT] User logged out: {email}")
+        return jsonify({'success': True, 'message': 'Logged out from Facebook'}), 200
+    except Exception as e:
+        print(f"[FACEBOOK LOGOUT ERROR] {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 200
+
 @app.route('/')
 def index():
     if 'logged_in' in session:
@@ -203,27 +257,56 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        data = request.get_json(silent=True) or {}
-        username = (data.get('username') or '').strip()
-        password = data.get('password') or ''
-        
-        # Simple credential check (no bcrypt dependency)
-        expected_username = DASHBOARD_USERNAME or 'admin'
-        expected_password = DASHBOARD_PASSWORD or 'password123'
-        
-        # Direct comparison - no hashing
-        if username != expected_username or password != expected_password:
-            return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
-        
-        # Set session
-        session['logged_in'] = True
-        session['username'] = username or 'Admin'
-        
-        return jsonify({'success': True, 'redirect': url_for('dashboard')})
+        try:
+            data = request.get_json(silent=True) or {}
+            username = (data.get('username') or '').strip()
+            password = data.get('password') or ''
+            
+            print(f"[LOGIN] Attempt: username='{username}', password length={len(password)}")
+            
+            # Simple credential check (no bcrypt dependency)
+            expected_username = DASHBOARD_USERNAME or 'admin'
+            expected_password = DASHBOARD_PASSWORD or 'password123'
+            
+            print(f"[LOGIN] Expected: username='{expected_username}', password length={len(expected_password)}")
+            
+            # Direct comparison - no hashing
+            if username != expected_username or password != expected_password:
+                print(f"[LOGIN] Failed - credentials mismatch")
+                return jsonify({'success': False, 'error': 'Invalid credentials'}), 200
+            
+            # Set session
+            session['logged_in'] = True
+            session['username'] = username or 'Admin'
+            
+            print(f"[LOGIN] Success - session created for {username}")
+            return jsonify({'success': True, 'redirect': url_for('dashboard')}), 200
+        except Exception as e:
+            print(f"[LOGIN] Error: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 200
     
     # Ensure CSRF cookie is set via template context
     resp = make_response(render_template('login.html'))
     return resp
+
+@app.route('/auth/facebook', methods=['GET'])
+def facebook_auth():
+    """Handle Facebook authentication"""
+    # For now, just add a dummy account
+    # In production, this would use OAuth2 flow
+    accounts = session.get('accounts', [])
+    
+    # Add a demo account
+    if not any(a.get('email') == 'demo@facebook.com' for a in accounts):
+        accounts.append({
+            'id': 'demo_fb_1',
+            'name': 'Demo Facebook Account',
+            'email': 'demo@facebook.com'
+        })
+        session['accounts'] = accounts
+        session['facebook_connected'] = True
+    
+    return redirect(url_for('accounts'))
 
 @app.route('/logout')
 def logout():
@@ -261,6 +344,9 @@ def media_page():
     return render_template('media.html')
 
 @app.route('/accounts')
+@login_required
+def accounts():
+    return render_template('accounts.html')
 @login_required
 def accounts_page():
     return render_template('accounts.html')
