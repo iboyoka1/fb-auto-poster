@@ -106,7 +106,10 @@ except ImportError:
     capture_exception = lambda e, c=None: None
     monitored = lambda n=None: lambda f: f
 
-app = Flask(__name__)
+app = Flask(__name__, 
+    static_folder=os.path.join(PROJECT_ROOT, 'static'),
+    static_url_path='/static',
+    template_folder=os.path.join(PROJECT_ROOT, 'templates'))
 app.secret_key = os.urandom(24)
 
 # Register API docs blueprint
