@@ -1,9 +1,176 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - FB Auto Poster</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    .login-box {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        padding: 40px;
+        max-width: 450px;
+        width: 100%;
+    }
+    .login-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .login-header h1 {
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .login-header p {
+        color: #666;
+        font-size: 14px;
+    }
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 10px 20px;
+        font-weight: 600;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #eee;
+    }
+    .tab-btn {
+        background: none;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        color: #666;
+        font-weight: 500;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+    }
+    .tab-btn.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    .info-box {
+        background: #f0f7ff;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 4px solid #667eea;
+    }
+    .info-box h4 {
+        margin: 0 0 5px 0;
+        color: #333;
+        font-size: 14px;
+    }
+    .info-box p {
+        margin: 0;
+        color: #666;
+        font-size: 13px;
+    }
+    </style>
+</head>
+<body>
 
-{% block title %}Login - FB Auto Poster{% endblock %}
+<div class="login-box">
+    <div class="login-header">
+        <h1>Facebook Auto Poster</h1>
+        <p>Dashboard & Facebook Login</p>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('facebook')">Facebook</button>
+    </div>
+    
+    <div id="dashboard-tab" class="tab-content active">
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" value="admin" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" placeholder="password123" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100">Login to Dashboard</button>
+        </form>
+    </div>
+    
+    <div id="facebook-tab" class="tab-content">
+        <div class="info-box">
+            <h4>Step 1: Login to Dashboard</h4>
+            <p>First, login with your dashboard credentials</p>
+        </div>
+        <div class="info-box">
+            <h4>Step 2: Auto-Discover Groups</h4>
+            <p>Once logged in, use auto-discover to find your Facebook groups</p>
+        </div>
+        <div class="info-box">
+            <h4>Step 3: Create & Post</h4>
+            <p>Create posts and distribute them to all your groups</p>
+        </div>
+        <button type="button" class="btn btn-primary w-100" onclick="switchTab('dashboard')">Login to Dashboard First</button>
+    </div>
+</div>
 
-{% block body %}
-<div class="login-container">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tab + '-tab').classList.add('active');
+    document.querySelector(`button[onclick="switchTab('${tab}')"]`).classList.add('active');
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            window.location.href = data.redirect || '/dashboard';
+        } else {
+            alert('Login failed: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Login error: ' + error.message);
+    }
+}
+</script>
+{% endblock %}
     <div class="login-box">
         <div class="login-header">
             <svg class="facebook-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -320,4 +487,6 @@ document.getElementById('fbLoginBtn')?.addEventListener('click', async () => {
     alert('Please login to the dashboard first, then use "Auto-Discover Groups" from the Groups page');
 });
 </script>
-{% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
