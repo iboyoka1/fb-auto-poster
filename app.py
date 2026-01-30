@@ -200,56 +200,23 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Rate limiting per IP
-        client_ip = request.remote_addr
-        if security_rate_limiter and not security_rate_limiter.is_allowed(client_ip, max_attempts=5, window_seconds=60):
-            return jsonify({'success': False, 'error': 'Too many login attempts. Try again later.'}), 429
-        
         data = request.get_json(silent=True) or {}
         username = (data.get('username') or '').strip()
         password = data.get('password') or ''
         
-        # Get stored password hash from setup config
-        stored_hash = None
-        try:
-            if SetupWizard:
-                config = SetupWizard.load_config()
-                if config and config.get('password_hash'):
-                    stored_hash = config['password_hash']
-        except:
-            pass
-        
-        # Fallback to environment variables if no config
-        if not stored_hash:
-            stored_hash = password_manager.hash_password(DASHBOARD_PASSWORD) if password_manager and DASHBOARD_PASSWORD else None
-        
-        # Verify credentials
+        # Simple credential check (no bcrypt dependency)
         expected_username = DASHBOARD_USERNAME or 'admin'
+        expected_password = DASHBOARD_PASSWORD or 'password123'
         
-        if password_manager and stored_hash:
-            # Use secure password comparison
-            if username != expected_username or not password_manager.verify_password(password, stored_hash):
-                return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
-        elif DASHBOARD_PASSWORD:
-            # Fallback to plaintext comparison
-            if username != expected_username or password != DASHBOARD_PASSWORD:
-                return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
+        # Direct comparison - no hashing
+        if username != expected_username or password != expected_password:
+            return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
         
-        # Reset rate limiter on successful login
-        if security_rate_limiter:
-            security_rate_limiter.reset(client_ip)
-        
-        # Generate JWT token
-        token = None
-        if token_manager:
-            token = token_manager.generate_token(username, expires_in_hours=24)
-        
+        # Set session
         session['logged_in'] = True
         session['username'] = username or 'Admin'
-        if token:
-            session['token'] = token
         
-        return jsonify({'success': True, 'redirect': url_for('dashboard'), 'token': token})
+        return jsonify({'success': True, 'redirect': url_for('dashboard')})
     
     # Ensure CSRF cookie is set via template context
     resp = make_response(render_template('login.html'))
