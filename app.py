@@ -106,11 +106,21 @@ except ImportError:
     capture_exception = lambda e, c=None: None
     monitored = lambda n=None: lambda f: f
 
+# Get the directory where app.py is located
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+
 app = Flask(__name__, 
-    static_folder=os.path.join(PROJECT_ROOT, 'static'),
+    static_folder=os.path.join(APP_DIR, 'static'),
     static_url_path='/static',
-    template_folder=os.path.join(PROJECT_ROOT, 'templates'))
+    template_folder=os.path.join(APP_DIR, 'templates'))
 app.secret_key = os.urandom(24)
+
+# Debug: Print paths at startup
+print(f"[STARTUP] APP_DIR: {APP_DIR}")
+print(f"[STARTUP] Static folder: {os.path.join(APP_DIR, 'static')}")
+print(f"[STARTUP] Static folder exists: {os.path.exists(os.path.join(APP_DIR, 'static'))}")
+print(f"[STARTUP] Template folder: {os.path.join(APP_DIR, 'templates')}")
+print(f"[STARTUP] Template folder exists: {os.path.exists(os.path.join(APP_DIR, 'templates'))}")
 
 # Configure session for smooth persistence
 app.config['SESSION_TYPE'] = 'filesystem'
