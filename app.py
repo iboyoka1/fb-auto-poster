@@ -189,6 +189,10 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Initialize database on module load (important for gunicorn/production)
+init_db()
+print("[DATABASE] Database initialized")
+
 @app.context_processor
 def inject_csrf():
     token = session.get('csrf_token')
