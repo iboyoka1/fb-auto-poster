@@ -11,15 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Playwright browsers are already installed in the base image
 
-# Copy project files
+# Copy project files (static and templates are now tracked by git)
 COPY . .
-
-# Explicitly copy static and templates (ensure they're included)
-COPY static/ ./static/
-COPY templates/ ./templates/
-
-# Debug: List files to verify copy
-RUN echo "=== Listing /app ===" && ls -la /app && echo "=== Listing /app/static ===" && ls -la /app/static || echo "No static folder" && echo "=== Listing /app/templates ===" && ls -la /app/templates || echo "No templates folder"
 
 # Create necessary directories
 RUN mkdir -p sessions logs media_library backups uploads
