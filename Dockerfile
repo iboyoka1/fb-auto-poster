@@ -3,21 +3,42 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies for Playwright
 RUN apt-get update && apt-get install -y \
-    chromium \
-    chromium-driver \
     wget \
     curl \
     ca-certificates \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libxkbcommon0 \
+    libatspi2.0-0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
+# Copy requirements first for better caching
 COPY requirements.txt .
-COPY . .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright browsers
+RUN playwright install firefox
+RUN playwright install-deps firefox
+
+# Copy project files
+COPY . .
 
 # Create necessary directories
 RUN mkdir -p sessions logs media_library backups uploads
@@ -26,14 +47,13 @@ RUN mkdir -p sessions logs media_library backups uploads
 ENV FLASK_APP=app.py
 ENV PYTHONUNBUFFERED=1
 ENV SERVER_HOST=0.0.0.0
-ENV SERVER_PORT=5000
 
-# Expose port
-EXPOSE 5000
+# Expose port (Render uses PORT env var)
+EXPOSE 10000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/api/health || exit 1
+    CMD curl -f http://localhost:${PORT:-10000}/api/health || exit 1
 
-# Run the application
-CMD ["python", "run_server.py"]
+# Run the application with gunicorn for production
+CMD gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 1 --threads 2 --timeout 120 app:app

@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+venv/
+ENV/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs and databases (will be created fresh)
+logs/*.log
+*.db
+
+# Local session data (sensitive - don't deploy)
+sessions/facebook-cookies.json
+sessions/facebook-credentials.json
+
+# Documentation
+*.md
+!README.md
+
+# Build artifacts
+*.exe
+build/
+dist/
+
+# Test files
+test_*.py
+*_test.py
+
+# Backup files
+*.bak
+*.orig
+backups/

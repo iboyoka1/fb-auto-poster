@@ -1,128 +1,568 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - FB Auto Poster</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
-        .login-box {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 50px;
-            max-width: 500px;
-            width: 100%;
-            margin: 20px;
-        }
-        .login-header { text-align: center; margin-bottom: 40px; }
-        .login-header h1 { color: #333; font-weight: 700; font-size: 32px; margin-bottom: 10px; }
-        .login-header p { color: #666; font-size: 16px; }
-        .form-control { border: 1px solid #ddd; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; }
-        .form-control:focus { border-color: #667eea; box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25); }
-        .form-label { color: #333; font-weight: 500; margin-bottom: 8px; font-size: 14px; }
-        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 12px 24px; font-weight: 600; width: 100%; border-radius: 8px; }
-        .btn-primary:hover { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
-        .tabs { display: flex; gap: 20px; margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; }
-        .tab-btn { background: none; border: none; padding: 12px 0; cursor: pointer; color: #999; font-weight: 600; border-bottom: 3px solid transparent; margin-bottom: -2px; font-size: 14px; }
-        .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .info-box { background: #f5f7ff; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea; }
-        .info-box h4 { margin: 0 0 5px 0; color: #333; font-size: 14px; font-weight: 600; }
-        .info-box p { margin: 0; color: #666; font-size: 13px; }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Login - FB Auto Poster{% endblock %}
+
+{% block body %}
+<div class="login-container">
     <div class="login-box">
         <div class="login-header">
+            <svg class="facebook-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
             <h1>Facebook Auto Poster</h1>
             <p>Dashboard & Facebook Login</p>
         </div>
         
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
-            <button class="tab-btn" onclick="switchTab('facebook')">Facebook</button>
+        <!-- Tabs -->
+        <div class="login-tabs">
+            <button type="button" class="login-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Dashboard
+            </button>
+            <button type="button" class="login-tab" data-tab="facebook" onclick="switchTab('facebook')">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                Facebook
+            </button>
         </div>
         
-        <div id="dashboard-tab" class="tab-content active">
-            <form id="loginForm" onsubmit="handleLogin(event)">
-                <div>
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" class="form-control" id="username" value="admin" required>
+        <!-- Dashboard Login Tab -->
+        <div id="tab-dashboard" class="login-tab-content active">
+            <div class="alert alert-info" style="margin-bottom: 20px; border-radius: 8px; background-color: #e7f3ff; border-left: 4px solid #1877f2;">
+                <strong>💡 Default Credentials:</strong> Use <code style="background: white; padding: 2px 6px; border-radius: 3px;">admin</code> / <code style="background: white; padding: 2px 6px; border-radius: 3px;">password123</code>
+            </div>
+            <div id="dashboardErrorMsg" class="alert alert-danger" style="display: none; margin-bottom: 15px;"></div>
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" value="admin" required>
                 </div>
-                <div>
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" placeholder="password123" required>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="password123" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Login to Dashboard</button>
+                
+                <button type="button" class="btn btn-primary btn-block" onclick="handleDashboardLogin()" style="padding: 12px; font-weight: 600; border-radius: 6px;">
+                    <span class="btn-text">Login to Dashboard</span>
+                    <span class="btn-loader" style="display: none;">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Logging in...
+                    </span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Facebook Login Tab -->
+        <div id="tab-facebook" class="login-tab-content">
+            <!-- Facebook Session Status -->
+            <div id="fbSessionStatus" class="alert alert-info" style="display: none; margin-bottom: 20px; border-radius: 8px; animation: slideDown 0.3s ease;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="fbStatusIcon">ℹ️</span>
+                    <div>
+                        <strong id="fbStatusTitle">Checking status...</strong>
+                        <p id="fbStatusMsg" style="margin: 5px 0 0 0; font-size: 14px;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Facebook Login Form -->
+                <form id="fbLoginForm" style="display: none; animation: slideDown 0.3s ease;">
+                    <div class="form-group">
+                        <label for="fbEmail">Email or Phone:</label>
+                        <input type="text" id="fbEmail" class="form-control" placeholder="Enter Facebook email or phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fbPassword">Password:</label>
+                        <input type="password" id="fbPassword" class="form-control" placeholder="Enter password" required>
+                    </div>
+                    <div id="fbErrorMsg" class="alert alert-danger" style="display: none; margin-bottom: 15px; border-radius: 6px; animation: shake 0.3s ease;"></div>
+                    <button type="button" class="btn btn-primary btn-block" id="fbLoginBtn" onclick="handleFacebookLogin()" style="padding: 12px; font-weight: 600; border-radius: 6px; transition: all 0.3s ease;">
+                        <span id="fbLoginBtnText">Auto-Login to Facebook</span>
+                        <span id="fbLoginSpinner" style="display: none; margin-left: 8px;">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-block mt-2" onclick="handleManualFacebookLogin()" id="fbManualLoginBtn" style="border-radius: 6px; transition: all 0.3s ease;">
+                        Manual Login (Open Browser)
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-block mt-2" onclick="logoutFromFacebook()" id="fbLogoutBtn" style="display: none; border-radius: 6px; transition: all 0.3s ease;">
+                        Logout from Facebook
+                    </button>
+
+                <div id="fbSuccessMsg" class="alert alert-success" style="display: none; margin-top: 15px; border-radius: 6px; animation: slideDown 0.3s ease;">
+                    <strong>✓ Success!</strong> You are now connected to Facebook. Redirecting to dashboard...
+                </div>
             </form>
-        </div>
-        
-        <div id="facebook-tab" class="tab-content">
-            <div class="info-box">
-                <h4>Step 1: Login to Dashboard</h4>
-                <p>First, login with your dashboard credentials</p>
-            </div>
-            <div class="info-box">
-                <h4>Step 2: Auto-Discover Groups</h4>
-                <p>Once logged in, use auto-discover to find your Facebook groups</p>
-            </div>
-            <div class="info-box">
-                <h4>Step 3: Create & Post</h4>
-                <p>Create posts and distribute them to all your groups</p>
-            </div>
-            <button type="button" class="btn btn-primary" onclick="switchTab('dashboard')">Login to Dashboard First</button>
-        </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tab + '-tab').classList.add('active');
-            event.target.classList.add('active');
-        }
+            <!-- Info Section -->
+            <div id="fbInfoSection" class="fb-login-info" style="animation: slideDown 0.3s ease;">
+                <h5 style="margin-bottom: 20px; color: #1877f2; font-weight: 600;">How It Works</h5>
+                <div class="info-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: #1877f2; margin-bottom: 8px;">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    <h4>Step 1: Connect Facebook</h4>
+                    <p>Login with your Facebook email and password above</p>
+                </div>
+                
+                <div class="info-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: #1877f2; margin-bottom: 8px;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <h4>Step 2: Discover Groups</h4>
+                    <p>Use "Auto-Discover Groups" to find your Facebook groups</p>
+                </div>
+                
+                <div class="info-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: #1877f2; margin-bottom: 8px;">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    <h4>Step 3: Create & Post</h4>
+                    <p>Create posts and distribute them to all your groups</p>
+                </div>
+            </div>
+        </div>
 
-        async function handleLogin(event) {
-            event.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            console.log('Attempting login with:', username);
-            
-            try {
-                const response = await fetch('/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                
-                console.log('Response status:', response.status);
-                
-                const data = await response.json();
-                console.log('Response data:', data);
-                
-                if (data.success) {
-                    window.location.href = data.redirect || '/dashboard';
-                } else {
-                    alert('Login failed: ' + (data.error || 'Invalid credentials'));
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                alert('Login error: ' + error.message);
+        <style>
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
-    </script>
-</body>
-</html>
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .form-control:focus {
+            border-color: #1877f2;
+            box-shadow: 0 0 0 0.2rem rgba(24, 119, 242, 0.25);
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.2em;
+        }
+        </style>
+        
+        <div class="login-footer">
+            <p class="text-muted">🔒 Your Facebook session is secure. Credentials are not stored.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.login-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e5e5;
+}
+
+.login-tab {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #65676b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.login-tab:hover {
+    color: #050505;
+}
+
+.login-tab.active {
+    color: #1877f2;
+    border-bottom-color: #1877f2;
+}
+
+.login-tab-content {
+    display: none;
+}
+
+.login-tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fb-login-info {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.info-box {
+    padding: 16px;
+    background: #f0f7ff;
+    border-radius: 8px;
+    border-left: 4px solid #1877f2;
+    text-align: center;
+}
+
+.info-box h4 {
+    margin-top: 8px;
+    margin-bottom: 4px;
+    color: #050505;
+    font-size: 14px;
+}
+
+.info-box p {
+    color: #65676b;
+    font-size: 13px;
+    margin: 0;
+}
+
+.session-status {
+    border-left: 4px solid #1877f2;
+    background: #f0f7ff;
+}
+
+.session-status.error {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
+.session-status.error #fbSessionMessage {
+    color: #991b1b;
+}
+
+.session-status.success {
+    border-left-color: #10b981;
+    background: #f0fdf4;
+}
+
+.session-status.success #fbSessionMessage {
+    color: #166534;
+}
+</style>
+
+<script>
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.login-tab-content').forEach(t => {
+        t.classList.remove('active');
+    });
+    document.querySelectorAll('.login-tab').forEach(t => {
+        t.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById('tab-' + tabName).classList.add('active');
+    event.target.closest('.login-tab').classList.add('active');
+}
+
+function goToDashboard() {
+    switchTab('dashboard');
+}
+
+// Dashboard Login Handler
+async function handleDashboardLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errorMsg = document.getElementById('dashboardErrorMsg');
+    const button = document.querySelector('[onclick="handleDashboardLogin()"]');
+    const btnText = button.querySelector('.btn-text');
+    const loader = button.querySelector('.btn-loader');
+    
+    // Clear previous errors
+    errorMsg.style.display = 'none';
+    errorMsg.textContent = '';
+    
+    // Validation
+    if (!username) {
+        errorMsg.textContent = 'Please enter username';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    if (!password) {
+        errorMsg.textContent = 'Please enter password';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    
+    // Show loading state
+    button.disabled = true;
+    btnText.style.display = 'none';
+    loader.style.display = 'inline-block';
+    
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Login successful - redirect to dashboard
+            console.log('Login successful, redirecting to:', data.redirect);
+            window.location.href = data.redirect || '/dashboard';
+        } else {
+            // Show error message
+            errorMsg.textContent = data.error || 'Login failed';
+            errorMsg.style.display = 'block';
+            
+            // Reset button state
+            button.disabled = false;
+            btnText.style.display = 'inline';
+            loader.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        errorMsg.textContent = 'Error: ' + error.message;
+        errorMsg.style.display = 'block';
+        
+        // Reset button state
+        button.disabled = false;
+        btnText.style.display = 'inline';
+        loader.style.display = 'none';
+    }
+}
+
+// Enhanced Facebook Session Management
+async function checkFacebookSessionStatus() {
+    try {
+        const response = await fetch('/api/facebook-status');
+        const data = await response.json();
+        
+        const statusDiv = document.getElementById('fbSessionStatus');
+        const formDiv = document.getElementById('fbLoginForm');
+        const infoDiv = document.getElementById('fbInfoSection');
+        
+        if (data.connected && data.authenticated) {
+            // Show logout option
+            statusDiv.className = 'alert alert-success';
+            statusDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">✓</span>
+                    <div>
+                        <strong>Connected to Facebook</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 14px;">Logged in as: <strong>${data.email}</strong></p>
+                    </div>
+                </div>
+            `;
+            statusDiv.style.display = 'block';
+            formDiv.style.display = 'block';
+            document.getElementById('fbLoginBtn').style.display = 'none';
+            document.getElementById('fbLogoutBtn').style.display = 'block';
+            document.getElementById('fbManualLoginBtn').style.display = 'none';
+            // hide raw inputs
+            const emailInput = document.getElementById('fbEmail');
+            const passInput = document.getElementById('fbPassword');
+            if (emailInput) emailInput.style.display = 'none';
+            if (passInput) passInput.style.display = 'none';
+            infoDiv.style.display = 'none';
+        } else {
+            // Show login form
+            statusDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">ℹ️</span>
+                    <div>
+                        <strong>Login to Facebook</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 14px;">Enter your Facebook credentials to connect</p>
+                    </div>
+                </div>
+            `;
+            statusDiv.className = 'alert alert-info';
+            statusDiv.style.display = 'block';
+            formDiv.style.display = 'block';
+            document.getElementById('fbLoginBtn').style.display = 'inline-block';
+            document.getElementById('fbLogoutBtn').style.display = 'none';
+            document.getElementById('fbManualLoginBtn').style.display = 'inline-block';
+            // ensure inputs visible
+            const emailInput2 = document.getElementById('fbEmail');
+            const passInput2 = document.getElementById('fbPassword');
+            if (emailInput2) emailInput2.style.display = 'block';
+            if (passInput2) passInput2.style.display = 'block';
+            infoDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error checking Facebook session:', error);
+    }
+}
+
+// Run a session check on page load so UI matches real state
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkFacebookSessionStatus);
+} else {
+    checkFacebookSessionStatus();
+}
+
+async function handleFacebookLogin() {
+    const email = document.getElementById('fbEmail').value.trim();
+    const password = document.getElementById('fbPassword').value;
+    const errorMsg = document.getElementById('fbErrorMsg');
+    const successMsg = document.getElementById('fbSuccessMsg');
+    const loginBtn = document.getElementById('fbLoginBtn');
+    const spinner = document.getElementById('fbLoginSpinner');
+    const btnText = document.getElementById('fbLoginBtnText');
+    
+    // Clear previous messages
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+    
+    // Validation
+    if (!email) {
+        errorMsg.textContent = 'Please enter your email or phone number';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    if (!password) {
+        errorMsg.textContent = 'Please enter your password';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    
+    // Show loading state
+    loginBtn.disabled = true;
+    spinner.style.display = 'inline-block';
+    btnText.textContent = 'Connecting...';
+    
+    try {
+        const response = await fetch('/api/facebook-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            successMsg.style.display = 'block';
+            // Clear form
+            document.getElementById('fbEmail').value = '';
+            document.getElementById('fbPassword').value = '';
+            
+            // Redirect after brief delay
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 1500);
+        } else {
+            errorMsg.textContent = data.error || data.message || 'Login failed. Please try again.';
+            errorMsg.style.display = 'block';
+            
+            // Reset button state
+            loginBtn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = 'Login to Facebook';
+        }
+    } catch (error) {
+        errorMsg.textContent = 'Connection error. Please check your internet and try again.';
+        errorMsg.style.display = 'block';
+        
+        // Reset button state
+        loginBtn.disabled = false;
+        spinner.style.display = 'none';
+        btnText.textContent = 'Login to Facebook';
+        
+        console.error('Facebook login error:', error);
+    }
+}
+
+async function logoutFromFacebook() {
+    if (!confirm('Are you sure you want to logout from Facebook?')) {
+        return;
+    }
+    
+    const logoutBtn = document.getElementById('fbLogoutBtn');
+    logoutBtn.disabled = true;
+    logoutBtn.textContent = 'Logging out...';
+    
+    try {
+        const response = await fetch('/api/facebook-logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Refresh session check
+            await checkFacebookSessionStatus();
+
+            // Show success banner
+            const successMsg = document.getElementById('fbSuccessMsg');
+            successMsg.textContent = '✓ Successfully logged out from Facebook';
+            successMsg.style.display = 'block';
+
+            // Toast confirmation and UI reset
+            if (typeof showNotification === 'function') {
+                showNotification('Logged out from Facebook', 'success');
+            }
+            logoutBtn.disabled = false;
+            logoutBtn.textContent = 'Logout from Facebook';
+
+            // Ensure login UI is visible and logout hidden
+            const loginBtn = document.getElementById('fbLoginBtn');
+            const manualBtn = document.getElementById('fbManualLoginBtn');
+            if (loginBtn) loginBtn.style.display = 'inline-block';
+            if (manualBtn) manualBtn.style.display = 'inline-block';
+            logoutBtn.style.display = 'none';
+
+            // Auto-hide success message after a short delay
+            setTimeout(() => { successMsg.style.display = 'none'; }, 3500);
+        } else {
+            alert('Logout failed: ' + (data.error || 'Unknown error'));
+            logoutBtn.disabled = false;
+            logoutBtn.textContent = 'Logout from Facebook';
+        }
+    } catch (error) {
+        alert('Logout error: ' + error.message);
+        logoutBtn.disabled = false;
+        logoutBtn.textContent = 'Logout from Facebook';
+        console.error('Facebook logout error:', error);
+    }
+}
+
+// Check Facebook session status on page load
+document.addEventListener('DOMContentLoaded', async () => {
+    // Set CSRF token in form
+    if (window.csrfToken) {
+        document.getElementById('csrf_token_value').value = window.csrfToken;
+    }
+    
+    // Check Facebook session
+    await checkFacebookSessionStatus();
+});
+</script>
+{% endblock %}

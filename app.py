@@ -112,6 +112,24 @@ app = Flask(__name__,
     template_folder=os.path.join(PROJECT_ROOT, 'templates'))
 app.secret_key = os.urandom(24)
 
+# Configure session for smooth persistence
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['PERMANENT_SESSION_LIFETIME'] = 7 * 24 * 60 * 60  # 7 days
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True  # Refresh on each request
+app.config['SESSION_COOKIE_SECURE'] = False  # Allow HTTP for local dev
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Secure cookies
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+
+# Initialize Flask-Session for persistent sessions
+try:
+    from flask_session import Session
+    Session(app)
+    print("[SESSION] Flask-Session initialized successfully")
+except ImportError:
+    print("[SESSION] Flask-Session not installed, using default Flask sessions")
+except Exception as e:
+    print(f"[SESSION] Error initializing Flask-Session: {e}")
+
 # Register API docs blueprint
 if api_docs:
     app.register_blueprint(api_docs)
@@ -196,57 +214,200 @@ def health_check():
 
 @app.route('/api/facebook-status', methods=['GET'])
 def facebook_status():
-    """Check if user is connected to Facebook"""
-    # Check if facebook session exists
-    fb_connected = session.get('facebook_connected', False)
-    fb_email = session.get('facebook_email', '')
-    return jsonify({'connected': fb_connected, 'email': fb_email}), 200
+    """Check if user is connected to Facebook - checks both session and cookie file"""
+    try:
+        # First check Flask session
+        fb_connected = session.get('facebook_connected', False)
+        fb_email = session.get('facebook_email', '')
+        fb_authenticated = session.get('facebook_authenticated', False)
+        
+        # Also check if we have valid cookies saved (in case session was lost)
+        session_file = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
+        logger.info(f"Checking cookie file: {session_file}, exists: {os.path.exists(session_file)}")
+        
+        if os.path.exists(session_file):
+            try:
+                with open(session_file, 'r', encoding='utf-8') as f:
+                    cookies = json.load(f)
+                cookie_names = {c.get('name') for c in cookies}
+                logger.info(f"Found cookies: {cookie_names}")
+                
+                if 'c_user' in cookie_names and 'xs' in cookie_names:
+                    c_user_value = next((c.get('value') for c in cookies if c.get('name') == 'c_user'), None)
+                    # Cookie file is valid - update response
+                    fb_connected = True
+                    fb_authenticated = True
+                    if not fb_email:
+                        fb_email = f"User {c_user_value}"
+                    logger.info(f"Facebook session valid for user: {c_user_value}")
+            except Exception as e:
+                logger.error(f"Error reading cookies file: {e}")
+        
+        return jsonify({
+            'connected': fb_connected,
+            'email': fb_email,
+            'authenticated': fb_authenticated,
+            'status': 'connected' if fb_connected else 'disconnected'
+        }), 200
+    except Exception as e:
+        logger.error(f"Error checking Facebook status: {str(e)}")
+        return jsonify({'connected': False, 'email': '', 'authenticated': False, 'status': 'error'}), 200
 
 @app.route('/api/facebook-login', methods=['POST'])
 def facebook_login():
-    """Handle Facebook login with email and password"""
+    """Handle Facebook login with email and password - Uses Playwright for real authentication"""
     try:
         data = request.get_json(silent=True) or {}
         email = (data.get('email') or '').strip()
         password = data.get('password') or ''
+        use_manual = data.get('manual', False)  # Option for manual login
         
-        # Validation
-        if not email or not password:
-            return jsonify({'success': False, 'error': 'Email and password required'}), 200
+        # Validation with clear error messages
+        if not email:
+            return jsonify({'success': False, 'error': 'Email is required'}), 200
         
-        # For demo/security: accept any non-empty email/password
-        # In production, verify against Facebook API
+        if not password:
+            return jsonify({'success': False, 'error': 'Password is required'}), 200
+        
         if len(password) < 4:
             return jsonify({'success': False, 'error': 'Password must be at least 4 characters'}), 200
         
-        # Store in session
-        session['facebook_connected'] = True
-        session['facebook_email'] = email
-        session['facebook_authenticated'] = True
+        # Validate email format
+        if '@' not in email and not email[0].isdigit():
+            return jsonify({'success': False, 'error': 'Please enter a valid email or phone number'}), 200
         
-        print(f"[FACEBOOK LOGIN] User logged in: {email}")
-        return jsonify({'success': True, 'message': f'Logged in as {email}'}), 200
+        # Save credentials to file for future use
+        creds_path = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-credentials.json')
+        try:
+            os.makedirs(os.path.dirname(creds_path), exist_ok=True)
+            with open(creds_path, 'w', encoding='utf-8') as f:
+                json.dump({'email': email, 'password': password}, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to save credentials: {e}")
+        
+        # Attempt real Facebook login using Playwright
+        try:
+            from main import FacebookGroupSpam
+            cookie_path = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
+            
+            logger.info(f"[FACEBOOK LOGIN] Starting Playwright authentication for {email}")
+            poster = FacebookGroupSpam(headless=True)
+            poster.start_browser()
+            
+            success = poster.auto_login_with_credentials(email, password, timeout=45)
+            
+            if success:
+                # Save cookies for future sessions
+                poster.generate_cookie(cookie_path)
+                poster.close_browser()
+                
+                # Store in session
+                session['facebook_connected'] = True
+                session['facebook_email'] = email
+                session['facebook_authenticated'] = True
+                session['facebook_login_time'] = datetime.now().isoformat()
+                session['logged_in'] = True
+                session['username'] = email.split('@')[0] if '@' in email else 'User'
+                session.modified = True
+                session.permanent = True
+                
+                logger.info(f"[FACEBOOK LOGIN SUCCESS] Real authentication successful for: {email}")
+                return jsonify({
+                    'success': True, 
+                    'message': f'Successfully connected as {email}',
+                    'email': email,
+                    'connected': True
+                }), 200
+            else:
+                poster.close_browser()
+                logger.warning(f"[FACEBOOK LOGIN] Auto-login failed for {email} - may need manual login for 2FA/CAPTCHA")
+                return jsonify({
+                    'success': False, 
+                    'error': 'Auto-login failed. Facebook may require 2FA or CAPTCHA. Try Manual Login instead.',
+                    'needs_manual': True
+                }), 200
+                
+        except ImportError as e:
+            logger.error(f"[FACEBOOK LOGIN] Playwright not installed: {e}")
+            return jsonify({'success': False, 'error': 'Playwright not installed. Run: pip install playwright && playwright install chromium'}), 200
+        except Exception as e:
+            logger.error(f"[FACEBOOK LOGIN] Playwright error: {e}")
+            return jsonify({'success': False, 'error': f'Login failed: {str(e)}. Try Manual Login.', 'needs_manual': True}), 200
+        
     except Exception as e:
-        print(f"[FACEBOOK LOGIN ERROR] {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 200
+        logger.error(f"[FACEBOOK LOGIN ERROR] {str(e)}")
+        return jsonify({'success': False, 'error': 'Login failed. Please try again.'}), 200
 
 @app.route('/api/facebook-logout', methods=['POST'])
 def facebook_logout():
-    """Logout from Facebook"""
+    """Logout from Facebook - Smooth logout flow
+
+    This endpoint now fully clears server-side session state and removes
+    any saved Facebook cookie files and account records to ensure a true logout.
+    """
     try:
-        email = session.get('facebook_email', '')
-        
-        # Clear Facebook session data
-        session['facebook_connected'] = False
-        session['facebook_email'] = ''
-        session['facebook_authenticated'] = False
+        email = session.get('facebook_email', 'Unknown user')
+
+        # Clear Flask session data completely
+        session_keys = ['facebook_connected', 'facebook_email', 'facebook_authenticated', 'facebook_login_time']
+        for k in session_keys:
+            session.pop(k, None)
+        # Also clear login flags
+        session.pop('logged_in', None)
+        session.pop('username', None)
         session.modified = True
-        
-        print(f"[FACEBOOK LOGOUT] User logged out: {email}")
-        return jsonify({'success': True, 'message': 'Logged out from Facebook'}), 200
+
+        # Remove saved cookie files in sessions/ (facebook-cookies.json and any account_* cookies)
+        removed_files = []
+        try:
+            sessions_dir = os.path.join(PROJECT_ROOT, 'sessions')
+            if os.path.isdir(sessions_dir):
+                for fname in os.listdir(sessions_dir):
+                    if fname.endswith('-cookies.json') or fname == 'facebook-cookies.json' or 'cookie' in fname.lower():
+                        path = os.path.join(sessions_dir, fname)
+                        try:
+                            os.remove(path)
+                            removed_files.append(fname)
+                        except Exception:
+                            logger.warning(f"Failed to remove session file: {path}")
+        except Exception as e:
+            logger.warning(f"Error while cleaning sessions folder: {e}")
+
+        # Clear accounts.json records (reset to empty list)
+        try:
+            accounts_path = os.path.join(PROJECT_ROOT, 'accounts.json')
+            if os.path.exists(accounts_path):
+                with open(accounts_path, 'w', encoding='utf-8') as f:
+                    json.dump([], f)
+        except Exception as e:
+            logger.warning(f"Failed to clear accounts.json: {e}")
+
+        logger.info(f"[FACEBOOK LOGOUT SUCCESS] User logged out: {email}. Removed files: {removed_files}")
+        return jsonify({
+            'success': True,
+            'message': 'Successfully logged out from Facebook and cleared saved session data',
+            'connected': False,
+            'removed_files': removed_files
+        }), 200
+
     except Exception as e:
-        print(f"[FACEBOOK LOGOUT ERROR] {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 200
+        logger.error(f"[FACEBOOK LOGOUT ERROR] {str(e)}")
+        return jsonify({'success': False, 'error': 'Logout failed. Please try again.'}), 200
+
+@app.route('/api/facebook-check', methods=['GET'])
+def facebook_check():
+    """Quick check for Facebook connection status - used for smooth UX updates"""
+    try:
+        fb_connected = session.get('facebook_connected', False)
+        fb_email = session.get('facebook_email', '')
+        
+        return jsonify({
+            'connected': fb_connected,
+            'email': fb_email,
+            'timestamp': datetime.now().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({'connected': False, 'email': '', 'error': str(e)}), 200
 
 @app.route('/')
 def index():
@@ -271,15 +432,20 @@ def login():
             print(f"[LOGIN] Expected: username='{expected_username}', password length={len(expected_password)}")
             
             # Direct comparison - no hashing
-            if username != expected_username or password != expected_password:
+            # Allow empty password for demo mode, or match exact password
+            password_valid = (password == expected_password) or (not expected_password and not password)
+            if username != expected_username or not password_valid:
                 print(f"[LOGIN] Failed - credentials mismatch")
-                return jsonify({'success': False, 'error': 'Invalid credentials'}), 200
+                return jsonify({'success': False, 'error': 'Invalid credentials. Use username: admin, password: password123'}), 200
             
-            # Set session
+            # Set session - MUST do this before returning
             session['logged_in'] = True
             session['username'] = username or 'Admin'
+            session.permanent = True  # Make session persistent
+            session.modified = True   # Force session save
             
             print(f"[LOGIN] Success - session created for {username}")
+            print(f"[LOGIN] Session data: logged_in={session.get('logged_in')}, username={session.get('username')}")
             return jsonify({'success': True, 'redirect': url_for('dashboard')}), 200
         except Exception as e:
             print(f"[LOGIN] Error: {str(e)}")
@@ -694,6 +860,7 @@ def create_post():
         import threading
         def do_post_background(post_id_arg: int, content_arg: str, groups_arg: list, media_files_arg: list):
             try:
+                from main import FacebookGroupSpam
                 poster = FacebookGroupSpam(post_content=content_arg, headless=True, media_files=media_files_arg if media_files_arg else None)
                 poster.start_browser()
                 poster.load_cookie()
@@ -772,6 +939,9 @@ def create_post():
                 # Clear tracking
                 ACTIVE_POSTS.pop(post_id_arg, None)
             except Exception as bg_error:
+                logger.error(f"Background posting error: {bg_error}")
+                import traceback
+                logger.error(traceback.format_exc())
                 try:
                     conn_b = sqlite3.connect(DATABASE)
                     c_b = conn_b.cursor()
@@ -842,7 +1012,14 @@ def fb_manual_login():
     try:
         import threading
         from main import FacebookGroupSpam
-        from configs import SOCIAL_MAPS
+        # Load SOCIAL_MAPS from available config modules, with safe fallback
+        try:
+            from configs import SOCIAL_MAPS
+        except Exception:
+            try:
+                from config import SOCIAL_MAPS
+            except Exception:
+                SOCIAL_MAPS = {}
         import json
         import time
         import os
@@ -851,18 +1028,24 @@ def fb_manual_login():
 
         def run_manual_login():
             # Open browser and wait for user to complete login, then save cookies automatically
+            # Don't set FB_DEBUG - it opens DevTools which is annoying
             poster = FacebookGroupSpam(headless=False)
             try:
                 poster.start_browser()
+                logger.info("Manual login: browser opened for manual login")
                 login_status['message'] = 'Browser opened. Please login to Facebook...'
                 
                 # Navigate to Facebook
                 try:
                     poster.page.goto("https://www.facebook.com", timeout=30000)
-                except Exception:
+                    logger.info("Manual login: navigated to https://www.facebook.com")
+                except Exception as e:
+                    logger.warning(f"Manual login: navigation to www failed: {e}")
                     try:
                         poster.page.goto("https://m.facebook.com", timeout=30000)
-                    except:
+                        logger.info("Manual login: navigated to https://m.facebook.com")
+                    except Exception as e2:
+                        logger.error(f"Manual login: failed to navigate to Facebook: {e2}")
                         login_status['message'] = 'Failed to navigate to Facebook'
                         return
 
@@ -874,17 +1057,55 @@ def fb_manual_login():
                     time.sleep(2)
                     attempt += 1
                     try:
-                        cookies = poster.page.context.cookies()
+                        # Get cookies from all Facebook domains
+                        cookies = poster.page.context.cookies(['https://www.facebook.com', 'https://facebook.com', 'https://m.facebook.com'])
                         names = {c.get('name') for c in cookies}
+                        logger.info(f"Manual login attempt {attempt}: found cookies: {names}")
                         
                         # Check for Facebook login cookies
                         if 'c_user' in names and 'xs' in names:
+                            logger.info("Manual login: detected c_user and xs cookies - LOGIN SUCCESSFUL!")
                             # Save cookies
                             sessions_dir = os.path.join(PROJECT_ROOT, 'sessions')
                             os.makedirs(sessions_dir, exist_ok=True)
-                            file_path = os.path.join(sessions_dir, SOCIAL_MAPS['facebook']['filename'])
+                            try:
+                                from configs import SOCIAL_MAPS
+                            except Exception:
+                                try:
+                                    from config import SOCIAL_MAPS
+                                except Exception:
+                                    SOCIAL_MAPS = {}
+                            cookie_filename = SOCIAL_MAPS.get('facebook', {}).get('filename', 'facebook-cookies.json')
+                            file_path = os.path.join(sessions_dir, cookie_filename)
                             with open(file_path, 'w', encoding='utf-8') as f:
                                 json.dump(cookies, f, indent=2)
+                            logger.info(f"Manual login: saved cookies to {file_path}")
+
+                            # Save debug artifacts (screenshot, html, console) for troubleshooting
+                            try:
+                                logs_dir = os.path.join(PROJECT_ROOT, 'logs', 'playwright')
+                                os.makedirs(logs_dir, exist_ok=True)
+                                ts = int(time.time())
+                                screenshot = os.path.join(logs_dir, f"manual-login-{ts}.png")
+                                htmlfile = os.path.join(logs_dir, f"manual-login-{ts}.html")
+                                consolefile = os.path.join(logs_dir, f"manual-login-{ts}-console.log")
+                                try:
+                                    poster.page.screenshot(path=screenshot, full_page=True)
+                                except Exception as e:
+                                    logger.debug(f"Manual login screenshot failed: {e}")
+                                try:
+                                    with open(htmlfile, 'w', encoding='utf-8') as fh:
+                                        fh.write(poster.page.content())
+                                except Exception as e:
+                                    logger.debug(f"Manual login html dump failed: {e}")
+                                try:
+                                    with open(consolefile, 'w', encoding='utf-8') as cf:
+                                        cf.write("\n".join(getattr(poster, 'console_messages', [])))
+                                except Exception as e:
+                                    logger.debug(f"Manual login write console failed: {e}")
+                                logger.info(f"Manual login: saved debug artifacts to {logs_dir}")
+                            except Exception as e:
+                                logger.debug(f"Manual login: failed saving debug artifacts: {e}")
                             
                             # Also update accounts.json
                             account_file = os.path.join(PROJECT_ROOT, 'accounts.json')
@@ -903,14 +1124,14 @@ def fb_manual_login():
                                         accounts.append({
                                             'user_id': c_user,
                                             'status': 'active',
-                                            'cookie_file': SOCIAL_MAPS['facebook']['filename'],
+                                            'cookie_file': (cookie_filename if 'cookie_filename' in locals() else 'facebook-cookies.json'),
                                             'login_date': datetime.now().isoformat()
                                         })
-                                    
                                     with open(account_file, 'w', encoding='utf-8') as f:
                                         json.dump(accounts, f, indent=2, ensure_ascii=False)
-                            except Exception:
-                                pass
+                                    logger.info(f"Manual login: accounts.json updated for user {c_user}")
+                            except Exception as e:
+                                logger.warning(f"Manual login: failed updating accounts.json: {e}")
                             
                             saved = True
                             login_status['success'] = True
@@ -918,26 +1139,78 @@ def fb_manual_login():
                             login_status['message'] = f'Login successful! Cookies saved.'
                             break
                     except Exception as e:
+                        logger.debug(f"Manual login: checking cookies attempt {attempt} failed: {e}")
                         login_status['message'] = f'Checking for login... ({attempt})'
                         continue
-                
+
                 if not saved:
+                    # Save debug artifacts when timed out
+                    try:
+                        logs_dir = os.path.join(PROJECT_ROOT, 'logs', 'playwright')
+                        os.makedirs(logs_dir, exist_ok=True)
+                        ts = int(time.time())
+                        screenshot = os.path.join(logs_dir, f"manual-login-timeout-{ts}.png")
+                        htmlfile = os.path.join(logs_dir, f"manual-login-timeout-{ts}.html")
+                        consolefile = os.path.join(logs_dir, f"manual-login-timeout-{ts}-console.log")
+                        try:
+                            poster.page.screenshot(path=screenshot, full_page=True)
+                        except Exception as e:
+                            logger.debug(f"Manual login timeout screenshot failed: {e}")
+                        try:
+                            with open(htmlfile, 'w', encoding='utf-8') as fh:
+                                fh.write(poster.page.content())
+                        except Exception as e:
+                            logger.debug(f"Manual login timeout html dump failed: {e}")
+                        try:
+                            with open(consolefile, 'w', encoding='utf-8') as cf:
+                                cf.write("\n".join(getattr(poster, 'console_messages', [])))
+                        except Exception as e:
+                            logger.debug(f"Manual login timeout write console failed: {e}")
+                        logger.info(f"Manual login: saved timeout debug artifacts to {logs_dir}")
+                    except Exception as e:
+                        logger.debug(f"Manual login: failed saving timeout artifacts: {e}")
+                    logger.info("Manual login: timed out without cookies")
                     login_status['message'] = 'Login timeout. Cookies were not detected.'
             except Exception as e:
+                # Capture debug artifacts on error
+                try:
+                    logs_dir = os.path.join(PROJECT_ROOT, 'logs', 'playwright')
+                    os.makedirs(logs_dir, exist_ok=True)
+                    ts = int(time.time())
+                    screenshot = os.path.join(logs_dir, f"manual-login-error-{ts}.png")
+                    htmlfile = os.path.join(logs_dir, f"manual-login-error-{ts}.html")
+                    consolefile = os.path.join(logs_dir, f"manual-login-error-{ts}-console.log")
+                    try:
+                        poster.page.screenshot(path=screenshot, full_page=True)
+                    except Exception as e2:
+                        logger.debug(f"Manual login error screenshot failed: {e2}")
+                    try:
+                        with open(htmlfile, 'w', encoding='utf-8') as fh:
+                            fh.write(poster.page.content())
+                    except Exception as e2:
+                        logger.debug(f"Manual login error html dump failed: {e2}")
+                    try:
+                        with open(consolefile, 'w', encoding='utf-8') as cf:
+                            cf.write("\n".join(getattr(poster, 'console_messages', [])))
+                    except Exception as e2:
+                        logger.debug(f"Manual login error write console failed: {e2}")
+                    logger.info(f"Manual login: saved error debug artifacts to {logs_dir}")
+                except Exception as e2:
+                    logger.debug(f"Manual login: failed saving error artifacts: {e2}")
+                logger.error(f"Manual login error: {e}")
                 login_status['message'] = f'Error during login: {str(e)}'
             finally:
                 try:
                     poster.close_browser()
-                except Exception:
-                    pass
-
-        # Run in background thread
+                except Exception as e:
+                    logger.debug(f"Error closing browser after manual login: {e}")
+        
         thread = threading.Thread(target=run_manual_login)
         thread.daemon = True
         thread.start()
-        
         return jsonify({'success': True, 'message': 'Browser opening for manual login. Complete login to save session automatically.', 'check_url': '/api/login-status'})
     except Exception as e:
+        logger.exception("Error in /api/fb-manual-login")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/login-status', methods=['GET'])
@@ -947,10 +1220,17 @@ def check_login_status():
     try:
         import os
         import json
-        from configs import SOCIAL_MAPS
+        try:
+            from configs import SOCIAL_MAPS
+        except Exception:
+            try:
+                from config import SOCIAL_MAPS
+            except Exception:
+                SOCIAL_MAPS = {}
+        cookie_filename = SOCIAL_MAPS.get('facebook', {}).get('filename', 'facebook-cookies.json')
         
         sessions_dir = os.path.join(PROJECT_ROOT, 'sessions')
-        cookie_file = os.path.join(sessions_dir, SOCIAL_MAPS['facebook']['filename'])
+        cookie_file = os.path.join(sessions_dir, cookie_filename)
         
         if os.path.exists(cookie_file):
             with open(cookie_file, 'r', encoding='utf-8') as f:
@@ -972,6 +1252,7 @@ def check_login_status():
             'message': 'Not logged in yet'
         })
     except Exception as e:
+        logger.exception("Error in /api/login-status")
         return jsonify({
             'success': False,
             'logged_in': False,
@@ -991,7 +1272,13 @@ def fb_auto_login():
     try:
         import threading
         from main import FacebookGroupSpam
-        from configs import SOCIAL_MAPS
+        try:
+            from configs import SOCIAL_MAPS
+        except Exception:
+            try:
+                from config import SOCIAL_MAPS
+            except Exception:
+                SOCIAL_MAPS = {}
         
         data = request.json or {}
         email = data.get('email') or None
@@ -1008,6 +1295,7 @@ def fb_auto_login():
         
         def run_fast_login():
             try:
+                # Don't set FB_DEBUG - it opens DevTools
                 # Fast login with minimal overhead
                 poster = FacebookGroupSpam(headless=False)
                 poster.start_browser()
@@ -1016,14 +1304,19 @@ def fb_auto_login():
                 success = poster.auto_login_with_credentials(email, password)
                 
                 if success:
-                    # Save cookies immediately
+                    # Save cookies immediately - get from all Facebook domains
                     try:
-                        cookies = poster.page.context.cookies()
+                        cookies = poster.page.context.cookies(['https://www.facebook.com', 'https://facebook.com', 'https://m.facebook.com'])
                         sessions_dir = os.path.join(PROJECT_ROOT, 'sessions')
                         os.makedirs(sessions_dir, exist_ok=True)
-                        file_path = os.path.join(sessions_dir, SOCIAL_MAPS['facebook']['filename'])
+                        try:
+                            cookie_filename = SOCIAL_MAPS.get('facebook', {}).get('filename', 'facebook-cookies.json')
+                        except Exception:
+                            cookie_filename = 'facebook-cookies.json'
+                        file_path = os.path.join(sessions_dir, cookie_filename)
                         with open(file_path, 'w', encoding='utf-8') as f:
                             json.dump(cookies, f)
+                        logger.info(f"Auto login: saved {len(cookies)} cookies to {file_path}")
                         
                         # Quick account update
                         account_file = os.path.join(PROJECT_ROOT, 'accounts.json')
@@ -1062,26 +1355,42 @@ def fb_auto_login():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/session-status', methods=['GET'])
-@login_required
 def session_status():
-    """Check if Facebook session exists and is valid"""
+    """Check if Facebook session exists and appears valid (fast check without browser)"""
     session_file = f"{PROJECT_ROOT}/sessions/facebook-cookies.json"
     exists = os.path.exists(session_file)
     
     if not exists:
         return jsonify({'success': True, 'has_session': False, 'valid': False})
     
-    # Actually validate the session by testing it
+    # Fast check: just verify cookies file has c_user and xs cookies
     try:
-        from main import FacebookGroupSpam
-        poster = FacebookGroupSpam(headless=True)
-        poster.start_browser()
-        is_valid = poster.validate_session()
-        poster.close_browser()
+        with open(session_file, 'r', encoding='utf-8') as f:
+            cookies = json.load(f)
         
-        return jsonify({'success': True, 'has_session': exists, 'valid': is_valid})
+        cookie_names = {c.get('name') for c in cookies}
+        has_c_user = 'c_user' in cookie_names
+        has_xs = 'xs' in cookie_names
+        
+        # Get user info
+        c_user_value = next((c.get('value') for c in cookies if c.get('name') == 'c_user'), None)
+        
+        if has_c_user and has_xs:
+            return jsonify({
+                'success': True, 
+                'has_session': True, 
+                'valid': True,
+                'user_id': c_user_value,
+                'message': 'Facebook session is active'
+            })
+        else:
+            return jsonify({
+                'success': True, 
+                'has_session': True, 
+                'valid': False,
+                'message': 'Session cookies incomplete'
+            })
     except Exception as e:
-        # If validation fails, session is likely invalid
         return jsonify({'success': True, 'has_session': exists, 'valid': False, 'error': str(e)})
 
 # New enhanced API endpoints
@@ -1151,7 +1460,9 @@ def schedule_post():
             schedule_time=data['schedule_time'],
             image_path=data.get('image_path'),
             recurring=data.get('recurring', False),
-            interval_hours=data.get('interval_hours', 24)
+            interval_hours=data.get('interval_hours', 24),
+            duration_type=data.get('duration_type', 'forever'),
+            duration_value=data.get('duration_value', 0)
         )
         
         return jsonify(result)

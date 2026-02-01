@@ -65,28 +65,7 @@
                     Post History
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="/templates">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    Templates
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/media">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                    Media Library
-                </a>
-            </li>
+            <!-- Hidden: Templates, Media Library, Analytics -->
             <li class="nav-item">
                 <a href="/accounts">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -94,16 +73,6 @@
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     Accounts
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/analytics">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="20" x2="18" y2="10"></line>
-                        <line x1="12" y1="20" x2="12" y2="4"></line>
-                        <line x1="6" y1="20" x2="6" y2="14"></line>
-                    </svg>
-                    Analytics
                 </a>
             </li>
         </ul>
@@ -158,31 +127,112 @@ Example: {Hey|Hello} everyone! Check out our {amazing|incredible} {new|latest} p
                         <button type="button" onclick="clearAllMedia()" style="margin-top: 10px; padding: 5px 10px; display: none;" id="clearMediaBtn">Clear All</button>
                     </div>
                     
-                    <div class="form-group" style="background: #fff4e6; padding: 15px; border-radius: 12px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-weight:600;">
-                                <input type="checkbox" id="schedulePost" onchange="toggleSchedule()" style="margin-right:8px;"> 
-                                📅 Schedule This Post (NEW!)
+                    <!-- Improved Schedule Section -->
+                    <div class="form-group schedule-section" style="background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%); padding: 20px; border-radius: 16px; border: 2px solid #e0e7ff;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                            <label style="font-weight:600; font-size: 15px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="schedulePost" onchange="toggleSchedule()" style="width: 20px; height: 20px; accent-color: #6366f1;"> 
+                                <span style="display: flex; align-items: center; gap: 8px;">
+                                    📅 <span>Schedule This Post</span>
+                                </span>
                             </label>
-                            <span id="nextRunLabel" class="badge badge-warning" style="display:none;">Next run: —</span>
+                            <span id="nextRunLabel" class="schedule-badge" style="display:none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(99,102,241,0.3);">
+                                ⏰ Next: —
+                            </span>
                         </div>
-                        <div id="scheduleOptions" style="display: none; margin-top: 12px; background:#fff; border:2px solid #ffe2bf; border-radius:12px; padding:12px;">
-                            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                                <div style="flex:1; min-width:240px;">
-                                    <label style="display:block; font-size:13px; color:#666;">Pick date & time</label>
-                                    <input type="datetime-local" id="scheduleTime" style="width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:8px;">
-                                    <small id="scheduleHelper" class="text-muted">Tip: you can also enter formats like "30m" or "2025-12-31 14:30"</small>
+                        
+                        <div id="scheduleOptions" style="display: none; margin-top: 16px;">
+                            <!-- Quick Schedule Buttons -->
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('30m')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">⚡ In 30 min</button>
+                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('1h')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">🕐 In 1 hour</button>
+                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('3h')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">🕒 In 3 hours</button>
+                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('tomorrow')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">🌅 Tomorrow 9AM</button>
+                            </div>
+                            
+                            <!-- Date/Time Picker -->
+                            <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; margin-bottom: 16px;">
+                                <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">📆 Pick exact date & time</label>
+                                <input type="datetime-local" id="scheduleTime" onchange="previewNextRun()" style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 15px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
+                                <div id="schedulePreview" style="margin-top: 10px; padding: 10px; background: #f0fdf4; border-radius: 8px; display: none;">
+                                    <span style="color: #15803d; font-size: 13px;">✓ <span id="schedulePreviewText"></span></span>
                                 </div>
-                                <div>
-                                    <label style="display:flex; align-items:center; gap:8px;">
-                                        <input type="checkbox" id="recurring"> Recurring
-                                        <input type="number" id="intervalHours" placeholder="Hours" min="1" value="24" style="width:90px; padding:10px; border:2px solid #e5e7eb; border-radius:8px;">
-                                    </label>
+                            </div>
+                            
+                            <!-- Recurring Options -->
+                            <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px;">
+                                    <input type="checkbox" id="recurring" onchange="toggleRecurring()" style="width: 18px; height: 18px; accent-color: #6366f1;">
+                                    <span style="font-weight: 500;">🔄 Make this a recurring post</span>
+                                </label>
+                                
+                                <div id="recurringOptions" style="display: none; padding-left: 28px;">
+                                    <!-- Interval Setting -->
+                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+                                        <span style="color: #64748b; font-size: 14px;">Repeat every</span>
+                                        <input type="number" id="intervalHours" min="1" value="1" style="width: 70px; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; text-align: center; font-size: 14px;">
+                                        <select id="intervalUnit" style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                                            <option value="hours" selected>Hours</option>
+                                            <option value="days">Days</option>
+                                            <option value="weeks">Weeks</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Duration Setting -->
+                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding: 14px; background: #fef3c7; border-radius: 10px; border: 1px solid #fcd34d;">
+                                        <span style="color: #92400e; font-size: 14px; font-weight: 500;">⏱️ Duration:</span>
+                                        <select id="durationType" onchange="toggleDurationInput()" style="padding: 8px 12px; border: 2px solid #fcd34d; border-radius: 8px; font-size: 14px; background: white;">
+                                            <option value="forever">Run forever</option>
+                                            <option value="days">Run for X days</option>
+                                            <option value="times">Run X times</option>
+                                        </select>
+                                        <div id="durationValueContainer" style="display: none; align-items: center; gap: 8px;">
+                                            <input type="number" id="durationValue" min="1" value="7" style="width: 70px; padding: 8px 12px; border: 2px solid #fcd34d; border-radius: 8px; text-align: center; font-size: 14px;">
+                                            <span id="durationLabel" style="color: #92400e; font-size: 14px;">days</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Quick Presets -->
+                                    <div style="margin-top: 12px;">
+                                        <span style="color: #64748b; font-size: 12px; display: block; margin-bottom: 8px;">Quick presets:</span>
+                                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                            <button type="button" onclick="setRecurringPreset(1, 'hours', 7, 'days')" class="preset-btn" style="padding: 8px 14px; border: 2px solid #10b981; background: #ecfdf5; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; color: #059669;">🔥 Every hour for 7 days</button>
+                                            <button type="button" onclick="setRecurringPreset(1, 'days', 0, 'forever')" class="preset-btn" style="padding: 6px 12px; border: 1px solid #d1d5db; background: #f9fafb; border-radius: 6px; cursor: pointer; font-size: 12px;">Daily forever</button>
+                                            <button type="button" onclick="setRecurringPreset(12, 'hours', 30, 'days')" class="preset-btn" style="padding: 6px 12px; border: 1px solid #d1d5db; background: #f9fafb; border-radius: 6px; cursor: pointer; font-size: 12px;">Twice daily for 30 days</button>
+                                            <button type="button" onclick="setRecurringPreset(1, 'weeks', 0, 'forever')" class="preset-btn" style="padding: 6px 12px; border: 1px solid #d1d5db; background: #f9fafb; border-radius: 6px; cursor: pointer; font-size: 12px;">Weekly forever</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Summary -->
+                                    <div id="recurringSummary" style="margin-top: 16px; padding: 12px 16px; background: linear-gradient(135deg, #dbeafe, #e0e7ff); border-radius: 10px; display: none;">
+                                        <span style="color: #3730a3; font-size: 13px; font-weight: 500;" id="recurringSummaryText">📊 Summary will appear here</span>
+                                    </div>
                                 </div>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="previewNextRun()">Preview Next Run</button>
                             </div>
                         </div>
                     </div>
+                    
+                    <style>
+                        .quick-schedule-btn:hover {
+                            background: #6366f1 !important;
+                            color: white !important;
+                            border-color: #6366f1 !important;
+                            transform: translateY(-1px);
+                        }
+                        .quick-schedule-btn.active {
+                            background: #6366f1 !important;
+                            color: white !important;
+                            border-color: #6366f1 !important;
+                        }
+                        .preset-btn:hover {
+                            background: #e0e7ff !important;
+                            border-color: #6366f1 !important;
+                        }
+                        #scheduleTime:focus {
+                            outline: none;
+                            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+                        }
+                    </style>
                     
                     <div class="target-groups">
                         <h4 style="display: flex; align-items: center; gap: 10px;">
@@ -255,8 +305,159 @@ let selectedMedia = [];
 function toggleSchedule() {
     const checkbox = document.getElementById('schedulePost');
     const options = document.getElementById('scheduleOptions');
+    const label = document.getElementById('nextRunLabel');
+    
+    if (checkbox.checked) {
+        options.style.display = 'block';
+        label.style.display = 'inline-flex';
+        // Set minimum datetime to now
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('scheduleTime').min = now.toISOString().slice(0, 16);
+    } else {
+        options.style.display = 'none';
+        label.style.display = 'none';
+    }
+}
+
+function toggleRecurring() {
+    const checkbox = document.getElementById('recurring');
+    const options = document.getElementById('recurringOptions');
     options.style.display = checkbox.checked ? 'block' : 'none';
-    document.getElementById('nextRunLabel').style.display = checkbox.checked ? 'inline-flex' : 'none';
+    updateRecurringSummary();
+}
+
+function setQuickSchedule(preset) {
+    const now = new Date();
+    let target;
+    
+    // Clear active state from all quick buttons
+    document.querySelectorAll('.quick-schedule-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    switch(preset) {
+        case '30m':
+            target = new Date(now.getTime() + 30 * 60000);
+            break;
+        case '1h':
+            target = new Date(now.getTime() + 60 * 60000);
+            break;
+        case '3h':
+            target = new Date(now.getTime() + 3 * 60 * 60000);
+            break;
+        case 'tomorrow':
+            target = new Date(now);
+            target.setDate(target.getDate() + 1);
+            target.setHours(9, 0, 0, 0);
+            break;
+        default:
+            return;
+    }
+    
+    // Format for datetime-local input
+    const formatted = target.toISOString().slice(0, 16);
+    document.getElementById('scheduleTime').value = formatted;
+    previewNextRun();
+}
+
+function setRecurringPreset(value, unit, durationVal = 0, durationType = 'forever') {
+    document.getElementById('intervalHours').value = value;
+    document.getElementById('intervalUnit').value = unit;
+    document.getElementById('durationType').value = durationType;
+    
+    if (durationType !== 'forever' && durationVal > 0) {
+        document.getElementById('durationValue').value = durationVal;
+    }
+    
+    toggleDurationInput();
+    updateRecurringSummary();
+    
+    // Visual feedback
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.style.background = '#f9fafb';
+        btn.style.borderColor = '#d1d5db';
+    });
+    event.target.style.background = '#e0e7ff';
+    event.target.style.borderColor = '#6366f1';
+}
+
+function toggleDurationInput() {
+    const durationType = document.getElementById('durationType').value;
+    const container = document.getElementById('durationValueContainer');
+    const label = document.getElementById('durationLabel');
+    
+    if (durationType === 'forever') {
+        container.style.display = 'none';
+    } else {
+        container.style.display = 'flex';
+        label.textContent = durationType === 'days' ? 'days' : 'times';
+    }
+    
+    updateRecurringSummary();
+}
+
+function updateRecurringSummary() {
+    const summaryEl = document.getElementById('recurringSummary');
+    const summaryText = document.getElementById('recurringSummaryText');
+    
+    if (!document.getElementById('recurring').checked) {
+        summaryEl.style.display = 'none';
+        return;
+    }
+    
+    const intervalVal = parseInt(document.getElementById('intervalHours').value) || 1;
+    const intervalUnit = document.getElementById('intervalUnit').value;
+    const durationType = document.getElementById('durationType').value;
+    const durationVal = parseInt(document.getElementById('durationValue').value) || 7;
+    
+    let intervalText = `every ${intervalVal} ${intervalUnit}`;
+    if (intervalVal === 1) {
+        intervalText = `every ${intervalUnit.slice(0, -1)}`; // Remove 's' for singular
+    }
+    
+    let durationText = '';
+    let totalPosts = 0;
+    
+    if (durationType === 'forever') {
+        durationText = 'forever (until stopped)';
+        totalPosts = '∞';
+    } else if (durationType === 'days') {
+        durationText = `for ${durationVal} days`;
+        // Calculate total posts
+        const intervalHours = getIntervalInHours();
+        totalPosts = Math.floor((durationVal * 24) / intervalHours);
+    } else if (durationType === 'times') {
+        durationText = `${durationVal} times total`;
+        totalPosts = durationVal;
+    }
+    
+    summaryText.innerHTML = `📊 Post ${intervalText} ${durationText} <strong style="color: #1e40af;">(~${totalPosts} posts)</strong>`;
+    summaryEl.style.display = 'block';
+}
+
+function getIntervalInHours() {
+    const value = parseInt(document.getElementById('intervalHours').value) || 1;
+    const unit = document.getElementById('intervalUnit').value;
+    
+    switch(unit) {
+        case 'hours': return value;
+        case 'days': return value * 24;
+        case 'weeks': return value * 24 * 7;
+        default: return value;
+    }
+}
+
+function getDurationData() {
+    const durationType = document.getElementById('durationType').value;
+    const durationVal = parseInt(document.getElementById('durationValue').value) || 7;
+    
+    if (durationType === 'forever') {
+        return { type: 'forever', value: 0 };
+    } else if (durationType === 'days') {
+        return { type: 'days', value: durationVal };
+    } else {
+        return { type: 'times', value: durationVal };
+    }
 }
 
 function previewMedia(event) {
@@ -332,40 +533,60 @@ async function previewSpintax() {
 function previewNextRun() {
     const raw = document.getElementById('scheduleTime').value.trim();
     const label = document.getElementById('nextRunLabel');
-    if (!raw) { label.textContent = 'Next run: —'; return; }
+    const preview = document.getElementById('schedulePreview');
+    const previewText = document.getElementById('schedulePreviewText');
+    
+    if (!raw) { 
+        label.innerHTML = '⏰ Next: —'; 
+        preview.style.display = 'none';
+        return; 
+    }
+    
     try {
-        // Client-side relative preview
-        let target;
-        if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
-            target = new Date(raw.replace(' ', 'T'));
-        } else if (/^\d{1,2}:\d{2}$/.test(raw)) {
-            const today = new Date();
-            const [hh, mm] = raw.split(':').map(Number);
-            target = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hh, mm);
-        } else if (/^\d+[mhd]$/.test(raw)) {
-            const num = parseInt(raw, 10);
-            const unit = raw.slice(-1);
-            const ms = unit === 'm' ? num*60000 : unit === 'h' ? num*3600000 : num*86400000;
-            target = new Date(Date.now() + ms);
-        } else {
-            label.textContent = 'Next run: invalid format';
-            return;
-        }
+        const target = new Date(raw);
         const diffMs = target.getTime() - Date.now();
-        if (diffMs <= 0) { label.textContent = 'Next run: now (overdue)'; return; }
-        const mins = Math.floor(diffMs/60000);
-        const hrs = Math.floor(mins/60);
-        const rem = mins%60;
-        if (hrs >= 24) {
-            const days = Math.floor(hrs/24);
-            label.textContent = `Next run: in ${days} day(s)`;
-        } else if (hrs > 0) {
-            label.textContent = `Next run: in ${hrs}h ${rem}m`;
-        } else {
-            label.textContent = `Next run: in ${mins} minutes`;
+        
+        if (diffMs <= 0) { 
+            label.innerHTML = '⚠️ Time passed!';
+            label.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            preview.style.display = 'none';
+            return; 
         }
+        
+        label.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+        
+        const mins = Math.floor(diffMs / 60000);
+        const hrs = Math.floor(mins / 60);
+        const days = Math.floor(hrs / 24);
+        const remHrs = hrs % 24;
+        const remMins = mins % 60;
+        
+        let relativeText;
+        if (days > 0) {
+            relativeText = `in ${days}d ${remHrs}h`;
+        } else if (hrs > 0) {
+            relativeText = `in ${hrs}h ${remMins}m`;
+        } else {
+            relativeText = `in ${mins} min`;
+        }
+        
+        label.innerHTML = `⏰ ${relativeText}`;
+        
+        // Show detailed preview
+        const options = { 
+            weekday: 'short', 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        };
+        const formattedDate = target.toLocaleDateString('en-US', options);
+        previewText.textContent = `Your post will be published on ${formattedDate}`;
+        preview.style.display = 'block';
+        
     } catch (_) {
-        label.textContent = 'Next run: —';
+        label.innerHTML = '⏰ Next: —';
+        preview.style.display = 'none';
     }
 }
 
@@ -474,6 +695,7 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         btn.innerHTML = '<span class="spinner"></span> Scheduling...';
         
         try {
+            const duration = getDurationData();
             const response = await fbAutoPoster.csrfFetch('/api/schedule', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -482,13 +704,27 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
                     groups: groups.map(g => g.username),
                     schedule_time: scheduleTime,
                     recurring: document.getElementById('recurring').checked,
-                    interval_hours: parseInt(document.getElementById('intervalHours').value) || 24
+                    interval_hours: getIntervalInHours(),
+                    duration_type: duration.type,
+                    duration_value: duration.value
                 })
             });
             
             const data = await response.json();
             if (data.success) {
-                fbAutoPoster.showNotification('Post scheduled successfully!', 'success');
+                const intervalHours = getIntervalInHours();
+                let msg = 'Post scheduled successfully!';
+                if (document.getElementById('recurring').checked) {
+                    if (duration.type === 'days') {
+                        const totalPosts = Math.floor((duration.value * 24) / intervalHours);
+                        msg = `Recurring post scheduled! ~${totalPosts} posts over ${duration.value} days`;
+                    } else if (duration.type === 'times') {
+                        msg = `Recurring post scheduled! Will post ${duration.value} times`;
+                    } else {
+                        msg = 'Recurring post scheduled! Will run until stopped';
+                    }
+                }
+                fbAutoPoster.showNotification(msg, 'success');
                 textarea.value = '';
                 updatePreview();
                 previewNextRun();

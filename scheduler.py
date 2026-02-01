@@ -39,7 +39,8 @@ class PostScheduler:
     
     def add_schedule(self, content: str, groups: List[str], schedule_time: str, 
                     image_path: str = None, recurring: bool = False, 
-                    interval_hours: int = 24) -> Dict:
+                    interval_hours: int = 24, duration_type: str = 'forever',
+                    duration_value: int = 0) -> Dict:
         """
         Add a new scheduled post
         
@@ -50,10 +51,21 @@ class PostScheduler:
             image_path: Optional image to post
             recurring: Whether to repeat this post
             interval_hours: Hours between recurring posts
+            duration_type: 'forever', 'days', or 'times'
+            duration_value: Number of days or times to repeat
         """
         scheduled_dt = parse_schedule(schedule_time)
         if not scheduled_dt:
             return {'success': False, 'error': 'Invalid schedule format'}
+        
+        # Calculate end time or max runs based on duration
+        end_time = None
+        max_runs = None
+        
+        if recurring and duration_type == 'days' and duration_value > 0:
+            end_time = (scheduled_dt + timedelta(days=duration_value)).isoformat()
+        elif recurring and duration_type == 'times' and duration_value > 0:
+            max_runs = duration_value
         
         schedule = {
             'id': int(time.time() * 1000),  # Unique ID
@@ -63,6 +75,10 @@ class PostScheduler:
             'image_path': image_path,
             'recurring': recurring,
             'interval_hours': interval_hours,
+            'duration_type': duration_type,
+            'end_time': end_time,
+            'max_runs': max_runs,
+            'run_count': 0,
             'status': 'pending',
             'created_at': datetime.now().isoformat()
         }
@@ -87,11 +103,41 @@ class PostScheduler:
         for schedule in self.schedules:
             if schedule['id'] == schedule_id:
                 if schedule['recurring']:
-                    # Reschedule for next interval
-                    old_time = datetime.fromisoformat(schedule['schedule_time'])
-                    new_time = old_time + timedelta(hours=schedule['interval_hours'])
-                    schedule['schedule_time'] = new_time.isoformat()
-                    schedule['last_posted'] = datetime.now().isoformat()
+                    # Increment run count
+                    schedule['run_count'] = schedule.get('run_count', 0) + 1
+                    
+                    # Check if we should continue recurring
+                    should_continue = True
+                    
+                    # Check max runs limit
+                    max_runs = schedule.get('max_runs')
+                    if max_runs and schedule['run_count'] >= max_runs:
+                        should_continue = False
+                    
+                    # Check end time limit
+                    end_time = schedule.get('end_time')
+                    if end_time:
+                        end_dt = datetime.fromisoformat(end_time)
+                        if datetime.now() >= end_dt:
+                            should_continue = False
+                    
+                    if should_continue:
+                        # Reschedule for next interval
+                        old_time = datetime.fromisoformat(schedule['schedule_time'])
+                        new_time = old_time + timedelta(hours=schedule['interval_hours'])
+                        
+                        # Also check if next run would be past end time
+                        if end_time and new_time >= datetime.fromisoformat(end_time):
+                            schedule['status'] = 'completed'
+                            schedule['completed_at'] = datetime.now().isoformat()
+                            schedule['completion_reason'] = 'Duration limit reached'
+                        else:
+                            schedule['schedule_time'] = new_time.isoformat()
+                            schedule['last_posted'] = datetime.now().isoformat()
+                    else:
+                        schedule['status'] = 'completed'
+                        schedule['completed_at'] = datetime.now().isoformat()
+                        schedule['completion_reason'] = 'Max runs reached' if max_runs else 'Duration limit reached'
                 else:
                     schedule['status'] = 'completed'
                     schedule['completed_at'] = datetime.now().isoformat()
