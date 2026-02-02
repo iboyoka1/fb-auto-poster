@@ -1,20 +1,8 @@
 [
   {
-    "id": "account_1766946251989",
-    "name": "Default Account",
-    "email": "",
-    "notes": "Default single account",
-    "session_file": "account_1766946251989-cookies.json",
-    "created_at": "2025-12-28T19:24:11.989407",
-    "last_used": "2026-01-27T19:56:02.733258",
-    "total_posts": 0,
-    "status": "active",
-    "has_session": true
-  },
-  {
     "user_id": "61551679375258",
     "status": "active",
     "cookie_file": "facebook-cookies.json",
-    "login_date": "2026-01-29T00:00:47.315227"
+    "login_date": "2026-02-01T16:44:19.048154"
   }
 ]

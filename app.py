@@ -684,8 +684,9 @@ def discover_groups_api():
     """Auto-discover all Facebook groups user is a member of - OPTIMIZED"""
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+        import time
         
-        logger.info("Starting FAST group discovery...")
+        logger.info("Starting group discovery with enhanced session handling...")
         
         # Load session cookies
         cookie_file = f"{PROJECT_ROOT}/sessions/facebook-cookies.json"
@@ -699,39 +700,102 @@ def discover_groups_api():
         with open(cookie_file, 'r') as f:
             cookies = json.load(f)
         
-        # Start browser with optimized settings
+        # Start browser with optimized settings and stealth
         playwright = sync_playwright().start()
         browser = playwright.chromium.launch(
             headless=True,
-            args=['--disable-blink-features=AutomationControlled', '--disable-dev-shm-usage', '--disable-gpu']
+            args=[
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ]
         )
-        context = browser.new_context(no_viewport=True, ignore_https_errors=True)
+        context = browser.new_context(
+            viewport={'width': 1920, 'height': 1080},
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            ignore_https_errors=True,
+            locale='en-US'
+        )
         page = context.new_page()
         
-        # Add cookies without sameSite
+        # Add stealth script to avoid detection
+        page.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+            Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
+            window.chrome = {runtime: {}};
+        """)
+        
+        # Sanitize cookies for Playwright compatibility (same as main.py)
+        sanitized_cookies = []
         for cookie in cookies:
-            cookie.pop('sameSite', None)
-            try:
-                context.add_cookies([cookie])
-            except:
+            c = dict(cookie)
+            
+            # Fix sameSite value
+            same_site = c.get('sameSite', 'Lax')
+            if same_site in ('Strict', 'Lax', 'None'):
                 pass
+            elif str(same_site).lower() == 'strict':
+                c['sameSite'] = 'Strict'
+            elif str(same_site).lower() == 'lax':
+                c['sameSite'] = 'Lax'
+            elif str(same_site).lower() in ('none', 'no_restriction', 'unspecified', ''):
+                c['sameSite'] = 'None'
+            else:
+                c['sameSite'] = 'Lax'
+            
+            # Ensure domain
+            if 'domain' not in c or not c['domain']:
+                c['domain'] = '.facebook.com'
+            
+            # Remove invalid fields
+            allowed_fields = {'name', 'value', 'domain', 'path', 'expires', 'httpOnly', 'secure', 'sameSite'}
+            c = {k: v for k, v in c.items() if k in allowed_fields}
+            sanitized_cookies.append(c)
+        
+        # Add sanitized cookies
+        try:
+            context.add_cookies(sanitized_cookies)
+            logger.info(f"Added {len(sanitized_cookies)} sanitized cookies")
+        except Exception as e:
+            logger.warning(f"Error adding cookies: {e}")
         
         discovered = []
         seen_urls = set()
         
         try:
-            # Navigate to groups page with shorter timeout
-            logger.info("Loading Facebook groups...")
-            page.goto("https://www.facebook.com/groups/", timeout=10000)
+            # WARM UP SESSION - Visit Facebook main page first
+            logger.info("=== WARMING UP FACEBOOK SESSION ===")
+            page.goto("https://www.facebook.com/", timeout=60000)
+            page.wait_for_load_state('domcontentloaded', timeout=30000)
+            time.sleep(3)
             
-            # Wait for initial content only
+            # Check if session is valid
+            current_url = page.url
+            if 'login' in current_url.lower() or '/login' in current_url:
+                logger.error("Session expired - redirected to login page")
+                return jsonify({
+                    'success': False,
+                    'error': 'Session expired',
+                    'message': 'Please upload new cookies - your session has expired'
+                }), 401
+            
+            logger.info(f"Session valid - URL: {current_url}")
+            
+            # Navigate to groups page with longer timeout
+            logger.info("Loading Facebook groups...")
+            page.goto("https://www.facebook.com/groups/", timeout=60000)
+            
+            # Wait for initial content with longer timeout
             try:
-                page.wait_for_selector('a[href*="/groups/"]', timeout=5000)
+                page.wait_for_selector('a[href*="/groups/"]', timeout=30000)
             except:
                 pass
             
             # Collect initial groups
-            page.wait_for_timeout(500)
+            page.wait_for_timeout(2000)
             
             # Fast scroll with minimal waits
             max_scroll = 5
@@ -795,10 +859,10 @@ def discover_groups_api():
                     except:
                         pass
                 
-                # Fast scroll (no wait)
+                # Scroll with reasonable wait for content loading
                 if scroll_num < max_scroll - 1:
                     page.evaluate("window.scrollBy(0, 800)")
-                    page.wait_for_timeout(200)
+                    page.wait_for_timeout(1500)
             
             logger.info(f"Found {len(discovered)} groups in {max_scroll} scrolls")
             
