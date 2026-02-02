@@ -29,5 +29,5 @@ EXPOSE 10000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT:-10000}/api/health || exit 1
 
-# Run the application with gunicorn for production
-CMD gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 1 --threads 2 --timeout 120 app:app
+# Run the application with gunicorn for production (increased timeout for slow operations)
+CMD gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 1 --threads 2 --timeout 300 app:app
