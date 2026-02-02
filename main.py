@@ -345,12 +345,16 @@ class FacebookGroupSpam:
                 
                 # Navigate to group
                 group_url = f"https://www.facebook.com/groups/{group_id}"
-                self.page.goto(group_url, timeout=30000)
-                self.page.wait_for_load_state('networkidle', timeout=15000)
-                time.sleep(3)
+                logger.info(f"Navigating to: {group_url}")
+                self.page.goto(group_url, timeout=60000)  # Increased timeout
+                logger.info("Page loaded, waiting for network idle...")
+                self.page.wait_for_load_state('domcontentloaded', timeout=30000)
+                time.sleep(5)  # Give more time for dynamic content
                 
                 current_url = self.page.url
-                logger.info(f"After navigation, current URL: {current_url}")
+                page_title = self.page.title()
+                logger.info(f"After navigation - URL: {current_url}")
+                logger.info(f"After navigation - Title: {page_title}")
                 
                 # Check if redirected to login
                 if 'login' in current_url.lower() or '/login' in current_url:
