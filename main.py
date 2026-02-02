@@ -235,7 +235,33 @@ class FacebookGroupSpam:
         if os.path.exists(cookie_path):
             with open(cookie_path, 'r', encoding='utf-8') as f:
                 cookies = json.load(f)
-            self.context.add_cookies(cookies)
+            
+            # Sanitize cookies for Playwright compatibility
+            sanitized_cookies = []
+            for cookie in cookies:
+                # Create a copy to avoid modifying original
+                c = dict(cookie)
+                
+                # Fix sameSite value - Playwright expects "Strict", "Lax", or "None"
+                same_site = c.get('sameSite', 'Lax')
+                if same_site in ('Strict', 'Lax', 'None'):
+                    pass  # Already valid
+                elif same_site.lower() == 'strict':
+                    c['sameSite'] = 'Strict'
+                elif same_site.lower() == 'lax':
+                    c['sameSite'] = 'Lax'
+                elif same_site.lower() in ('none', 'no_restriction', 'unspecified', ''):
+                    c['sameSite'] = 'None'
+                else:
+                    c['sameSite'] = 'Lax'  # Default to Lax for unknown values
+                
+                # Remove any fields that Playwright doesn't accept
+                allowed_fields = {'name', 'value', 'domain', 'path', 'expires', 'httpOnly', 'secure', 'sameSite'}
+                c = {k: v for k, v in c.items() if k in allowed_fields}
+                
+                sanitized_cookies.append(c)
+            
+            self.context.add_cookies(sanitized_cookies)
 
     def post_to_groups(self, groups, progress_callback=None, should_cancel=None):
         """Post content to multiple Facebook groups using Playwright."""
