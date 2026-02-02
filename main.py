@@ -362,20 +362,29 @@ class FacebookGroupSpam:
                 else:
                     try:
                         # Step 1: Find and click the post creation box
-                        # Facebook uses different selectors, try them in order
                         post_box_clicked = False
                         
-                        # Method 1: Look for "Write something" text
-                        try:
-                            write_box = self.page.get_by_role("button", name="Write something")
-                            if write_box.count() > 0:
-                                write_box.first.click()
+                        # Method 1: Click on "Write" text (most reliable)
+                        if not post_box_clicked:
+                            try:
+                                self.page.click('div[role="button"]:has-text("Write")', timeout=10000)
                                 post_box_clicked = True
-                                logger.info("Clicked 'Write something' button")
-                        except:
-                            pass
+                                logger.info("Clicked composer via 'Write' selector")
+                            except:
+                                pass
                         
-                        # Method 2: Look for the composer placeholder
+                        # Method 2: Use get_by_text
+                        if not post_box_clicked:
+                            try:
+                                write_el = self.page.get_by_text("Write something").first
+                                if write_el.is_visible():
+                                    write_el.click()
+                                    post_box_clicked = True
+                                    logger.info("Clicked 'Write something' text")
+                            except:
+                                pass
+                        
+                        # Method 3: Try older selectors as fallback
                         if not post_box_clicked:
                             try:
                                 placeholder = self.page.locator('div[role="button"]:has-text("Write something")')
@@ -386,19 +395,6 @@ class FacebookGroupSpam:
                             except:
                                 pass
                         
-                        # Method 3: Look for any text that suggests post creation
-                        if not post_box_clicked:
-                            try:
-                                for text in ["Write something", "What's on your mind", "Create a post"]:
-                                    els = self.page.get_by_text(text, exact=False)
-                                    if els.count() > 0:
-                                        els.first.click()
-                                        post_box_clicked = True
-                                        logger.info(f"Clicked '{text}' element")
-                                        break
-                            except:
-                                pass
-                        
                         if not post_box_clicked:
                             result['error'] = 'Could not find post creation area'
                             logger.error(f"Could not find post box in {group_name}")
@@ -406,29 +402,16 @@ class FacebookGroupSpam:
                             # Wait for post dialog to open
                             time.sleep(3)
                             
-                            # Step 2: Find the text input area and type content
+                            # Step 2: Type content directly (dialog should have focus)
                             typed = False
                             
-                            # Try to find contenteditable div (the actual text input)
+                            # Just type - the textbox should be focused
                             try:
-                                text_box = self.page.locator('div[contenteditable="true"][role="textbox"]')
-                                if text_box.count() > 0:
-                                    text_box.first.click()
-                                    time.sleep(0.5)
-                                    self.page.keyboard.type(self.post_content, delay=30)
-                                    typed = True
-                                    logger.info("Typed content into textbox")
+                                self.page.keyboard.type(self.post_content, delay=30)
+                                typed = True
+                                logger.info("Typed content into composer")
                             except Exception as e:
-                                logger.debug(f"Textbox method failed: {e}")
-                            
-                            if not typed:
-                                try:
-                                    # Just type - focus should already be on the input
-                                    self.page.keyboard.type(self.post_content, delay=30)
-                                    typed = True
-                                    logger.info("Typed content directly")
-                                except Exception as e:
-                                    logger.debug(f"Direct typing failed: {e}")
+                                logger.debug(f"Direct typing failed: {e}")
                             
                             if not typed:
                                 result['error'] = 'Could not type content'
@@ -449,40 +432,24 @@ class FacebookGroupSpam:
                                 # Step 4: Click Post button
                                 posted = False
                                 
-                                # Method 1: aria-label Post
+                                # Method 1: Direct click on aria-label="Post"
                                 try:
-                                    post_btn = self.page.locator('div[aria-label="Post"][role="button"]')
-                                    if post_btn.count() > 0:
-                                        post_btn.first.click()
-                                        posted = True
-                                        logger.info("Clicked Post button (aria-label)")
+                                    self.page.click('div[aria-label="Post"]', timeout=5000)
+                                    posted = True
+                                    logger.info("Clicked Post button (aria-label)")
                                 except:
                                     pass
                                 
-                                # Method 2: Get by role and name
+                                # Method 2: Get by role
                                 if not posted:
                                     try:
-                                        post_btn = self.page.get_by_role("button", name="Post")
-                                        if post_btn.count() > 0:
-                                            post_btn.first.click()
-                                            posted = True
-                                            logger.info("Clicked Post button (role)")
+                                        self.page.get_by_role("button", name="Post").click()
+                                        posted = True
+                                        logger.info("Clicked Post button (role)")
                                     except:
                                         pass
                                 
-                                # Method 3: Text-based search
-                                if not posted:
-                                    try:
-                                        post_btn = self.page.locator('div[role="button"]:has-text("Post")')
-                                        if post_btn.count() > 0:
-                                            # Get the last one (usually the submit button)
-                                            post_btn.last.click()
-                                            posted = True
-                                            logger.info("Clicked Post button (text)")
-                                    except:
-                                        pass
-                                
-                                # Method 4: Keyboard shortcut
+                                # Method 3: Keyboard shortcut
                                 if not posted:
                                     try:
                                         self.page.keyboard.press('Control+Enter')
