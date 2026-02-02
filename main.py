@@ -365,61 +365,93 @@ class FacebookGroupSpam:
                         # Step 1: Find and click the post creation box
                         post_box_clicked = False
                         
-                        # Wait a bit more for composer to be ready
-                        time.sleep(2)
+                        # Wait for page to fully render
+                        time.sleep(5)
                         
-                        # Method 1: Click on "Write" text (most reliable locally)
+                        logger.info("=== ATTEMPTING TO CLICK COMPOSER ===")
+                        
+                        # Method 1: Click on "Write" text (most reliable)
                         if not post_box_clicked:
                             try:
-                                self.page.click('div[role="button"]:has-text("Write")', timeout=15000)
+                                self.page.click('div[role="button"]:has-text("Write")', timeout=10000)
                                 post_box_clicked = True
-                                logger.info("Clicked composer via 'Write' selector")
+                                logger.info("✓ Method 1: Clicked composer via 'Write' selector")
                             except Exception as e:
                                 logger.debug(f"Method 1 failed: {e}")
                         
-                        # Method 2: Use get_by_text
+                        # Method 2: Try Arabic text (for Arabic Facebook)
+                        if not post_box_clicked:
+                            try:
+                                self.page.click('div[role="button"]:has-text("اكتب")', timeout=5000)
+                                post_box_clicked = True
+                                logger.info("✓ Method 2: Clicked composer via Arabic text")
+                            except Exception as e:
+                                logger.debug(f"Method 2 failed: {e}")
+                        
+                        # Method 3: French text
+                        if not post_box_clicked:
+                            try:
+                                self.page.click('div[role="button"]:has-text("Écrivez")', timeout=5000)
+                                post_box_clicked = True
+                                logger.info("✓ Method 3: Clicked composer via French text")
+                            except Exception as e:
+                                logger.debug(f"Method 3 failed: {e}")
+                        
+                        # Method 4: Use get_by_text for "Write something"
                         if not post_box_clicked:
                             try:
                                 write_el = self.page.get_by_text("Write something").first
                                 if write_el.is_visible():
                                     write_el.click()
                                     post_box_clicked = True
-                                    logger.info("Clicked 'Write something' text")
+                                    logger.info("✓ Method 4: Clicked 'Write something' text")
                             except Exception as e:
-                                logger.debug(f"Method 2 failed: {e}")
+                                logger.debug(f"Method 4 failed: {e}")
                         
-                        # Method 3: Try span with Write
+                        # Method 5: Try span with Write
                         if not post_box_clicked:
                             try:
                                 self.page.click('span:has-text("Write")', timeout=5000)
                                 post_box_clicked = True
-                                logger.info("Clicked span with 'Write'")
+                                logger.info("✓ Method 5: Clicked span with 'Write'")
                             except Exception as e:
-                                logger.debug(f"Method 3 failed: {e}")
+                                logger.debug(f"Method 5 failed: {e}")
                         
-                        # Method 4: Click by coordinates (composer is usually near top)
+                        # Method 6: Click composer pagelet
                         if not post_box_clicked:
                             try:
-                                # Try clicking where composer typically is
                                 self.page.click('div[data-pagelet*="Composer"], div[data-pagelet*="composer"]', timeout=5000)
                                 post_box_clicked = True
-                                logger.info("Clicked composer pagelet")
+                                logger.info("✓ Method 6: Clicked composer pagelet")
                             except Exception as e:
-                                logger.debug(f"Method 4 failed: {e}")
+                                logger.debug(f"Method 6 failed: {e}")
+                        
+                        # Method 7: Find any clickable element with "what's on your mind" text
+                        if not post_box_clicked:
+                            try:
+                                self.page.click('div:has-text("What\'s on your mind")', timeout=5000)
+                                post_box_clicked = True
+                                logger.info("✓ Method 7: Clicked 'What's on your mind'")
+                            except Exception as e:
+                                logger.debug(f"Method 7 failed: {e}")
                         
                         if not post_box_clicked:
                             result['error'] = 'Could not find post creation area'
                             logger.error(f"Could not find post box in {group_name}")
                             # Save debug screenshot
                             try:
-                                debug_path = f'/tmp/debug-{group_id}-{int(time.time())}.png'
+                                debug_dir = os.path.join('logs', 'playwright')
+                                os.makedirs(debug_dir, exist_ok=True)
+                                debug_path = os.path.join(debug_dir, f'no-composer-{group_id}-{int(time.time())}.png')
                                 self.page.screenshot(path=debug_path)
                                 logger.info(f"Debug screenshot saved: {debug_path}")
                             except:
                                 pass
                         else:
                             # Wait for post dialog to open
-                            time.sleep(3)
+                            time.sleep(4)
+                            
+                            logger.info("=== TYPING CONTENT ===")
                             
                             # Step 2: Type content directly (dialog should have focus)
                             typed = False
@@ -428,14 +460,14 @@ class FacebookGroupSpam:
                             try:
                                 self.page.keyboard.type(self.post_content, delay=30)
                                 typed = True
-                                logger.info("Typed content into composer")
+                                logger.info("✓ Typed content into composer")
                             except Exception as e:
                                 logger.debug(f"Direct typing failed: {e}")
                             
                             if not typed:
                                 result['error'] = 'Could not type content'
                             else:
-                                time.sleep(2)
+                                time.sleep(3)
                                 
                                 # Step 3: Handle media files if any
                                 if self.media_files:
