@@ -826,13 +826,18 @@ def discover_groups_api():
                         if group_id in seen_urls:
                             continue
                         
-                        # FILTER: Only numeric IDs (valid groups/pages)
-                        # Skip if contains /posts/, /user/, or non-numeric suffixes
-                        if '/' in group_id or not group_id.replace('-', '').replace('_', '').isdigit():
+                        # FILTER: Skip invalid paths (not actual group pages)
+                        # Skip if contains sub-paths like /posts/, /members/, /about/, etc.
+                        if '/' in group_id:
                             continue
                         
-                        # Skip short IDs (likely not real groups)
-                        if len(group_id) < 5:
+                        # Skip Facebook internal pages
+                        skip_keywords = ['feed', 'discover', 'joins', 'create', 'notifications', 'settings', 'search']
+                        if group_id.lower() in skip_keywords:
+                            continue
+                        
+                        # Skip very short IDs (likely navigation elements)
+                        if len(group_id) < 3:
                             continue
                         
                         # Clean group name - remove "Last active" and timestamp info
