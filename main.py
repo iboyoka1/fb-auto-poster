@@ -345,9 +345,9 @@ class FacebookGroupSpam:
                 
                 # Navigate to group
                 group_url = f"https://www.facebook.com/groups/{group_id}"
-                self.page.goto(group_url, timeout=90000)  # 90 seconds for slow connections
+                self.page.goto(group_url, timeout=90000)
                 self.page.wait_for_load_state('domcontentloaded', timeout=60000)
-                time.sleep(3)
+                time.sleep(5)  # Wait for dynamic content to load
                 
                 current_url = self.page.url
                 logger.info(f"Group page loaded: {current_url}")
@@ -364,14 +364,17 @@ class FacebookGroupSpam:
                         # Step 1: Find and click the post creation box
                         post_box_clicked = False
                         
-                        # Method 1: Click on "Write" text (most reliable)
+                        # Wait a bit more for composer to be ready
+                        time.sleep(2)
+                        
+                        # Method 1: Click on "Write" text (most reliable locally)
                         if not post_box_clicked:
                             try:
-                                self.page.click('div[role="button"]:has-text("Write")', timeout=10000)
+                                self.page.click('div[role="button"]:has-text("Write")', timeout=15000)
                                 post_box_clicked = True
                                 logger.info("Clicked composer via 'Write' selector")
-                            except:
-                                pass
+                            except Exception as e:
+                                logger.debug(f"Method 1 failed: {e}")
                         
                         # Method 2: Use get_by_text
                         if not post_box_clicked:
@@ -381,23 +384,38 @@ class FacebookGroupSpam:
                                     write_el.click()
                                     post_box_clicked = True
                                     logger.info("Clicked 'Write something' text")
-                            except:
-                                pass
+                            except Exception as e:
+                                logger.debug(f"Method 2 failed: {e}")
                         
-                        # Method 3: Try older selectors as fallback
+                        # Method 3: Try span with Write
                         if not post_box_clicked:
                             try:
-                                placeholder = self.page.locator('div[role="button"]:has-text("Write something")')
-                                if placeholder.count() > 0:
-                                    placeholder.first.click()
-                                    post_box_clicked = True
-                                    logger.info("Clicked post placeholder")
-                            except:
-                                pass
+                                self.page.click('span:has-text("Write")', timeout=5000)
+                                post_box_clicked = True
+                                logger.info("Clicked span with 'Write'")
+                            except Exception as e:
+                                logger.debug(f"Method 3 failed: {e}")
+                        
+                        # Method 4: Click by coordinates (composer is usually near top)
+                        if not post_box_clicked:
+                            try:
+                                # Try clicking where composer typically is
+                                self.page.click('div[data-pagelet*="Composer"], div[data-pagelet*="composer"]', timeout=5000)
+                                post_box_clicked = True
+                                logger.info("Clicked composer pagelet")
+                            except Exception as e:
+                                logger.debug(f"Method 4 failed: {e}")
                         
                         if not post_box_clicked:
                             result['error'] = 'Could not find post creation area'
                             logger.error(f"Could not find post box in {group_name}")
+                            # Save debug screenshot
+                            try:
+                                debug_path = f'/tmp/debug-{group_id}-{int(time.time())}.png'
+                                self.page.screenshot(path=debug_path)
+                                logger.info(f"Debug screenshot saved: {debug_path}")
+                            except:
+                                pass
                         else:
                             # Wait for post dialog to open
                             time.sleep(3)
