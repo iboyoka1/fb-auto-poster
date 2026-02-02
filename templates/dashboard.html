@@ -273,6 +273,24 @@
                         📁 Find cookies at: <code>sessions/facebook-cookies.json</code> on your local PC
                     </p>
                 </div>
+                
+                <!-- Upload Groups Option (for Cloud Deployment) -->
+                <div style="padding: 15px; background: #d1ecf1; border-radius: 6px; border: 1px solid #17a2b8; margin-top: 10px;">
+                    <h5 style="margin-top: 0; color: #0c5460;">📋 Upload Groups (Cloud Mode)</h5>
+                    <p style="color: #0c5460; font-size: 13px; margin-bottom: 15px;">Upload your groups.json to post to your groups on the cloud.</p>
+                    <textarea id="groupsInput" placeholder='Paste your groups.json content here...' style="width: 100%; height: 80px; margin-bottom: 10px; font-size: 11px; font-family: monospace; border-radius: 4px; border: 1px solid #ddd; padding: 8px;"></textarea>
+                    <button type="button" class="btn btn-info" id="uploadGroupsBtn" style="width: 100%; background: #17a2b8; border-color: #17a2b8;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 5px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Upload Groups
+                    </button>
+                    <p style="color: #0c5460; font-size: 11px; margin-top: 8px; margin-bottom: 0;">
+                        📁 Find groups at: <code>groups.json</code> on your local PC
+                    </p>
+                </div>
             </div>
         </div>
         
@@ -547,6 +565,53 @@ document.getElementById('uploadCookiesBtn').addEventListener('click', async () =
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Upload Cookies';
+    }
+});
+
+// Upload Groups handler
+document.getElementById('uploadGroupsBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('uploadGroupsBtn');
+    const groupsInput = document.getElementById('groupsInput').value.trim();
+    
+    if (!groupsInput) {
+        alert('Please paste your groups.json content first');
+        return;
+    }
+    
+    let groups;
+    try {
+        groups = JSON.parse(groupsInput);
+        if (!Array.isArray(groups)) {
+            throw new Error('Groups must be an array');
+        }
+    } catch (e) {
+        alert('Invalid JSON format. Please paste the exact content from groups.json');
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Uploading...';
+    
+    try {
+        const response = await fetch('/api/upload-groups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ groups: groups })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✓ Groups uploaded successfully!\n\n' + data.count + ' groups are now available.');
+            window.location.reload();
+        } else {
+            alert('Failed to upload groups: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error uploading groups: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Upload Groups';
     }
 });
 

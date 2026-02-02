@@ -267,6 +267,38 @@ def upload_cookies():
         logger.error(f"[UPLOAD COOKIES] Error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/upload-groups', methods=['POST'])
+@login_required
+def upload_groups():
+    """Upload groups.json from local machine to server (for cloud deployment)"""
+    try:
+        data = request.get_json(silent=True) or {}
+        groups = data.get('groups', [])
+        
+        if not groups:
+            return jsonify({'success': False, 'error': 'No groups provided'}), 400
+        
+        # Validate groups have required fields
+        for g in groups:
+            if not g.get('username'):
+                return jsonify({'success': False, 'error': 'Groups must have username field'}), 400
+        
+        # Save groups to file
+        groups_path = os.path.join(PROJECT_ROOT, 'groups.json')
+        with open(groups_path, 'w', encoding='utf-8') as f:
+            json.dump(groups, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f"[UPLOAD GROUPS] Successfully uploaded {len(groups)} groups")
+        return jsonify({
+            'success': True, 
+            'message': f'Uploaded {len(groups)} groups successfully',
+            'count': len(groups)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"[UPLOAD GROUPS] Error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/facebook-status', methods=['GET'])
 def facebook_status():
     """Check if user is connected to Facebook - checks both session and cookie file"""
