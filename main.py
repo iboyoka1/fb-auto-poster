@@ -301,13 +301,15 @@ class FacebookGroupSpam:
             logger.info(f"Verified loaded cookies: {loaded_names}")
             
             # Warm up session by visiting Facebook main page first
-            logger.info("Warming up Facebook session...")
+            logger.info("=== WARMING UP FACEBOOK SESSION ===")
             try:
                 self.page.goto('https://www.facebook.com/', timeout=30000)
-                self.page.wait_for_load_state('networkidle', timeout=15000)
-                time.sleep(2)
+                self.page.wait_for_load_state('domcontentloaded', timeout=15000)
+                time.sleep(3)
                 current_url = self.page.url
-                logger.info(f"After warmup, current URL: {current_url}")
+                page_title = self.page.title()
+                logger.info(f"Warmup complete - URL: {current_url}")
+                logger.info(f"Warmup complete - Title: {page_title}")
                 
                 # Check if we're logged in by looking for login elements
                 if 'login' in current_url.lower() or '/login' in current_url:
