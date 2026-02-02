@@ -18,7 +18,7 @@ class FacebookGroupSpam:
 
     def start_browser(self):
         self.playwright = sync_playwright().start()
-        # Use stable browser args to prevent crashes
+        # Use stable browser args for headless Docker environments
         browser_args = [
             '--disable-blink-features=AutomationControlled',
             '--disable-dev-shm-usage',
@@ -26,23 +26,28 @@ class FacebookGroupSpam:
             '--disable-gpu',
             '--disable-software-rasterizer',
             '--disable-extensions',
+            '--headless=new',  # New headless mode for better compatibility
         ]
         
-        # Try Firefox first (more stable), fall back to Chromium
+        # Use Chromium first (better Docker/headless support), fall back to Firefox
         try:
-            self.browser = self.playwright.firefox.launch(
-                headless=self.headless,
-                slow_mo=50
-            )
-            logger.info("Using Firefox browser")
-        except Exception as e:
-            logger.warning(f"Firefox failed, trying Chromium: {e}")
             self.browser = self.playwright.chromium.launch(
                 headless=self.headless,
                 args=browser_args,
                 slow_mo=50
             )
             logger.info("Using Chromium browser")
+        except Exception as e:
+            logger.warning(f"Chromium failed, trying Firefox: {e}")
+            try:
+                self.browser = self.playwright.firefox.launch(
+                    headless=self.headless,
+                    slow_mo=50
+                )
+                logger.info("Using Firefox browser")
+            except Exception as e2:
+                logger.error(f"Both browsers failed: Chromium={e}, Firefox={e2}")
+                raise Exception(f"Could not start any browser: {e2}")
 
         # Use stable context settings
         self.context = self.browser.new_context(
