@@ -49,14 +49,41 @@ class FacebookGroupSpam:
                 logger.error(f"Both browsers failed: Chromium={e}, Firefox={e2}")
                 raise Exception(f"Could not start any browser: {e2}")
 
-        # Use stable context settings
+        # Use stable context settings with stealth measures
         self.context = self.browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             viewport={'width': 1280, 'height': 720},
             ignore_https_errors=True,
-            locale='en-US'
+            locale='en-US',
+            timezone_id='America/New_York',
+            permissions=['geolocation'],
+            java_script_enabled=True,
         )
         self.page = self.context.new_page()
+        
+        # Add stealth scripts to avoid bot detection
+        self.page.add_init_script("""
+            // Override webdriver property
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+            
+            // Override plugins
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
+            
+            // Override languages
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['en-US', 'en']
+            });
+            
+            // Remove automation-related properties
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+        """)
+        
         logger.info("Browser started successfully")
 
     def close_browser(self):
@@ -255,13 +282,40 @@ class FacebookGroupSpam:
                 else:
                     c['sameSite'] = 'Lax'  # Default to Lax for unknown values
                 
+                # Ensure domain is set correctly for Facebook
+                if 'domain' not in c or not c['domain']:
+                    c['domain'] = '.facebook.com'
+                
                 # Remove any fields that Playwright doesn't accept
                 allowed_fields = {'name', 'value', 'domain', 'path', 'expires', 'httpOnly', 'secure', 'sameSite'}
                 c = {k: v for k, v in c.items() if k in allowed_fields}
                 
                 sanitized_cookies.append(c)
             
+            logger.info(f"Loading {len(sanitized_cookies)} cookies into browser context")
             self.context.add_cookies(sanitized_cookies)
+            
+            # Verify cookies were loaded by checking context cookies
+            loaded = self.context.cookies(['https://www.facebook.com'])
+            loaded_names = {c.get('name') for c in loaded}
+            logger.info(f"Verified loaded cookies: {loaded_names}")
+            
+            # Warm up session by visiting Facebook main page first
+            logger.info("Warming up Facebook session...")
+            try:
+                self.page.goto('https://www.facebook.com/', timeout=30000)
+                self.page.wait_for_load_state('networkidle', timeout=15000)
+                time.sleep(2)
+                current_url = self.page.url
+                logger.info(f"After warmup, current URL: {current_url}")
+                
+                # Check if we're logged in by looking for login elements
+                if 'login' in current_url.lower() or '/login' in current_url:
+                    logger.warning("Session warmup: Redirected to login page - cookies may be expired")
+                else:
+                    logger.info("Session warmup: Successfully loaded Facebook (not on login page)")
+            except Exception as e:
+                logger.warning(f"Session warmup failed: {e}")
 
     def post_to_groups(self, groups, progress_callback=None, should_cancel=None):
         """Post content to multiple Facebook groups using Playwright."""
@@ -293,10 +347,16 @@ class FacebookGroupSpam:
                 self.page.wait_for_load_state('networkidle', timeout=15000)
                 time.sleep(3)
                 
+                current_url = self.page.url
+                logger.info(f"After navigation, current URL: {current_url}")
+                
                 # Check if redirected to login
-                if 'login' in self.page.url.lower():
+                if 'login' in current_url.lower() or '/login' in current_url:
                     result['error'] = 'Not logged in'
-                    logger.error("Session expired - login required")
+                    logger.error(f"Session expired - login required. Redirected to: {current_url}")
+                elif 'checkpoint' in current_url.lower():
+                    result['error'] = 'Security checkpoint'
+                    logger.error(f"Facebook security checkpoint triggered. URL: {current_url}")
                 else:
                     try:
                         # Step 1: Find and click the post creation box
