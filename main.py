@@ -345,9 +345,10 @@ class FacebookGroupSpam:
                 
                 # Navigate to group
                 group_url = f"https://www.facebook.com/groups/{group_id}"
-                self.page.goto(group_url, timeout=90000)
-                self.page.wait_for_load_state('domcontentloaded', timeout=60000)
-                time.sleep(5)  # Wait for dynamic content to load
+                self.page.goto(group_url, timeout=120000)  # 2 minutes for Render
+                self.page.wait_for_load_state('domcontentloaded', timeout=90000)
+                # Wait longer for dynamic content on slow connections (Render)
+                time.sleep(10)
                 
                 current_url = self.page.url
                 logger.info(f"Group page loaded: {current_url}")
