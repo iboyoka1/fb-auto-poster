@@ -681,12 +681,12 @@ def update_group(index):
 @app.route('/api/discover-groups', methods=['POST'])
 @login_required
 def discover_groups_api():
-    """Auto-discover all Facebook groups user is a member of - OPTIMIZED"""
+    """Auto-discover Facebook groups using cookies + requests (FAST - no browser needed)"""
+    import requests
+    import re
+    
     try:
-        from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
-        import time
-        
-        logger.info("Starting group discovery with enhanced session handling...")
+        logger.info("=== FAST GROUP DISCOVERY (using requests) ===")
         
         # Load session cookies
         cookie_file = f"{PROJECT_ROOT}/sessions/facebook-cookies.json"
@@ -694,218 +694,124 @@ def discover_groups_api():
             return jsonify({
                 'success': False,
                 'error': 'No saved session found',
-                'message': 'Please login first'
+                'message': 'Please upload cookies first'
             }), 400
         
         with open(cookie_file, 'r') as f:
-            cookies = json.load(f)
+            cookies_list = json.load(f)
         
-        # Start browser with optimized settings and stealth
-        playwright = None
-        browser = None
-        try:
-            playwright = sync_playwright().start()
-            browser = playwright.chromium.launch(
-                headless=True,
-                args=[
-                    '--disable-blink-features=AutomationControlled',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu',
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox'
-                ]
-            )
-        except Exception as browser_error:
-            error_msg = str(browser_error)
-            logger.error(f"Browser launch error: {error_msg}")
-            # Check if browsers are not installed
-            if "Executable doesn't exist" in error_msg or "browserType.launch" in error_msg:
-                return jsonify({
-                    'success': False,
-                    'error': 'Playwright browsers not installed',
-                    'message': 'Server needs Playwright browsers. Run: playwright install chromium'
-                }), 500
-            raise browser_error
+        # Convert cookies list to requests format
+        cookies = {}
+        for c in cookies_list:
+            cookies[c['name']] = c['value']
         
-        context = browser.new_context(
-            viewport={'width': 1920, 'height': 1080},
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            ignore_https_errors=True,
-            locale='en-US'
-        )
-        page = context.new_page()
-        
-        # Add stealth script to avoid detection
-        page.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-            Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
-            Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
-            window.chrome = {runtime: {}};
-        """)
-        
-        # Sanitize cookies for Playwright compatibility (same as main.py)
-        sanitized_cookies = []
-        for cookie in cookies:
-            c = dict(cookie)
-            
-            # Fix sameSite value
-            same_site = c.get('sameSite', 'Lax')
-            if same_site in ('Strict', 'Lax', 'None'):
-                pass
-            elif str(same_site).lower() == 'strict':
-                c['sameSite'] = 'Strict'
-            elif str(same_site).lower() == 'lax':
-                c['sameSite'] = 'Lax'
-            elif str(same_site).lower() in ('none', 'no_restriction', 'unspecified', ''):
-                c['sameSite'] = 'None'
-            else:
-                c['sameSite'] = 'Lax'
-            
-            # Ensure domain
-            if 'domain' not in c or not c['domain']:
-                c['domain'] = '.facebook.com'
-            
-            # Remove invalid fields
-            allowed_fields = {'name', 'value', 'domain', 'path', 'expires', 'httpOnly', 'secure', 'sameSite'}
-            c = {k: v for k, v in c.items() if k in allowed_fields}
-            sanitized_cookies.append(c)
-        
-        # Add sanitized cookies
-        try:
-            context.add_cookies(sanitized_cookies)
-            logger.info(f"Added {len(sanitized_cookies)} sanitized cookies")
-        except Exception as e:
-            logger.warning(f"Error adding cookies: {e}")
-        
-        discovered = []
-        seen_urls = set()
-        MAX_GROUPS = 10  # Only 10 groups - super fast to avoid timeout
-        
-        try:
-            # INSTANT - Go directly to groups page, grab first 10 only
-            logger.info("=== INSTANT GROUP DISCOVERY (max 10 groups) ===")
-            page.goto("https://www.facebook.com/groups/joins", timeout=15000)
-            page.wait_for_load_state('domcontentloaded', timeout=8000)
-            
-            # Check if session is valid
-            current_url = page.url
-            if 'login' in current_url.lower() or '/login' in current_url:
-                logger.error("Session expired - redirected to login page")
-                return jsonify({
-                    'success': False,
-                    'error': 'Session expired',
-                    'message': 'Please upload new cookies - your session has expired'
-                }), 401
-            
-            logger.info(f"Session valid - URL: {current_url}")
-            
-            # Wait for groups to appear
-            try:
-                page.wait_for_selector('a[href*="/groups/"]', timeout=5000)
-            except:
-                pass
-            
-            # NO scrolling - just grab what's visible immediately
-            group_links = page.query_selector_all('a[href*="/groups/"]')
-            logger.info(f"Found {len(group_links)} group links on page")
-            
-            for link in group_links:
-                # Stop if we have enough
-                if len(discovered) >= MAX_GROUPS:
-                    logger.info(f"Reached max groups limit ({MAX_GROUPS})")
-                    break
-                
-                try:
-                    href = link.get_attribute('href')
-                    text = link.text_content().strip()
-                    
-                    if not href or not text or '/groups/' not in href:
-                        continue
-                    
-                    # Clean URL - remove query params
-                    if '?' in href:
-                        href = href.split('?')[0]
-                    
-                    # Extract group part
-                    parts = href.split('/groups/')
-                    if len(parts) < 2:
-                        continue
-                    
-                    group_id = parts[1].rstrip('/')
-                    
-                    # Skip if already seen
-                    if group_id in seen_urls:
-                        continue
-                    
-                    # FILTER: Skip invalid paths
-                    if '/' in group_id:
-                        continue
-                    
-                    # Skip Facebook internal pages
-                    skip_keywords = ['feed', 'discover', 'joins', 'create', 'notifications', 'settings', 'search']
-                    if group_id.lower() in skip_keywords:
-                        continue
-                    
-                    # Skip very short IDs
-                    if len(group_id) < 3:
-                        continue
-                    
-                    # Clean group name
-                    group_name = text.split('Last active')[0].strip()
-                    group_name = group_name.split('Last updated')[0].strip()
-                    group_name = group_name.split('a few seconds ago')[0].strip()
-                    group_name = group_name.split('minutes ago')[0].strip()
-                    group_name = group_name.split('hours ago')[0].strip()
-                    group_name = group_name.split('days ago')[0].strip()
-                    
-                    # Skip generic names
-                    if group_name in ["Groups", "Group", "Your groups", "Discover", "Your feed", "feed", "discover", "joins"] or len(group_name) < 2:
-                        continue
-                    
-                    # Valid group found
-                    seen_urls.add(group_id)
-                    discovered.append({
-                        'name': group_name[:100],
-                        'username': group_id,
-                        'status': 'member',
-                        'type': 'group',
-                        'url': f"https://www.facebook.com/groups/{group_id}"
-                    })
-                except:
-                    pass
-            
-            logger.info(f"Found {len(discovered)} valid groups")
-            
-            return jsonify({
-                'success': True,
-                'groups': discovered,
-                'count': len(discovered),
-                'message': f'Found {len(discovered)} groups! (Run again to discover more)'
-            })
-        
-        except PlaywrightTimeout as e:
-            # Return whatever we found even if timeout
-            if discovered:
-                return jsonify({
-                    'success': True,
-                    'groups': discovered,
-                    'count': len(discovered),
-                    'message': f'Found {len(discovered)} groups (partial)'
-                })
+        # Check we have required cookies
+        if 'c_user' not in cookies or 'xs' not in cookies:
             return jsonify({
                 'success': False,
-                'error': 'Timeout',
-                'message': 'Session may have expired'
+                'error': 'Invalid cookies',
+                'message': 'Missing c_user or xs cookie. Please re-upload cookies.'
             }), 400
         
-        finally:
-            try:
-                page.close()
-                context.close()
-                browser.close()
-                playwright.stop()
-            except:
-                pass
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        discovered = []
+        seen_ids = set()
+        
+        # Fetch the groups page
+        logger.info("Fetching Facebook groups page...")
+        response = requests.get(
+            'https://www.facebook.com/groups/joins/',
+            cookies=cookies,
+            headers=headers,
+            timeout=15,
+            allow_redirects=True
+        )
+        
+        # Check if redirected to login
+        if '/login' in response.url or 'login' in response.url.lower():
+            logger.error("Session expired - redirected to login")
+            return jsonify({
+                'success': False,
+                'error': 'Session expired',
+                'message': 'Please upload new cookies - your session has expired'
+            }), 401
+        
+        html = response.text
+        logger.info(f"Got {len(html)} bytes of HTML")
+        
+        # Extract groups using regex patterns
+        # Pattern 1: /groups/GROUP_ID/ in href
+        group_pattern = r'href="[^"]*?/groups/(\d+)["/]'
+        group_ids = re.findall(group_pattern, html)
+        
+        # Pattern 2: Also look for named groups /groups/groupname/
+        named_pattern = r'href="/groups/([a-zA-Z0-9._]+)/?["\?]'
+        named_groups = re.findall(named_pattern, html)
+        
+        # Combine all found group IDs
+        all_groups = list(set(group_ids + named_groups))
+        logger.info(f"Found {len(all_groups)} potential group IDs")
+        
+        # Filter and create group entries
+        skip_keywords = ['feed', 'discover', 'joins', 'create', 'notifications', 'settings', 'search', 'groups']
+        
+        for group_id in all_groups:
+            if len(discovered) >= 20:  # Limit to 20 groups
+                break
+                
+            # Skip invalid
+            if group_id.lower() in skip_keywords:
+                continue
+            if len(group_id) < 3:
+                continue
+            if group_id in seen_ids:
+                continue
+            
+            seen_ids.add(group_id)
+            
+            # Try to extract group name from HTML
+            name_pattern = rf'/groups/{re.escape(group_id)}[^>]*>([^<]+)<'
+            name_match = re.search(name_pattern, html)
+            group_name = name_match.group(1).strip() if name_match else group_id
+            
+            # Clean up name
+            if len(group_name) > 100:
+                group_name = group_name[:100]
+            if group_name in skip_keywords or len(group_name) < 2:
+                group_name = group_id
+            
+            discovered.append({
+                'name': group_name,
+                'username': group_id,
+                'status': 'member',
+                'type': 'group',
+                'url': f"https://www.facebook.com/groups/{group_id}"
+            })
+        
+        logger.info(f"Discovered {len(discovered)} valid groups")
+        
+        return jsonify({
+            'success': True,
+            'groups': discovered,
+            'count': len(discovered),
+            'message': f'Found {len(discovered)} groups!'
+        })
+    
+    except requests.Timeout:
+        logger.error("Request timeout")
+        return jsonify({
+            'success': False,
+            'error': 'Timeout',
+            'message': 'Request timed out. Try again.'
+        }), 408
     
     except Exception as e:
         logger.error(f"Group discovery error: {str(e)}")
