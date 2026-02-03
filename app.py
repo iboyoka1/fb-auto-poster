@@ -781,11 +781,10 @@ def discover_groups_api():
         seen_urls = set()
         
         try:
-            # WARM UP SESSION - Visit Facebook main page first
-            logger.info("=== WARMING UP FACEBOOK SESSION ===")
-            page.goto("https://www.facebook.com/", timeout=60000)
-            page.wait_for_load_state('domcontentloaded', timeout=30000)
-            time.sleep(3)
+            # FAST SESSION CHECK - Go directly to groups page (skip warmup to save time)
+            logger.info("=== FAST GROUP DISCOVERY ===")
+            page.goto("https://www.facebook.com/groups/joins", timeout=30000)
+            page.wait_for_load_state('domcontentloaded', timeout=15000)
             
             # Check if session is valid
             current_url = page.url
@@ -799,21 +798,17 @@ def discover_groups_api():
             
             logger.info(f"Session valid - URL: {current_url}")
             
-            # Navigate to groups page with longer timeout
-            logger.info("Loading Facebook groups...")
-            page.goto("https://www.facebook.com/groups/", timeout=60000)
-            
-            # Wait for initial content with longer timeout
+            # Wait for initial content
             try:
-                page.wait_for_selector('a[href*="/groups/"]', timeout=30000)
+                page.wait_for_selector('a[href*="/groups/"]', timeout=10000)
             except:
                 pass
             
-            # Collect initial groups
-            page.wait_for_timeout(2000)
+            # Short initial wait
+            page.wait_for_timeout(1000)
             
-            # Fast scroll with minimal waits
-            max_scroll = 5
+            # FAST scroll - only 3 scrolls with short waits
+            max_scroll = 3
             for scroll_num in range(max_scroll):
                 # Get all group links
                 group_links = page.query_selector_all('a[href*="/groups/"]')
@@ -879,10 +874,10 @@ def discover_groups_api():
                     except:
                         pass
                 
-                # Scroll with reasonable wait for content loading
+                # Fast scroll with minimal wait
                 if scroll_num < max_scroll - 1:
-                    page.evaluate("window.scrollBy(0, 800)")
-                    page.wait_for_timeout(1500)
+                    page.evaluate("window.scrollBy(0, 1000)")
+                    page.wait_for_timeout(800)
             
             logger.info(f"Found {len(discovered)} groups in {max_scroll} scrolls")
             
