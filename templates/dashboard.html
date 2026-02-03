@@ -608,6 +608,18 @@ document.getElementById('uploadGroupsBtn').addEventListener('click', async () =>
             body: JSON.stringify({ groups: groups })
         });
         
+        // Check content type before parsing
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            // Server returned HTML (restart page or login redirect)
+            if (response.status === 401 || response.redirected) {
+                alert('Session expired. Please refresh the page and log in again.');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Server is restarting. Please wait 30 seconds and try again.');
+        }
+        
         const data = await response.json();
         
         if (data.success) {
@@ -617,7 +629,11 @@ document.getElementById('uploadGroupsBtn').addEventListener('click', async () =>
             alert('Failed to upload groups: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
-        alert('Error uploading groups: ' + error.message);
+        if (error.message.includes('<!DOCTYPE') || error.message.includes('Unexpected token')) {
+            alert('Server is restarting or session expired.\n\nPlease wait 30 seconds and refresh the page, then try again.');
+        } else {
+            alert('Error uploading groups: ' + error.message);
+        }
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Upload Groups';
