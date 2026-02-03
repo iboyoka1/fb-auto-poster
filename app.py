@@ -779,12 +779,13 @@ def discover_groups_api():
         
         discovered = []
         seen_urls = set()
+        MAX_GROUPS = 50  # Limit to prevent timeout
         
         try:
-            # FAST SESSION CHECK - Go directly to groups page (skip warmup to save time)
-            logger.info("=== FAST GROUP DISCOVERY ===")
-            page.goto("https://www.facebook.com/groups/joins", timeout=30000)
-            page.wait_for_load_state('domcontentloaded', timeout=15000)
+            # ULTRA FAST - Go directly to groups page
+            logger.info("=== ULTRA FAST GROUP DISCOVERY (max 50 groups) ===")
+            page.goto("https://www.facebook.com/groups/joins", timeout=20000)
+            page.wait_for_load_state('domcontentloaded', timeout=10000)
             
             # Check if session is valid
             current_url = page.url
@@ -800,20 +801,29 @@ def discover_groups_api():
             
             # Wait for initial content
             try:
-                page.wait_for_selector('a[href*="/groups/"]', timeout=10000)
+                page.wait_for_selector('a[href*="/groups/"]', timeout=8000)
             except:
                 pass
             
-            # Short initial wait
-            page.wait_for_timeout(1000)
+            # Very short wait
+            page.wait_for_timeout(500)
             
-            # FAST scroll - only 3 scrolls with short waits
-            max_scroll = 3
+            # Only 2 scrolls - stop early if we have enough groups
+            max_scroll = 2
             for scroll_num in range(max_scroll):
+                # Stop if we have enough groups
+                if len(discovered) >= MAX_GROUPS:
+                    logger.info(f"Reached max groups limit ({MAX_GROUPS})")
+                    break
+                
                 # Get all group links
                 group_links = page.query_selector_all('a[href*="/groups/"]')
                 
                 for link in group_links:
+                    # Stop if we have enough
+                    if len(discovered) >= MAX_GROUPS:
+                        break
+                    
                     try:
                         href = link.get_attribute('href')
                         text = link.text_content().strip()
@@ -874,10 +884,10 @@ def discover_groups_api():
                     except:
                         pass
                 
-                # Fast scroll with minimal wait
-                if scroll_num < max_scroll - 1:
-                    page.evaluate("window.scrollBy(0, 1000)")
-                    page.wait_for_timeout(800)
+                # Quick scroll - only if we need more groups
+                if scroll_num < max_scroll - 1 and len(discovered) < MAX_GROUPS:
+                    page.evaluate("window.scrollBy(0, 1500)")
+                    page.wait_for_timeout(500)
             
             logger.info(f"Found {len(discovered)} groups in {max_scroll} scrolls")
             
