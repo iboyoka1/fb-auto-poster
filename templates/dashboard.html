@@ -548,9 +548,18 @@ document.getElementById('uploadCookiesBtn').addEventListener('click', async () =
     try {
         const response = await fetch('/api/upload-cookies', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify({ cookies: cookies })
         });
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server is restarting. Please wait 1-2 minutes and try again.');
+        }
         
         const data = await response.json();
         
