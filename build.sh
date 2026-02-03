@@ -8,13 +8,10 @@ echo "=== Installing Python dependencies ==="
 pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "=== Installing Playwright browsers and dependencies ==="
-# Install system dependencies for Playwright (Render uses Debian/Ubuntu)
-# Playwright install-deps installs system libraries needed for browser automation
-playwright install-deps chromium || true
-
-# Install Chromium browser for Playwright
-playwright install chromium
+echo "=== Installing Playwright Chromium browser ==="
+# On Render, we can't use install-deps (requires sudo)
+# Instead, install the browser only - Render's base image has most deps
+python -m playwright install chromium
 
 echo "=== Creating required directories ==="
 mkdir -p sessions logs media_library backups uploads

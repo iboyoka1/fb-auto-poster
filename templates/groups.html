@@ -489,8 +489,21 @@ document.getElementById('discoverGroupsBtn').addEventListener('click', async fun
     
     try {
         const response = await fetch('/api/discover-groups', {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
         });
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response:', text.substring(0, 500));
+            throw new Error('Server returned HTML instead of JSON. Check if you are logged in.');
+        }
+        
         const data = await response.json();
         
         if (data.success && data.groups.length > 0) {
