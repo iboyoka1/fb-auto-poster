@@ -1,8 +1,9 @@
 services:
   - type: web
     name: fb-auto-poster
-    runtime: docker
-    dockerfilePath: ./Dockerfile
+    runtime: python
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: python run_server.py
     envVars:
       - key: PYTHONUNBUFFERED
         value: 1
@@ -10,4 +11,6 @@ services:
         value: production
       - key: SECRET_KEY
         generateValue: true
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: /opt/render/.cache/ms-playwright
     healthCheckPath: /api/health

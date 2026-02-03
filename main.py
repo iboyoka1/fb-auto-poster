@@ -346,9 +346,16 @@ class FacebookGroupSpam:
                 # Navigate to group
                 group_url = f"https://www.facebook.com/groups/{group_id}"
                 self.page.goto(group_url, timeout=120000)  # 2 minutes for Render
-                self.page.wait_for_load_state('domcontentloaded', timeout=90000)
-                # Wait longer for dynamic content on slow connections (Render)
-                time.sleep(10)
+                self.page.wait_for_load_state('networkidle', timeout=60000)
+                
+                # Wait for dynamic content to fully load
+                time.sleep(5)
+                
+                # Scroll down a bit to trigger lazy loading, then back up
+                self.page.evaluate("window.scrollBy(0, 300)")
+                time.sleep(1)
+                self.page.evaluate("window.scrollTo(0, 0)")
+                time.sleep(3)
                 
                 current_url = self.page.url
                 logger.info(f"Group page loaded: {current_url}")
@@ -370,70 +377,106 @@ class FacebookGroupSpam:
                         
                         logger.info("=== ATTEMPTING TO CLICK COMPOSER ===")
                         
-                        # Method 1: Click on "Write" text (most reliable)
+                        # Log what's visible on page for debugging
+                        try:
+                            page_text = self.page.content()[:2000]
+                            logger.info(f"Page content preview: {page_text[:500]}...")
+                        except:
+                            pass
+                        
+                        # Method 1: French "Exprimez-vous" (most common for French FB)
                         if not post_box_clicked:
                             try:
-                                self.page.click('div[role="button"]:has-text("Write")', timeout=10000)
+                                self.page.click('div[role="button"]:has-text("Exprimez")', timeout=8000)
                                 post_box_clicked = True
-                                logger.info("✓ Method 1: Clicked composer via 'Write' selector")
+                                logger.info("✓ Method 1: Clicked 'Exprimez' (French)")
                             except Exception as e:
                                 logger.debug(f"Method 1 failed: {e}")
                         
-                        # Method 2: Try Arabic text (for Arabic Facebook)
+                        # Method 2: English "Write"
+                        if not post_box_clicked:
+                            try:
+                                self.page.click('div[role="button"]:has-text("Write")', timeout=5000)
+                                post_box_clicked = True
+                                logger.info("✓ Method 2: Clicked 'Write' button")
+                            except Exception as e:
+                                logger.debug(f"Method 2 failed: {e}")
+                        
+                        # Method 3: Try Arabic text (for Arabic Facebook)
                         if not post_box_clicked:
                             try:
                                 self.page.click('div[role="button"]:has-text("اكتب")', timeout=5000)
                                 post_box_clicked = True
-                                logger.info("✓ Method 2: Clicked composer via Arabic text")
+                                logger.info("✓ Method 3: Clicked composer via Arabic text")
                             except Exception as e:
-                                logger.debug(f"Method 2 failed: {e}")
+                                logger.debug(f"Method 3 failed: {e}")
                         
-                        # Method 3: French text
+                        # Method 4: French "Écrivez"
                         if not post_box_clicked:
                             try:
                                 self.page.click('div[role="button"]:has-text("Écrivez")', timeout=5000)
                                 post_box_clicked = True
-                                logger.info("✓ Method 3: Clicked composer via French text")
+                                logger.info("✓ Method 4: Clicked 'Écrivez' (French)")
                             except Exception as e:
-                                logger.debug(f"Method 3 failed: {e}")
+                                logger.debug(f"Method 4 failed: {e}")
                         
-                        # Method 4: Use get_by_text for "Write something"
+                        # Method 5: Click on contenteditable area directly
+                        if not post_box_clicked:
+                            try:
+                                self.page.click('div[contenteditable="true"]', timeout=5000)
+                                post_box_clicked = True
+                                logger.info("✓ Method 5: Clicked contenteditable div")
+                            except Exception as e:
+                                logger.debug(f"Method 5 failed: {e}")
+                        
+                        # Method 6: Use get_by_placeholder
+                        if not post_box_clicked:
+                            try:
+                                el = self.page.get_by_placeholder("Write something").first
+                                if el.is_visible():
+                                    el.click()
+                                    post_box_clicked = True
+                                    logger.info("✓ Method 6: Clicked via placeholder")
+                            except Exception as e:
+                                logger.debug(f"Method 6 failed: {e}")
+                        
+                        # Method 7: Click any textbox role
+                        if not post_box_clicked:
+                            try:
+                                self.page.click('div[role="textbox"]', timeout=5000)
+                                post_box_clicked = True
+                                logger.info("✓ Method 7: Clicked textbox role")
+                            except Exception as e:
+                                logger.debug(f"Method 7 failed: {e}")
+                        
+                        # Method 8: Use get_by_text for "Write something"
                         if not post_box_clicked:
                             try:
                                 write_el = self.page.get_by_text("Write something").first
                                 if write_el.is_visible():
                                     write_el.click()
                                     post_box_clicked = True
-                                    logger.info("✓ Method 4: Clicked 'Write something' text")
+                                    logger.info("✓ Method 8: Clicked 'Write something' text")
                             except Exception as e:
-                                logger.debug(f"Method 4 failed: {e}")
+                                logger.debug(f"Method 8 failed: {e}")
                         
-                        # Method 5: Try span with Write
-                        if not post_box_clicked:
-                            try:
-                                self.page.click('span:has-text("Write")', timeout=5000)
-                                post_box_clicked = True
-                                logger.info("✓ Method 5: Clicked span with 'Write'")
-                            except Exception as e:
-                                logger.debug(f"Method 5 failed: {e}")
-                        
-                        # Method 6: Click composer pagelet
+                        # Method 9: Click composer pagelet
                         if not post_box_clicked:
                             try:
                                 self.page.click('div[data-pagelet*="Composer"], div[data-pagelet*="composer"]', timeout=5000)
                                 post_box_clicked = True
-                                logger.info("✓ Method 6: Clicked composer pagelet")
+                                logger.info("✓ Method 9: Clicked composer pagelet")
                             except Exception as e:
-                                logger.debug(f"Method 6 failed: {e}")
+                                logger.debug(f"Method 9 failed: {e}")
                         
-                        # Method 7: Find any clickable element with "what's on your mind" text
+                        # Method 10: Click any element with "What's on your mind"
                         if not post_box_clicked:
                             try:
                                 self.page.click('div:has-text("What\'s on your mind")', timeout=5000)
                                 post_box_clicked = True
-                                logger.info("✓ Method 7: Clicked 'What's on your mind'")
+                                logger.info("✓ Method 10: Clicked 'What's on your mind'")
                             except Exception as e:
-                                logger.debug(f"Method 7 failed: {e}")
+                                logger.debug(f"Method 10 failed: {e}")
                         
                         if not post_box_clicked:
                             result['error'] = 'Could not find post creation area'
@@ -483,24 +526,42 @@ class FacebookGroupSpam:
                                 # Step 4: Click Post button
                                 posted = False
                                 
-                                # Method 1: Direct click on aria-label="Post"
+                                # Method 1: French "Publier" (for French FB)
                                 try:
-                                    self.page.click('div[aria-label="Post"]', timeout=5000)
+                                    self.page.click('div[aria-label="Publier"]', timeout=5000)
                                     posted = True
-                                    logger.info("Clicked Post button (aria-label)")
+                                    logger.info("✓ Clicked 'Publier' button (French)")
                                 except:
                                     pass
                                 
-                                # Method 2: Get by role
+                                # Method 2: English "Post"
+                                if not posted:
+                                    try:
+                                        self.page.click('div[aria-label="Post"]', timeout=5000)
+                                        posted = True
+                                        logger.info("✓ Clicked 'Post' button (English)")
+                                    except:
+                                        pass
+                                
+                                # Method 3: Get by role (French)
+                                if not posted:
+                                    try:
+                                        self.page.get_by_role("button", name="Publier").click()
+                                        posted = True
+                                        logger.info("✓ Clicked Publier button (role)")
+                                    except:
+                                        pass
+                                
+                                # Method 4: Get by role (English)
                                 if not posted:
                                     try:
                                         self.page.get_by_role("button", name="Post").click()
                                         posted = True
-                                        logger.info("Clicked Post button (role)")
+                                        logger.info("✓ Clicked Post button (role)")
                                     except:
                                         pass
                                 
-                                # Method 3: Keyboard shortcut
+                                # Method 5: Keyboard shortcut
                                 if not posted:
                                     try:
                                         self.page.keyboard.press('Control+Enter')

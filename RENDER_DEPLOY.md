@@ -43,7 +43,7 @@ Replace `YOUR_USERNAME` with your GitHub username.
 |-------|-------|
 | **Name** | `fb-auto-poster` |
 | **Runtime** | `Python 3` |
-| **Build Command** | `pip install -r requirements.txt` |
+| **Build Command** | `chmod +x build.sh && ./build.sh` |
 | **Start Command** | `python run_server.py` |
 | **Instance Type** | `Free` |
 

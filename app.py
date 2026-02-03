@@ -701,17 +701,32 @@ def discover_groups_api():
             cookies = json.load(f)
         
         # Start browser with optimized settings and stealth
-        playwright = sync_playwright().start()
-        browser = playwright.chromium.launch(
-            headless=True,
-            args=[
-                '--disable-blink-features=AutomationControlled',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--no-sandbox',
-                '--disable-setuid-sandbox'
-            ]
-        )
+        playwright = None
+        browser = None
+        try:
+            playwright = sync_playwright().start()
+            browser = playwright.chromium.launch(
+                headless=True,
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox'
+                ]
+            )
+        except Exception as browser_error:
+            error_msg = str(browser_error)
+            logger.error(f"Browser launch error: {error_msg}")
+            # Check if browsers are not installed
+            if "Executable doesn't exist" in error_msg or "browserType.launch" in error_msg:
+                return jsonify({
+                    'success': False,
+                    'error': 'Playwright browsers not installed',
+                    'message': 'Server needs Playwright browsers. Run: playwright install chromium'
+                }), 500
+            raise browser_error
+        
         context = browser.new_context(
             viewport={'width': 1920, 'height': 1080},
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
