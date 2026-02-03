@@ -779,13 +779,13 @@ def discover_groups_api():
         
         discovered = []
         seen_urls = set()
-        MAX_GROUPS = 50  # Limit to prevent timeout
+        MAX_GROUPS = 10  # Only 10 groups - super fast to avoid timeout
         
         try:
-            # ULTRA FAST - Go directly to groups page
-            logger.info("=== ULTRA FAST GROUP DISCOVERY (max 50 groups) ===")
-            page.goto("https://www.facebook.com/groups/joins", timeout=20000)
-            page.wait_for_load_state('domcontentloaded', timeout=10000)
+            # INSTANT - Go directly to groups page, grab first 10 only
+            logger.info("=== INSTANT GROUP DISCOVERY (max 10 groups) ===")
+            page.goto("https://www.facebook.com/groups/joins", timeout=15000)
+            page.wait_for_load_state('domcontentloaded', timeout=8000)
             
             # Check if session is valid
             current_url = page.url
@@ -799,103 +799,88 @@ def discover_groups_api():
             
             logger.info(f"Session valid - URL: {current_url}")
             
-            # Wait for initial content
+            # Wait for groups to appear
             try:
-                page.wait_for_selector('a[href*="/groups/"]', timeout=8000)
+                page.wait_for_selector('a[href*="/groups/"]', timeout=5000)
             except:
                 pass
             
-            # Very short wait
-            page.wait_for_timeout(500)
+            # NO scrolling - just grab what's visible immediately
+            group_links = page.query_selector_all('a[href*="/groups/"]')
+            logger.info(f"Found {len(group_links)} group links on page")
             
-            # Only 2 scrolls - stop early if we have enough groups
-            max_scroll = 2
-            for scroll_num in range(max_scroll):
-                # Stop if we have enough groups
+            for link in group_links:
+                # Stop if we have enough
                 if len(discovered) >= MAX_GROUPS:
                     logger.info(f"Reached max groups limit ({MAX_GROUPS})")
                     break
                 
-                # Get all group links
-                group_links = page.query_selector_all('a[href*="/groups/"]')
-                
-                for link in group_links:
-                    # Stop if we have enough
-                    if len(discovered) >= MAX_GROUPS:
-                        break
+                try:
+                    href = link.get_attribute('href')
+                    text = link.text_content().strip()
                     
-                    try:
-                        href = link.get_attribute('href')
-                        text = link.text_content().strip()
-                        
-                        if not href or not text or '/groups/' not in href:
-                            continue
-                        
-                        # Clean URL - remove query params
-                        if '?' in href:
-                            href = href.split('?')[0]
-                        
-                        # Extract group part
-                        parts = href.split('/groups/')
-                        if len(parts) < 2:
-                            continue
-                        
-                        group_id = parts[1].rstrip('/')
-                        
-                        # Skip if already seen
-                        if group_id in seen_urls:
-                            continue
-                        
-                        # FILTER: Skip invalid paths (not actual group pages)
-                        # Skip if contains sub-paths like /posts/, /members/, /about/, etc.
-                        if '/' in group_id:
-                            continue
-                        
-                        # Skip Facebook internal pages
-                        skip_keywords = ['feed', 'discover', 'joins', 'create', 'notifications', 'settings', 'search']
-                        if group_id.lower() in skip_keywords:
-                            continue
-                        
-                        # Skip very short IDs (likely navigation elements)
-                        if len(group_id) < 3:
-                            continue
-                        
-                        # Clean group name - remove "Last active" and timestamp info
-                        group_name = text.split('Last active')[0].strip()
-                        group_name = group_name.split('Last updated')[0].strip()
-                        group_name = group_name.split('a few seconds ago')[0].strip()
-                        group_name = group_name.split('minutes ago')[0].strip()
-                        group_name = group_name.split('hours ago')[0].strip()
-                        group_name = group_name.split('days ago')[0].strip()
-                        
-                        # Skip generic names
-                        if group_name in ["Groups", "Group", "Your groups", "Discover", "Your feed", "feed", "discover", "joins"] or len(group_name) < 2:
-                            continue
-                        
-                        # Valid group found
-                        seen_urls.add(group_id)
-                        discovered.append({
-                            'name': group_name[:100],
-                            'username': group_id,
-                            'status': 'member',
-                            'type': 'group',
-                            'url': f"https://www.facebook.com/groups/{group_id}"
-                        })
-                    except:
-                        pass
-                
-                # Quick scroll - only if we need more groups
-                if scroll_num < max_scroll - 1 and len(discovered) < MAX_GROUPS:
-                    page.evaluate("window.scrollBy(0, 1500)")
-                    page.wait_for_timeout(500)
+                    if not href or not text or '/groups/' not in href:
+                        continue
+                    
+                    # Clean URL - remove query params
+                    if '?' in href:
+                        href = href.split('?')[0]
+                    
+                    # Extract group part
+                    parts = href.split('/groups/')
+                    if len(parts) < 2:
+                        continue
+                    
+                    group_id = parts[1].rstrip('/')
+                    
+                    # Skip if already seen
+                    if group_id in seen_urls:
+                        continue
+                    
+                    # FILTER: Skip invalid paths
+                    if '/' in group_id:
+                        continue
+                    
+                    # Skip Facebook internal pages
+                    skip_keywords = ['feed', 'discover', 'joins', 'create', 'notifications', 'settings', 'search']
+                    if group_id.lower() in skip_keywords:
+                        continue
+                    
+                    # Skip very short IDs
+                    if len(group_id) < 3:
+                        continue
+                    
+                    # Clean group name
+                    group_name = text.split('Last active')[0].strip()
+                    group_name = group_name.split('Last updated')[0].strip()
+                    group_name = group_name.split('a few seconds ago')[0].strip()
+                    group_name = group_name.split('minutes ago')[0].strip()
+                    group_name = group_name.split('hours ago')[0].strip()
+                    group_name = group_name.split('days ago')[0].strip()
+                    
+                    # Skip generic names
+                    if group_name in ["Groups", "Group", "Your groups", "Discover", "Your feed", "feed", "discover", "joins"] or len(group_name) < 2:
+                        continue
+                    
+                    # Valid group found
+                    seen_urls.add(group_id)
+                    discovered.append({
+                        'name': group_name[:100],
+                        'username': group_id,
+                        'status': 'member',
+                        'type': 'group',
+                        'url': f"https://www.facebook.com/groups/{group_id}"
+                    })
+                except:
+                    pass
             
-            logger.info(f"Found {len(discovered)} groups in {max_scroll} scrolls")
+            logger.info(f"Found {len(discovered)} valid groups")
             
             return jsonify({
                 'success': True,
                 'groups': discovered,
                 'count': len(discovered),
-                'message': f'Found {len(discovered)} groups!'
+                'message': f'Found {len(discovered)} groups! (Run again to discover more)'
             })
         
         except PlaywrightTimeout as e:
