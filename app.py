@@ -278,21 +278,56 @@ def upload_groups():
         if not groups:
             return jsonify({'success': False, 'error': 'No groups provided'}), 400
         
-        # Validate groups have required fields
+        # Normalize and validate groups - handle different formats
+        normalized_groups = []
         for g in groups:
-            if not g.get('username'):
-                return jsonify({'success': False, 'error': 'Groups must have username field'}), 400
+            # Handle different input formats
+            if isinstance(g, str):
+                # Just a group ID string
+                normalized_groups.append({
+                    'name': g,
+                    'username': g,
+                    'status': 'member'
+                })
+            elif isinstance(g, dict):
+                # Try to extract username from various fields
+                username = (
+                    g.get('username') or 
+                    g.get('id') or 
+                    g.get('group_id') or 
+                    g.get('groupId') or
+                    g.get('url', '').split('/groups/')[-1].strip('/').split('?')[0] or
+                    None
+                )
+                
+                if not username:
+                    logger.warning(f"[UPLOAD GROUPS] Skipping group with no identifier: {g}")
+                    continue
+                
+                name = g.get('name') or g.get('title') or g.get('groupName') or username
+                
+                normalized_groups.append({
+                    'name': name,
+                    'username': username,
+                    'status': g.get('status', 'member')
+                })
+            else:
+                logger.warning(f"[UPLOAD GROUPS] Skipping invalid group format: {g}")
+                continue
+        
+        if not normalized_groups:
+            return jsonify({'success': False, 'error': 'No valid groups found. Groups need an id, username, or url field.'}), 400
         
         # Save groups to file
         groups_path = os.path.join(PROJECT_ROOT, 'groups.json')
         with open(groups_path, 'w', encoding='utf-8') as f:
-            json.dump(groups, f, indent=2, ensure_ascii=False)
+            json.dump(normalized_groups, f, indent=2, ensure_ascii=False)
         
-        logger.info(f"[UPLOAD GROUPS] Successfully uploaded {len(groups)} groups")
+        logger.info(f"[UPLOAD GROUPS] Successfully uploaded {len(normalized_groups)} groups")
         return jsonify({
             'success': True, 
-            'message': f'Uploaded {len(groups)} groups successfully',
-            'count': len(groups)
+            'message': f'Uploaded {len(normalized_groups)} groups successfully',
+            'count': len(normalized_groups)
         }), 200
         
     except Exception as e:
