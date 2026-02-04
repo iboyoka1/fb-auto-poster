@@ -50,6 +50,29 @@
         </div>
       </div>
     </div>
+
+    <!-- Cookie Upload Section for Cloud Deployment -->
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-body">
+        <h3>🍪 Upload Cookies (For Cloud Hosting)</h3>
+        <p style="color: #666; margin-bottom: 15px;">
+          If you're running on Railway/Render (no browser window), extract cookies from your browser and paste them here.
+        </p>
+        <div style="margin-bottom: 15px;">
+          <strong>How to get cookies:</strong>
+          <ol style="margin-top: 10px; padding-left: 20px;">
+            <li>Install <a href="https://chrome.google.com/webstore/detail/editthiscookie" target="_blank">EditThisCookie</a> extension</li>
+            <li>Go to facebook.com and login</li>
+            <li>Click EditThisCookie icon → Export (copies JSON)</li>
+            <li>Paste the JSON below</li>
+          </ol>
+        </div>
+        <textarea id="cookieJson" rows="8" style="width: 100%; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder='[{"name": "c_user", "value": "...", "domain": ".facebook.com", ...}]'></textarea>
+        <br><br>
+        <button id="uploadCookies" class="btn btn-primary">📤 Upload Cookies</button>
+        <span id="uploadStatus" style="margin-left: 15px;"></span>
+      </div>
+    </div>
   </main>
 </div>
 {% endblock %}
@@ -80,6 +103,49 @@ async function checkSession() {
   }
 }
 
+async function uploadCookies() {
+  const textarea = document.getElementById('cookieJson');
+  const statusEl = document.getElementById('uploadStatus');
+  const btn = document.getElementById('uploadCookies');
+  
+  const cookieText = textarea.value.trim();
+  if (!cookieText) {
+    alert('Please paste your cookies JSON first');
+    return;
+  }
+  
+  // Validate JSON
+  try {
+    JSON.parse(cookieText);
+  } catch (e) {
+    alert('Invalid JSON format. Please paste valid cookie JSON.');
+    return;
+  }
+  
+  btn.disabled = true;
+  statusEl.textContent = 'Uploading...';
+  
+  try {
+    const res = await fetch('/api/upload-cookies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cookies: cookieText })
+    });
+    const data = await res.json();
+    if (data.success) {
+      statusEl.innerHTML = '<span style="color: green;">✅ ' + data.message + '</span>';
+      textarea.value = '';
+      checkSession();
+    } else {
+      statusEl.innerHTML = '<span style="color: red;">❌ ' + (data.error || 'Upload failed') + '</span>';
+    }
+  } catch (e) {
+    statusEl.innerHTML = '<span style="color: red;">❌ Error: ' + e.message + '</span>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function startManualLogin() {
   const btn = document.getElementById('startManualLogin');
   btn.disabled = true;
@@ -106,6 +172,7 @@ async function startManualLogin() {
 }
 
 document.getElementById('startManualLogin').addEventListener('click', startManualLogin);
+document.getElementById('uploadCookies').addEventListener('click', uploadCookies);
 checkSession();
 sessionCheckInterval = setInterval(checkSession, 8000);
 </script>

@@ -1641,6 +1641,72 @@ def fb_manual_login():
         logger.exception("Error in /api/fb-manual-login")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/upload-cookies', methods=['POST'])
+@login_required
+def upload_cookies():
+    """Upload Facebook cookies directly (for cloud deployment where browser won't work)"""
+    try:
+        import json
+        import os
+        
+        data = request.get_json()
+        if not data or 'cookies' not in data:
+            return jsonify({'success': False, 'error': 'No cookies provided'})
+        
+        cookie_text = data['cookies']
+        
+        # Parse the cookies JSON
+        try:
+            cookies = json.loads(cookie_text)
+        except json.JSONDecodeError as e:
+            return jsonify({'success': False, 'error': f'Invalid JSON: {str(e)}'})
+        
+        if not isinstance(cookies, list):
+            return jsonify({'success': False, 'error': 'Cookies must be a JSON array'})
+        
+        # Validate required cookies
+        cookie_names = {c.get('name') for c in cookies if isinstance(c, dict)}
+        if 'c_user' not in cookie_names or 'xs' not in cookie_names:
+            return jsonify({'success': False, 'error': 'Missing required cookies (c_user and xs). Make sure you are logged into Facebook.'})
+        
+        # Save cookies to file
+        sessions_dir = os.path.join(PROJECT_ROOT, 'sessions')
+        os.makedirs(sessions_dir, exist_ok=True)
+        cookie_path = os.path.join(sessions_dir, 'facebook-cookies.json')
+        
+        with open(cookie_path, 'w', encoding='utf-8') as f:
+            json.dump(cookies, f, indent=2)
+        
+        logger.info(f"Cookies uploaded successfully: {len(cookies)} cookies saved")
+        
+        # Update accounts.json
+        try:
+            c_user = next((c.get('value') for c in cookies if c.get('name') == 'c_user'), None)
+            if c_user:
+                account_file = os.path.join(PROJECT_ROOT, 'accounts.json')
+                accounts = []
+                if os.path.exists(account_file):
+                    with open(account_file, 'r', encoding='utf-8') as f:
+                        accounts = json.load(f)
+                
+                existing = next((a for a in accounts if a.get('user_id') == c_user), None)
+                if not existing:
+                    accounts.append({
+                        'user_id': c_user,
+                        'status': 'active',
+                        'cookie_file': 'facebook-cookies.json',
+                        'login_date': datetime.now().isoformat()
+                    })
+                    with open(account_file, 'w', encoding='utf-8') as f:
+                        json.dump(accounts, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            logger.warning(f"Failed to update accounts.json: {e}")
+        
+        return jsonify({'success': True, 'message': f'Cookies saved! ({len(cookies)} cookies)'})
+    except Exception as e:
+        logger.exception("Error uploading cookies")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/login-status', methods=['GET'])
 @login_required
 def check_login_status():
