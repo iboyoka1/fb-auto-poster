@@ -892,7 +892,7 @@ def discover_groups_api():
             discovered.append({
                 'name': group_name,
                 'username': group_id,
-                'status': 'member',
+                'status': 'straight',  # Active by default so they show in post form
                 'type': 'group',
                 'url': f"https://www.facebook.com/groups/{group_id}"
             })
@@ -1157,7 +1157,7 @@ def bulk_add_groups():
                 existing_groups.append({
                     'name': group['name'],
                     'username': group['username'],
-                    'status': group.get('status', 'member')
+                    'status': group.get('status', 'straight')  # Active by default
                 })
                 existing_usernames.add(group['username'])
                 added_count += 1
