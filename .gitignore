@@ -8,6 +8,7 @@ configs.py
 sessions/
 logs/
 *.log
+browser_profile/
 
 ### macOS ###
 # General

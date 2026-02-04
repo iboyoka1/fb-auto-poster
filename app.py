@@ -1401,12 +1401,12 @@ def fb_manual_login():
         login_status = {'success': False, 'message': '', 'cookies_saved': False}
 
         def run_manual_login():
-            # Open browser and wait for user to complete login, then save cookies automatically
-            # Don't set FB_DEBUG - it opens DevTools which is annoying
-            poster = FacebookGroupSpam(headless=False)
+            # Open browser with PERSISTENT PROFILE and wait for user to complete login
+            # This saves the session to the browser profile for future use
+            poster = FacebookGroupSpam(headless=False, use_persistent=True)
             try:
                 poster.start_browser()
-                logger.info("Manual login: browser opened for manual login")
+                logger.info("Manual login: browser opened with PERSISTENT PROFILE for manual login")
                 login_status['message'] = 'Browser opened. Please login to Facebook...'
                 
                 # Navigate to Facebook
@@ -1510,7 +1510,7 @@ def fb_manual_login():
                             saved = True
                             login_status['success'] = True
                             login_status['cookies_saved'] = True
-                            login_status['message'] = f'Login successful! Cookies saved.'
+                            login_status['message'] = f'Login successful! Session saved to persistent browser profile + cookies.'
                             break
                     except Exception as e:
                         logger.debug(f"Manual login: checking cookies attempt {attempt} failed: {e}")
