@@ -596,12 +596,12 @@ async function loadGroups() {
         const data = await response.json();
         
         if (data.success) {
-            // Show all groups (member, straight, active, etc.) - not just 'straight'
-            groups = data.groups;
+            // Filter to show ONLY active groups (status = 'straight' or 'active')
+            groups = data.groups.filter(g => g.status === 'straight' || g.status === 'active');
             
             const container = document.getElementById('groupsList');
             if (groups.length === 0) {
-                container.innerHTML = '<p class="text-muted" style="padding: 20px; text-align: center;">No groups found. <a href="/groups">Discover groups</a> first.</p>';
+                container.innerHTML = '<p class="text-muted" style="padding: 20px; text-align: center;">Aucun groupe actif trouvé. <a href="/groups">Activez des groupes</a> d\'abord.</p>';
             } else {
                 container.innerHTML = `
                     <div class="groups-grid">
@@ -624,7 +624,7 @@ async function loadGroups() {
         }
     } catch (error) {
         console.error('Failed to load groups:', error);
-        document.getElementById('groupsList').innerHTML = '<p class="error" style="padding: 20px; text-align: center;">Failed to load groups</p>';
+        document.getElementById('groupsList').innerHTML = '<p class="error" style="padding: 20px; text-align: center;">Échec du chargement des groupes</p>';
     }
 }
 

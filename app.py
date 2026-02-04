@@ -1187,10 +1187,12 @@ def create_post():
             content = data.get('content', '')
             selected_groups = data.get('groups', [])
             media_files = []
+            logger.info(f"[POST] JSON request - groups received: {selected_groups}")
         else:
             # Handle file uploads
             content = request.form.get('content', '')
             selected_groups = request.form.getlist('groups[]')
+            logger.info(f"[POST] Form request - groups[] received: {selected_groups}")
             # Keep as strings - usernames can be numeric IDs or alphanumeric names
             
             # Handle uploaded files
@@ -1218,6 +1220,8 @@ def create_post():
         # Load all groups
         with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
             all_groups = json.load(f)
+        
+        logger.info(f"[POST] All groups in file: {len(all_groups)} - usernames: {[g.get('username') for g in all_groups]}")
 
         # Accept both indices and usernames for selected_groups
         groups_to_post = []
@@ -1227,13 +1231,20 @@ def create_post():
                     # Index
                     if 0 <= g < len(all_groups):
                         groups_to_post.append(all_groups[g])
+                        logger.info(f"[POST] Matched group by index {g}")
                 elif isinstance(g, str):
-                    # Username
+                    # Username - match against all groups
                     match = next((grp for grp in all_groups if str(grp.get('username')) == str(g)), None)
                     if match:
                         groups_to_post.append(match)
+                        logger.info(f"[POST] Matched group by username: {g}")
+                    else:
+                        logger.warning(f"[POST] No match found for username: {g}")
         else:
             groups_to_post = all_groups
+            logger.info("[POST] No groups selected, using all groups")
+        
+        logger.info(f"[POST] Final groups to post: {len(groups_to_post)}")
 
         if not groups_to_post:
             conn = sqlite3.connect(DATABASE)
