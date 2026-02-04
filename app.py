@@ -2566,6 +2566,55 @@ def get_enabled_features():
     })
 
 
+@app.route('/api/clear-all-data', methods=['POST'])
+@login_required
+def clear_all_data():
+    """Clear all groups and post history - start fresh"""
+    try:
+        results = {
+            'groups_cleared': False,
+            'database_cleared': False,
+            'errors': []
+        }
+        
+        # 1. Clear groups.json
+        groups_file = os.path.join(PROJECT_ROOT, 'groups.json')
+        try:
+            with open(groups_file, 'w') as f:
+                json.dump([], f)
+            results['groups_cleared'] = True
+            logger.info("[CLEAR DATA] Groups cleared")
+        except Exception as e:
+            results['errors'].append(f"Groups: {str(e)}")
+            logger.error(f"[CLEAR DATA] Failed to clear groups: {e}")
+        
+        # 2. Clear database tables (posts and analytics)
+        try:
+            conn = sqlite3.connect(DATABASE)
+            c = conn.cursor()
+            c.execute('DELETE FROM posts')
+            c.execute('DELETE FROM analytics')
+            conn.commit()
+            conn.close()
+            results['database_cleared'] = True
+            logger.info("[CLEAR DATA] Database cleared")
+        except Exception as e:
+            results['errors'].append(f"Database: {str(e)}")
+            logger.error(f"[CLEAR DATA] Failed to clear database: {e}")
+        
+        success = results['groups_cleared'] and results['database_cleared']
+        
+        return jsonify({
+            'success': success,
+            'message': 'All data cleared! You can now discover new groups.' if success else 'Partial clear',
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"[CLEAR DATA] Error: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
 if __name__ == '__main__':
     init_db()
     host = os.environ.get('HOST', SERVER_HOST)

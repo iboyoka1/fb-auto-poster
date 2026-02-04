@@ -109,8 +109,8 @@
                 </button>
             </div>
         </header>
-        <div class="toolbar" style="display:flex; gap:12px; align-items:center; margin-bottom:16px;">
-            <input type="text" id="groupSearch" placeholder="Search groups by name or username" style="flex:1; padding:10px; border:2px solid #e5e7eb; border-radius:8px;">
+        <div class="toolbar" style="display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap: wrap;">
+            <input type="text" id="groupSearch" placeholder="Search groups by name or username" style="flex:1; padding:10px; border:2px solid #e5e7eb; border-radius:8px; min-width: 200px;">
             <label class="btn btn-secondary" for="csvFile">Select CSV</label>
             <input type="file" id="csvFile" accept=".csv" style="display:none;" />
             <button id="importCsvBtn" class="btn btn-secondary">
@@ -120,6 +120,13 @@
                     <path d="M20 12a8 8 0 1 0-16 0"></path>
                 </svg>
                 Import CSV
+            </button>
+            <button id="clearAllDataBtn" class="btn" style="background: #dc2626; color: white;" title="Clear all groups and post history to start fresh">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Clear All Data
             </button>
         </div>
         
@@ -696,6 +703,39 @@ async function addSelectedDiscoveredGroups() {
         alert('Error: ' + error.message);
     }
 }
+
+// Clear All Data handler
+document.getElementById('clearAllDataBtn').addEventListener('click', async function() {
+    if (!confirm('⚠️ WARNING: This will delete ALL groups and post history!\n\nYour cookies (login) will be kept.\n\nAre you sure you want to start fresh?')) {
+        return;
+    }
+    
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span>Clearing...</span>';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/clear-all-data', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ All data cleared!\n\nNow click "Auto-Discover Groups" to find your groups fresh from Facebook.');
+            await loadGroups();
+        } else {
+            alert('Error: ' + (data.error || JSON.stringify(data.results)));
+        }
+    } catch (error) {
+        alert('Error clearing data: ' + error.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
 
 // Load groups immediately; check login in background to avoid blocking UI
 loadGroups();
