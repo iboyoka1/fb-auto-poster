@@ -596,11 +596,12 @@ async function loadGroups() {
         const data = await response.json();
         
         if (data.success) {
-            groups = data.groups.filter(g => g.status === 'straight');
+            // Show all groups (member, straight, active, etc.) - not just 'straight'
+            groups = data.groups;
             
             const container = document.getElementById('groupsList');
             if (groups.length === 0) {
-                container.innerHTML = '<p class="text-muted" style="padding: 20px; text-align: center;">No active groups. <a href="/groups">Add groups</a> first.</p>';
+                container.innerHTML = '<p class="text-muted" style="padding: 20px; text-align: center;">No groups found. <a href="/groups">Discover groups</a> first.</p>';
             } else {
                 container.innerHTML = `
                     <div class="groups-grid">
@@ -611,7 +612,7 @@ async function loadGroups() {
                                 <div class="group-info">
                                     <strong>${escapeHtml(g.name)}</strong>
                                     <small style="color: #65676b; display: block; margin-top: 3px;">
-                                        ${g.type || 'group'} • ${g.status}
+                                        ID: ${g.username}
                                     </small>
                                 </div>
                             </label>
