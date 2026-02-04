@@ -6,11 +6,15 @@ import logging
 
 logger = logging.getLogger('fb_auto_poster.main')
 
+# Persistent browser profile directory
+BROWSER_PROFILE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'browser_profile')
+
 class FacebookGroupSpam:
-    def __init__(self, post_content=None, headless=True, media_files=None):
+    def __init__(self, post_content=None, headless=True, media_files=None, use_persistent=True):
         self.post_content = post_content
         self.headless = headless
         self.media_files = media_files
+        self.use_persistent = use_persistent  # Use persistent browser profile
         self.browser = None
         self.context = None
         self.page = None
@@ -18,6 +22,10 @@ class FacebookGroupSpam:
 
     def start_browser(self):
         self.playwright = sync_playwright().start()
+        
+        # Ensure profile directory exists
+        os.makedirs(BROWSER_PROFILE_DIR, exist_ok=True)
+        
         # Use stable browser args for headless Docker environments
         browser_args = [
             '--disable-blink-features=AutomationControlled',
@@ -26,40 +34,62 @@ class FacebookGroupSpam:
             '--disable-gpu',
             '--disable-software-rasterizer',
             '--disable-extensions',
-            '--headless=new',  # New headless mode for better compatibility
         ]
         
-        # Use Chromium first (better Docker/headless support), fall back to Firefox
-        try:
-            self.browser = self.playwright.chromium.launch(
-                headless=self.headless,
-                args=browser_args,
-                slow_mo=50
-            )
-            logger.info("Using Chromium browser")
-        except Exception as e:
-            logger.warning(f"Chromium failed, trying Firefox: {e}")
+        if self.headless:
+            browser_args.append('--headless=new')  # New headless mode for better compatibility
+        
+        # Context options
+        context_options = {
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'viewport': {'width': 1280, 'height': 720},
+            'ignore_https_errors': True,
+            'locale': 'fr-FR',  # French locale for consistency
+            'timezone_id': 'Europe/Paris',
+            'permissions': ['geolocation'],
+            'java_script_enabled': True,
+        }
+        
+        # Use persistent context to remember login session
+        if self.use_persistent:
             try:
-                self.browser = self.playwright.firefox.launch(
+                logger.info(f"Using persistent browser profile: {BROWSER_PROFILE_DIR}")
+                self.context = self.playwright.chromium.launch_persistent_context(
+                    BROWSER_PROFILE_DIR,
                     headless=self.headless,
+                    args=browser_args,
+                    slow_mo=50,
+                    **context_options
+                )
+                self.page = self.context.pages[0] if self.context.pages else self.context.new_page()
+                logger.info("Using persistent Chromium browser context")
+            except Exception as e:
+                logger.warning(f"Persistent context failed, falling back to regular context: {e}")
+                self.use_persistent = False
+        
+        if not self.use_persistent:
+            # Fallback: Use regular browser context
+            try:
+                self.browser = self.playwright.chromium.launch(
+                    headless=self.headless,
+                    args=browser_args,
                     slow_mo=50
                 )
-                logger.info("Using Firefox browser")
-            except Exception as e2:
-                logger.error(f"Both browsers failed: Chromium={e}, Firefox={e2}")
-                raise Exception(f"Could not start any browser: {e2}")
-
-        # Use stable context settings with stealth measures
-        self.context = self.browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            viewport={'width': 1280, 'height': 720},
-            ignore_https_errors=True,
-            locale='en-US',
-            timezone_id='America/New_York',
-            permissions=['geolocation'],
-            java_script_enabled=True,
-        )
-        self.page = self.context.new_page()
+                logger.info("Using Chromium browser")
+            except Exception as e:
+                logger.warning(f"Chromium failed, trying Firefox: {e}")
+                try:
+                    self.browser = self.playwright.firefox.launch(
+                        headless=self.headless,
+                        slow_mo=50
+                    )
+                    logger.info("Using Firefox browser")
+                except Exception as e2:
+                    logger.error(f"Both browsers failed: Chromium={e}, Firefox={e2}")
+                    raise Exception(f"Could not start any browser: {e2}")
+            
+            self.context = self.browser.new_context(**context_options)
+            self.page = self.context.new_page()
         
         # Add stealth scripts to avoid bot detection
         self.page.add_init_script("""
@@ -75,7 +105,7 @@ class FacebookGroupSpam:
             
             // Override languages
             Object.defineProperty(navigator, 'languages', {
-                get: () => ['en-US', 'en']
+                get: () => ['fr-FR', 'fr', 'en-US', 'en']
             });
             
             // Remove automation-related properties
@@ -84,14 +114,15 @@ class FacebookGroupSpam:
             delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
         """)
         
-        logger.info("Browser started successfully")
+        logger.info("Browser started successfully with persistent profile")
 
     def close_browser(self):
         try:
-            if self.browser:
-                self.browser.close()
+            if self.context:
+                self.context.close()
+                logger.info("Browser context closed (session saved to persistent profile)")
         except Exception as e:
-            logger.warning(f"Error closing browser: {e}")
+            logger.warning(f"Error closing browser context: {e}")
         try:
             if hasattr(self, 'playwright'):
                 self.playwright.stop()
