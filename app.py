@@ -907,6 +907,155 @@ def discover_groups_api():
             'message': 'Failed to discover groups'
         }), 500
 
+
+# Store discovered groups temporarily for batch processing
+DISCOVERY_CACHE = {}
+
+@app.route('/api/discover-groups-batch', methods=['POST'])
+@login_required
+def discover_groups_batch():
+    """
+    Discover groups in batches of 5.
+    First call: discovers all groups and caches them
+    Subsequent calls with batch parameter: returns next 5 groups
+    """
+    import requests as req_lib
+    import re
+    
+    try:
+        data = request.get_json(silent=True) or {}
+        batch_num = data.get('batch', 0)
+        batch_size = 5
+        session_id = session.get('username', 'default')
+        
+        # If batch > 0, return from cache
+        if batch_num > 0 and session_id in DISCOVERY_CACHE:
+            cached = DISCOVERY_CACHE[session_id]
+            start_idx = batch_num * batch_size
+            end_idx = start_idx + batch_size
+            batch_groups = cached['groups'][start_idx:end_idx]
+            
+            has_more = end_idx < len(cached['groups'])
+            
+            return jsonify({
+                'success': True,
+                'groups': batch_groups,
+                'batch': batch_num,
+                'total_found': len(cached['groups']),
+                'has_more': has_more,
+                'message': f'Batch {batch_num + 1}: {len(batch_groups)} groups'
+            })
+        
+        # First call - discover all groups quickly
+        logger.info("=== BATCH GROUP DISCOVERY ===")
+        
+        # Load session cookies
+        cookie_file = f"{PROJECT_ROOT}/sessions/facebook-cookies.json"
+        if not os.path.exists(cookie_file):
+            return jsonify({
+                'success': False,
+                'error': 'No saved session found',
+                'message': 'Please upload cookies first'
+            }), 400
+        
+        with open(cookie_file, 'r') as f:
+            cookies_list = json.load(f)
+        
+        cookies = {c['name']: c['value'] for c in cookies_list}
+        
+        if 'c_user' not in cookies or 'xs' not in cookies:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid cookies',
+                'message': 'Missing c_user or xs cookie.'
+            }), 400
+        
+        user_id = cookies.get('c_user', '')
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+        }
+        
+        http_session = req_lib.Session()
+        http_session.cookies.update(cookies)
+        http_session.headers.update(headers)
+        
+        discovered = []
+        seen_ids = set()
+        
+        # Only try 2 URLs max to be fast
+        urls_to_try = [
+            'https://mbasic.facebook.com/groups/?category=membership',
+            f'https://mbasic.facebook.com/{user_id}/groups' if user_id else 'https://mbasic.facebook.com/groups/',
+        ]
+        
+        for url in urls_to_try[:2]:
+            try:
+                logger.info(f"Fetching: {url}")
+                response = http_session.get(url, timeout=10, allow_redirects=True)
+                
+                if '/login' in response.url:
+                    continue
+                
+                html = response.text
+                
+                # Fast regex for group IDs
+                patterns = [
+                    r'href="/groups/(\d{8,})',
+                    r'/groups/(\d{10,})',
+                ]
+                
+                for pattern in patterns:
+                    for gid in re.findall(pattern, html):
+                        if gid and gid not in seen_ids and gid != user_id:
+                            seen_ids.add(gid)
+                            discovered.append({
+                                'name': gid,
+                                'username': gid,
+                                'status': 'member',
+                                'url': f'https://www.facebook.com/groups/{gid}'
+                            })
+                            
+            except Exception as e:
+                logger.warning(f"Error: {e}")
+                continue
+        
+        if not discovered:
+            return jsonify({
+                'success': False,
+                'error': 'No groups found',
+                'message': 'Could not find groups. Check cookies.'
+            }), 404
+        
+        # Cache results
+        DISCOVERY_CACHE[session_id] = {
+            'groups': discovered,
+            'timestamp': time.time()
+        }
+        
+        # Return first batch of 5
+        first_batch = discovered[:batch_size]
+        has_more = len(discovered) > batch_size
+        
+        return jsonify({
+            'success': True,
+            'groups': first_batch,
+            'batch': 0,
+            'total_found': len(discovered),
+            'has_more': has_more,
+            'message': f'Found {len(discovered)} groups! Showing first {len(first_batch)}'
+        })
+        
+    except Exception as e:
+        logger.error(f"Batch discovery error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/api/groups/bulk-add', methods=['POST'])
 @login_required
 def bulk_add_groups():

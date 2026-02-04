@@ -479,62 +479,147 @@ window.onclick = function(event) {
     }
 }
 
-// Auto-discover groups button
+// Store all discovered groups for batch processing
+let allDiscoveredGroups = [];
+let currentBatch = 0;
+let hasMoreBatches = false;
+
+// Auto-discover groups button - BATCH MODE (5 at a time)
 document.getElementById('discoverGroupsBtn').addEventListener('click', async function() {
     const btn = this;
     const originalText = btn.innerHTML;
+    
+    // Reset for new discovery
+    allDiscoveredGroups = [];
+    currentBatch = 0;
     
     btn.disabled = true;
     btn.innerHTML = '<span style="display:inline-block; width:16px; height:16px; border:2px solid #f3f3f3; border-top:2px solid #667eea; border-radius:50%; animation:spin 1s linear infinite; margin-right:6px; vertical-align:middle;"></span> Discovering...';
     
     try {
-        const response = await fetch('/api/discover-groups', {
+        // First batch call
+        const response = await fetch('/api/discover-groups-batch', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({ batch: 0 })
         });
         
         // Check if response is JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-            const text = await response.text();
-            console.error('Non-JSON response:', text.substring(0, 500));
-            throw new Error('Server returned HTML instead of JSON. Check if you are logged in.');
+            throw new Error('Server is restarting. Please wait 30 seconds and try again.');
         }
         
         const data = await response.json();
         
         if (data.success && data.groups.length > 0) {
-            showDiscoveryResults(data.groups);
+            allDiscoveredGroups = data.groups;
+            hasMoreBatches = data.has_more;
+            showBatchDiscoveryResults(data.groups, data.total_found, data.has_more);
         } else if (!data.success) {
-            alert('Error: ' + data.message);
+            alert('Error: ' + (data.message || data.error));
         } else {
-            alert('No groups found');
+            alert('No groups found. Make sure cookies are uploaded.');
         }
     } catch (error) {
-        alert('Error discovering groups: ' + error.message);
+        if (error.message.includes('<!DOCTYPE') || error.message.includes('Unexpected token')) {
+            alert('Server is restarting. Please wait 30 seconds and refresh the page.');
+        } else {
+            alert('Error discovering groups: ' + error.message);
+        }
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
 });
 
-function showDiscoveryResults(discoveredGroups) {
+async function loadMoreGroups() {
+    const btn = document.getElementById('loadMoreBtn');
+    if (!btn) return;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display:inline-block; width:14px; height:14px; border:2px solid #f3f3f3; border-top:2px solid #667eea; border-radius:50%; animation:spin 1s linear infinite; margin-right:6px;"></span> Loading...';
+    
+    try {
+        currentBatch++;
+        const response = await fetch('/api/discover-groups-batch', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ batch: currentBatch })
+        });
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server error');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.groups.length > 0) {
+            // Add new groups to list
+            allDiscoveredGroups = [...allDiscoveredGroups, ...data.groups];
+            hasMoreBatches = data.has_more;
+            
+            // Update the displayed list
+            const list = document.getElementById('discoveredGroupsList');
+            data.groups.forEach((group, idx) => {
+                const globalIndex = allDiscoveredGroups.length - data.groups.length + idx;
+                const item = document.createElement('div');
+                item.style.cssText = 'display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #f0f0f0;';
+                item.innerHTML = `
+                    <input type="checkbox" class="discovered-group-checkbox" value="${globalIndex}" data-name="${escapeHtml(group.name)}" data-username="${escapeHtml(group.username)}" checked style="margin-right:12px; width:18px; height:18px; cursor:pointer;">
+                    <div style="flex:1;">
+                        <strong>${escapeHtml(group.name)}</strong>
+                        <br>
+                        <small style="color:#666;">${escapeHtml(group.username)}</small>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+            
+            // Update header count
+            const header = document.querySelector('#discoveryModal .modal-header h3');
+            if (header) {
+                header.textContent = `Discovered ${allDiscoveredGroups.length} of ${data.total_found} Groups`;
+            }
+            
+            // Hide button if no more
+            if (!data.has_more) {
+                btn.style.display = 'none';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = `Load Next 5 (${data.total_found - allDiscoveredGroups.length} remaining)`;
+            }
+        }
+    } catch (error) {
+        alert('Error loading more groups: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = 'Load More Groups';
+    }
+}
+
+function showBatchDiscoveryResults(discoveredGroups, totalFound, hasMore) {
     const html = `
     <div id="discoveryModal" class="modal" style="display:block;">
         <div class="modal-content" style="max-width:600px;">
             <div class="modal-header">
-                <h3>Discovered ${discoveredGroups.length} Groups</h3>
+                <h3>Discovered ${discoveredGroups.length} of ${totalFound} Groups</h3>
                 <button class="modal-close" onclick="closeDiscoveryModal()">&times;</button>
             </div>
             <div style="max-height: 400px; overflow-y: auto; padding: 20px; border-bottom: 1px solid #e5e7eb;">
                 <div id="discoveredGroupsList"></div>
+                ${hasMore ? `<button id="loadMoreBtn" class="btn btn-secondary" onclick="loadMoreGroups()" style="width:100%; margin-top:15px;">Load Next 5 (${totalFound - discoveredGroups.length} remaining)</button>` : ''}
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" style="display:flex; gap:10px;">
                 <button type="button" class="btn btn-secondary" onclick="closeDiscoveryModal()">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="addSelectedDiscoveredGroups()">Add Selected Groups</button>
+                <button type="button" class="btn btn-outline" onclick="selectAllDiscovered()" style="border:1px solid #667eea; color:#667eea;">Select All</button>
+                <button type="button" class="btn btn-success" onclick="addSelectedDiscoveredGroups()">Add Selected</button>
             </div>
         </div>
     </div>
@@ -550,20 +635,28 @@ function showDiscoveryResults(discoveredGroups) {
         const item = document.createElement('div');
         item.style.cssText = 'display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #f0f0f0;';
         item.innerHTML = `
-            <input type="checkbox" class="discovered-group-checkbox" value="${index}" data-name="${group.name}" data-username="${group.username}" checked style="margin-right:12px; width:18px; height:18px; cursor:pointer;">
+            <input type="checkbox" class="discovered-group-checkbox" value="${index}" data-name="${escapeHtml(group.name)}" data-username="${escapeHtml(group.username)}" checked style="margin-right:12px; width:18px; height:18px; cursor:pointer;">
             <div style="flex:1;">
-                <strong>${group.name}</strong>
+                <strong>${escapeHtml(group.name)}</strong>
                 <br>
-                <small style="color:#666;">${group.username}</small>
+                <small style="color:#666;">${escapeHtml(group.username)}</small>
             </div>
         `;
         list.appendChild(item);
     });
 }
 
+function selectAllDiscovered() {
+    const checkboxes = document.querySelectorAll('.discovered-group-checkbox');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+}
+
 function closeDiscoveryModal() {
     const modal = document.getElementById('discoveryModal');
     if (modal) modal.remove();
+    allDiscoveredGroups = [];
+    currentBatch = 0;
 }
 
 async function addSelectedDiscoveredGroups() {
