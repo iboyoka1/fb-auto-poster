@@ -437,7 +437,7 @@ class FacebookGroupSpam:
                 
                 # Navigate to group
                 group_url = f"https://www.facebook.com/groups/{group_id}"
-                self.page.goto(group_url, timeout=120000)  # 2 minutes for Render
+                self.page.goto(group_url, timeout=120000)  # 2 minutes timeout
                 self.page.wait_for_load_state('networkidle', timeout=60000)
                 
                 # Handle "Continue as [Name]" popup if it appears

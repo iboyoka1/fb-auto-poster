@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Settings - {{ app_name }}{% endblock %}
+{% block title %}Paramètres - {{ app_name }}{% endblock %}
 
 {% block body %}
 <div class="dashboard">
@@ -12,40 +12,40 @@
       <span>{{ app_name }}</span>
     </div>
     <ul class="nav-menu">
-      <li class="nav-item"><a href="/dashboard">Dashboard</a></li>
-      <li class="nav-item"><a href="/groups">Manage Groups</a></li>
-      <li class="nav-item"><a href="/post">Create Post</a></li>
-      <li class="nav-item"><a href="/history">Post History</a></li>
-      <li class="nav-item"><a href="/manual-login">Manual Login</a></li>
-      <li class="nav-item active"><a href="/settings">⚙️ Settings</a></li>
+      <li class="nav-item"><a href="/dashboard">Tableau de Bord</a></li>
+      <li class="nav-item"><a href="/groups">Gérer les Groupes</a></li>
+      <li class="nav-item"><a href="/post">Créer une Publication</a></li>
+      <li class="nav-item"><a href="/history">Historique</a></li>
+      <li class="nav-item"><a href="/manual-login">Connexion Manuelle</a></li>
+      <li class="nav-item active"><a href="/settings">⚙️ Paramètres</a></li>
     </ul>
     <div class="sidebar-footer">
-      <a href="/logout" class="btn-logout">Logout</a>
+      <a href="/logout" class="btn-logout">Déconnexion</a>
     </div>
   </nav>
 
   <main class="main-content">
     <header class="content-header">
-      <h2>⚙️ Settings</h2>
-      <button id="saveSettings" class="btn btn-primary">💾 Save Settings</button>
+      <h2>⚙️ Paramètres</h2>
+      <button id="saveSettings" class="btn btn-primary">💾 Enregistrer</button>
     </header>
 
     <div class="settings-container">
       <!-- Branding Section -->
       <div class="card">
         <div class="card-header">
-          <h3>🎨 Branding</h3>
+          <h3>🎨 Image de Marque</h3>
         </div>
         <div class="card-body">
           <div class="form-group">
-            <label for="appName">App Name</label>
+            <label for="appName">Nom de l'Application</label>
             <input type="text" id="appName" class="form-control" value="{{ settings.app_name }}" placeholder="FB Auto Poster">
-            <small>This name appears in the sidebar and browser title</small>
+            <small>Ce nom apparaît dans la barre latérale et le titre du navigateur</small>
           </div>
           <div class="form-group">
-            <label for="primaryColor">Primary Color</label>
+            <label for="primaryColor">Couleur Principale</label>
             <input type="color" id="primaryColor" value="{{ settings.primary_color or '#1877f2' }}" style="width: 80px; height: 40px;">
-            <small>Main accent color for buttons and links</small>
+            <small>Couleur d'accent principale pour les boutons et liens</small>
           </div>
         </div>
       </div>
@@ -53,35 +53,35 @@
       <!-- Posting Settings -->
       <div class="card">
         <div class="card-header">
-          <h3>📝 Posting Settings</h3>
+          <h3>📝 Paramètres de Publication</h3>
         </div>
         <div class="card-body">
           <div class="form-row">
             <div class="form-group">
-              <label for="minDelay">Min Delay Between Posts (seconds)</label>
+              <label for="minDelay">Délai Min Entre Publications (secondes)</label>
               <input type="number" id="minDelay" class="form-control" value="{{ settings.min_delay }}" min="5" max="600">
             </div>
             <div class="form-group">
-              <label for="maxDelay">Max Delay Between Posts (seconds)</label>
+              <label for="maxDelay">Délai Max Entre Publications (secondes)</label>
               <input type="number" id="maxDelay" class="form-control" value="{{ settings.max_delay }}" min="10" max="900">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="postsPerHour">Max Posts Per Hour</label>
+              <label for="postsPerHour">Max Publications Par Heure</label>
               <input type="number" id="postsPerHour" class="form-control" value="{{ settings.posts_per_hour }}" min="1" max="60">
-              <small>Rate limit to avoid Facebook blocks</small>
+              <small>Limite de taux pour éviter les blocages Facebook</small>
             </div>
             <div class="form-group">
-              <label for="groupsPerPost">Max Groups Per Post</label>
+              <label for="groupsPerPost">Max Groupes Par Publication</label>
               <input type="number" id="groupsPerPost" class="form-control" value="{{ settings.groups_per_post }}" min="1" max="100">
-              <small>Maximum groups to post to in one batch</small>
+              <small>Nombre maximum de groupes par lot</small>
             </div>
           </div>
           <div class="form-group">
-            <label for="retryCount">Retry Count Per Group</label>
+            <label for="retryCount">Nombre de Tentatives Par Groupe</label>
             <input type="number" id="retryCount" class="form-control" value="{{ settings.retry_count }}" min="0" max="5">
-            <small>Number of retries if posting fails</small>
+            <small>Nombre de tentatives si la publication échoue</small>
           </div>
         </div>
       </div>
@@ -89,22 +89,22 @@
       <!-- Activity Hours -->
       <div class="card">
         <div class="card-header">
-          <h3>🕐 Activity Hours</h3>
+          <h3>🕐 Heures d'Activité</h3>
         </div>
         <div class="card-body">
-          <p class="hint">Only post during these hours to appear more natural</p>
+          <p class="hint">Publiez uniquement pendant ces heures pour paraître plus naturel</p>
           <div class="form-row">
             <div class="form-group">
-              <label for="activityStart">Start Hour (24h format)</label>
+              <label for="activityStart">Heure de Début (format 24h)</label>
               <input type="number" id="activityStart" class="form-control" value="{{ settings.activity_start }}" min="0" max="23">
             </div>
             <div class="form-group">
-              <label for="activityEnd">End Hour (24h format)</label>
+              <label for="activityEnd">Heure de Fin (format 24h)</label>
               <input type="number" id="activityEnd" class="form-control" value="{{ settings.activity_end }}" min="0" max="23">
             </div>
           </div>
           <div class="form-group">
-            <label for="timezone">Timezone</label>
+            <label for="timezone">Fuseau Horaire</label>
             <select id="timezone" class="form-control">
               <option value="UTC" {% if settings.timezone == 'UTC' %}selected{% endif %}>UTC</option>
               <option value="Europe/Paris" {% if settings.timezone == 'Europe/Paris' %}selected{% endif %}>Europe/Paris</option>
@@ -123,43 +123,43 @@
       <!-- Features -->
       <div class="card">
         <div class="card-header">
-          <h3>🚀 Features</h3>
+          <h3>🚀 Fonctionnalités</h3>
         </div>
         <div class="card-body">
           <div class="toggle-group">
             <label class="toggle-label">
               <input type="checkbox" id="enableScheduling" {% if settings.enable_scheduling %}checked{% endif %}>
-              <span>Enable Scheduling</span>
+              <span>Activer la Planification</span>
             </label>
-            <small>Allow scheduling posts for later</small>
+            <small>Permettre de planifier des publications pour plus tard</small>
           </div>
           <div class="toggle-group">
             <label class="toggle-label">
               <input type="checkbox" id="enableSpintax" {% if settings.enable_spintax %}checked{% endif %}>
-              <span>Enable Spintax</span>
+              <span>Activer le Spintax</span>
             </label>
-            <small>Allow {word1|word2|word3} syntax for variation</small>
+            <small>Permettre la syntaxe {mot1|mot2|mot3} pour les variations</small>
           </div>
           <div class="toggle-group">
             <label class="toggle-label">
               <input type="checkbox" id="enableMediaLibrary" {% if settings.enable_media_library %}checked{% endif %}>
-              <span>Enable Media Library</span>
+              <span>Activer la Bibliothèque Médias</span>
             </label>
-            <small>Allow uploading and reusing images/videos</small>
+            <small>Permettre l'import et la réutilisation d'images/vidéos</small>
           </div>
           <div class="toggle-group">
             <label class="toggle-label">
               <input type="checkbox" id="enableTemplates" {% if settings.enable_templates %}checked{% endif %}>
-              <span>Enable Content Templates</span>
+              <span>Activer les Modèles de Contenu</span>
             </label>
-            <small>Save and reuse post templates</small>
+            <small>Sauvegarder et réutiliser des modèles de publication</small>
           </div>
           <div class="toggle-group">
             <label class="toggle-label">
               <input type="checkbox" id="useGaussianDelays" {% if settings.use_gaussian_delays %}checked{% endif %}>
-              <span>Use Smart Delays</span>
+              <span>Utiliser les Délais Intelligents</span>
             </label>
-            <small>More natural random delays between posts</small>
+            <small>Délais aléatoires plus naturels entre les publications</small>
           </div>
         </div>
       </div>
@@ -167,25 +167,25 @@
       <!-- Session Settings -->
       <div class="card">
         <div class="card-header">
-          <h3>🔐 Session Settings</h3>
+          <h3>🔐 Paramètres de Session</h3>
         </div>
         <div class="card-body">
           <div class="form-group">
-            <label for="sessionCheckInterval">Session Check Interval (minutes)</label>
+            <label for="sessionCheckInterval">Intervalle de Vérification (minutes)</label>
             <input type="number" id="sessionCheckInterval" class="form-control" value="{{ settings.session_check_interval }}" min="5" max="120">
-            <small>How often to verify Facebook session is still valid</small>
+            <small>Fréquence de vérification de la session Facebook</small>
           </div>
           <div class="form-group">
-            <label for="browserLocale">Browser Language</label>
+            <label for="browserLocale">Langue du Navigateur</label>
             <select id="browserLocale" class="form-control">
-              <option value="en-US" {% if settings.browser_locale == 'en-US' %}selected{% endif %}>English (US)</option>
-              <option value="fr-FR" {% if settings.browser_locale == 'fr-FR' %}selected{% endif %}>French</option>
-              <option value="ar-SA" {% if settings.browser_locale == 'ar-SA' %}selected{% endif %}>Arabic</option>
-              <option value="es-ES" {% if settings.browser_locale == 'es-ES' %}selected{% endif %}>Spanish</option>
-              <option value="de-DE" {% if settings.browser_locale == 'de-DE' %}selected{% endif %}>German</option>
-              <option value="pt-BR" {% if settings.browser_locale == 'pt-BR' %}selected{% endif %}>Portuguese</option>
+              <option value="en-US" {% if settings.browser_locale == 'en-US' %}selected{% endif %}>Anglais (US)</option>
+              <option value="fr-FR" {% if settings.browser_locale == 'fr-FR' %}selected{% endif %}>Français</option>
+              <option value="ar-SA" {% if settings.browser_locale == 'ar-SA' %}selected{% endif %}>Arabe</option>
+              <option value="es-ES" {% if settings.browser_locale == 'es-ES' %}selected{% endif %}>Espagnol</option>
+              <option value="de-DE" {% if settings.browser_locale == 'de-DE' %}selected{% endif %}>Allemand</option>
+              <option value="pt-BR" {% if settings.browser_locale == 'pt-BR' %}selected{% endif %}>Portugais</option>
             </select>
-            <small>Language for Facebook interactions</small>
+            <small>Langue pour les interactions Facebook</small>
           </div>
         </div>
       </div>
@@ -193,14 +193,14 @@
       <!-- Danger Zone -->
       <div class="card card-danger">
         <div class="card-header">
-          <h3>⚠️ Danger Zone</h3>
+          <h3>⚠️ Zone de Danger</h3>
         </div>
         <div class="card-body">
-          <button id="clearAllData" class="btn btn-danger">🗑️ Clear All Data</button>
-          <small>Remove all groups, posts history, and sessions</small>
+          <button id="clearAllData" class="btn btn-danger">🗑️ Effacer Toutes les Données</button>
+          <small>Supprimer tous les groupes, l'historique et les sessions</small>
           <br><br>
-          <button id="resetSettings" class="btn btn-warning">🔄 Reset to Defaults</button>
-          <small>Reset all settings to default values</small>
+          <button id="resetSettings" class="btn btn-warning">🔄 Réinitialiser par Défaut</button>
+          <small>Réinitialiser tous les paramètres aux valeurs par défaut</small>
         </div>
       </div>
     </div>

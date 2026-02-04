@@ -155,11 +155,11 @@ python app.py
 # Visit http://localhost:5000/dashboard
 ```
 
-### Render Deployment
+### Railway Deployment
 1. Code automatically pushed to GitHub
-2. Render detects changes
+2. Railway detects changes
 3. Auto-builds and deploys
-4. Live at: `https://fb-auto-poster.onrender.com`
+4. Live at: `https://fb-auto-poster-production-28fa.up.railway.app`
 
 ---
 

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Manage Groups - {{ app_name|default('FB Auto Poster') }}{% endblock %}
+{% block title %}Gérer les Groupes - {{ app_name|default('FB Auto Poster') }}{% endblock %}
 
 {% block body %}
 <div class="dashboard">
@@ -33,7 +33,7 @@
                         <rect x="14" y="14" width="7" height="7"></rect>
                         <rect x="3" y="14" width="7" height="7"></rect>
                     </svg>
-                    Dashboard
+                    Tableau de Bord
                 </a>
             </li>
             <li class="nav-item active">
@@ -44,7 +44,7 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    Manage Groups
+                    Gérer les Groupes
                 </a>
             </li>
             <li class="nav-item">
@@ -53,7 +53,7 @@
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
-                    Create Post
+                    Créer une Publication
                 </a>
             </li>
             <li class="nav-item">
@@ -62,7 +62,7 @@
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    Post History
+                    Historique
                 </a>
             </li>
             <!-- Hidden: Templates, Media Library, Analytics -->
@@ -72,7 +72,7 @@
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                    Accounts
+                    Comptes
                 </a>
             </li>
         </ul>
@@ -84,34 +84,34 @@
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>
                 </svg>
-                Logout
+                Déconnexion
             </a>
         </div>
     </nav>
     
     <main class="main-content">
         <header class="content-header">
-            <h2>Manage Facebook Groups</h2>
+            <h2>Gérer les Groupes Facebook</h2>
             <div style="display: flex; gap: 10px;">
-                <button id="discoverGroupsBtn" class="btn btn-success" title="Auto-discover all your Facebook groups">
+                <button id="discoverGroupsBtn" class="btn btn-success" title="Découvrir automatiquement tous vos groupes Facebook">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px; display:inline; margin-right:6px;">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
                     </svg>
-                    Auto-Discover Groups
+                    Découverte Automatique
                 </button>
                 <button id="addGroupBtn" class="btn btn-primary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Add Group
+                    Ajouter un Groupe
                 </button>
             </div>
         </header>
         <div class="toolbar" style="display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap: wrap;">
-            <input type="text" id="groupSearch" placeholder="Search groups by name or username" style="flex:1; padding:10px; border:2px solid #e5e7eb; border-radius:8px; min-width: 200px;">
-            <label class="btn btn-secondary" for="csvFile">Select CSV</label>
+            <input type="text" id="groupSearch" placeholder="Rechercher par nom ou identifiant" style="flex:1; padding:10px; border:2px solid #e5e7eb; border-radius:8px; min-width: 200px;">
+            <label class="btn btn-secondary" for="csvFile">Sélectionner CSV</label>
             <input type="file" id="csvFile" accept=".csv" style="display:none;" />
             <button id="importCsvBtn" class="btn btn-secondary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -119,20 +119,20 @@
                     <line x1="12" y1="12" x2="12" y2="21"></line>
                     <path d="M20 12a8 8 0 1 0-16 0"></path>
                 </svg>
-                Import CSV
+                Importer CSV
             </button>
-            <button id="clearAllDataBtn" class="btn" style="background: #dc2626; color: white;" title="Clear all groups and post history to start fresh">
+            <button id="clearAllDataBtn" class="btn" style="background: #dc2626; color: white;" title="Effacer tous les groupes et l'historique pour recommencer">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
-                Clear All Data
+                Tout Effacer
             </button>
         </div>
         
         <div class="groups-container">
             <div id="groupsList" class="groups-list">
-                <div class="loading">Loading groups...</div>
+                <div class="loading">Chargement des groupes...</div>
             </div>
         </div>
     </main>
@@ -142,30 +142,30 @@
 <div id="groupModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 id="modalTitle">Add New Group</h3>
+            <h3 id="modalTitle">Ajouter un Nouveau Groupe</h3>
             <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
         <form id="groupForm">
             <input type="hidden" id="groupIndex" value="">
             <div class="form-group">
-                <label for="groupName">Group Name *</label>
-                <input type="text" id="groupName" required placeholder="Enter group name">
+                <label for="groupName">Nom du Groupe *</label>
+                <input type="text" id="groupName" required placeholder="Entrez le nom du groupe">
             </div>
             <div class="form-group">
-                <label for="groupUsername">Group Username/ID *</label>
-                <input type="text" id="groupUsername" required placeholder="e.g., algorithmicsmn or 1579795602330616">
-                <small>Find this in the group URL: facebook.com/groups/<strong>username</strong></small>
+                <label for="groupUsername">Identifiant/ID du Groupe *</label>
+                <input type="text" id="groupUsername" required placeholder="ex: algorithmicsmn ou 1579795602330616">
+                <small>Trouvez-le dans l'URL du groupe : facebook.com/groups/<strong>identifiant</strong></small>
             </div>
             <div class="form-group">
-                <label for="groupStatus">Status</label>
+                <label for="groupStatus">Statut</label>
                 <select id="groupStatus">
-                    <option value="straight">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="straight">Actif</option>
+                    <option value="inactive">Inactif</option>
                 </select>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Group</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer le Groupe</button>
             </div>
         </form>
     </div>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Create Post - {{ app_name|default('FB Auto Poster') }}{% endblock %}
+{% block title %}Créer une Publication - {{ app_name|default('FB Auto Poster') }}{% endblock %}
 
 {% block body %}
 <div class="dashboard">
@@ -33,7 +33,7 @@
                         <rect x="14" y="14" width="7" height="7"></rect>
                         <rect x="3" y="14" width="7" height="7"></rect>
                     </svg>
-                    Dashboard
+                    Tableau de Bord
                 </a>
             </li>
             <li class="nav-item">
@@ -44,7 +44,7 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    Manage Groups
+                    Gérer les Groupes
                 </a>
             </li>
             <li class="nav-item active">
@@ -53,7 +53,7 @@
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
-                    Create Post
+                    Créer une Publication
                 </a>
             </li>
             <li class="nav-item">
@@ -62,7 +62,7 @@
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    Post History
+                    Historique
                 </a>
             </li>
             <!-- Hidden: Templates, Media Library, Analytics -->
@@ -72,7 +72,7 @@
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                    Accounts
+                    Comptes
                 </a>
             </li>
         </ul>
@@ -84,47 +84,47 @@
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>
                 </svg>
-                Logout
+                Déconnexion
             </a>
         </div>
     </nav>
     
     <main class="main-content">
         <header class="content-header">
-            <h2>Create New Post</h2>
+            <h2>Créer une Nouvelle Publication</h2>
         </header>
         
         <div class="post-creator">
             <div class="post-form-container">
                 <form id="postForm">
                     <div class="form-group">
-                        <label for="postContent">Post Content * 
-                            <span class="badge" style="background: #1877f2; color: white; margin-left: 10px;">NEW: Spintax Supported!</span>
+                        <label for="postContent">Contenu de la Publication * 
+                            <span class="badge" style="background: #1877f2; color: white; margin-left: 10px;">NOUVEAU : Spintax Supporté !</span>
                         </label>
-                        <textarea id="postContent" rows="10" required placeholder="Write your post content here...
+                        <textarea id="postContent" rows="10" required placeholder="Écrivez le contenu de votre publication ici...
 
-✨ NEW FEATURES:
-- Spintax: {Hello|Hi|Hey} for unique variations
-- Add images (see below)
-- Schedule for later
+✨ NOUVELLES FONCTIONNALITÉS :
+- Spintax : {Bonjour|Salut|Hey} pour des variations uniques
+- Ajoutez des images (voir ci-dessous)
+- Planifiez pour plus tard
 
-Example: {Hey|Hello} everyone! Check out our {amazing|incredible} {new|latest} product!"></textarea>
+Exemple : {Salut|Bonjour} tout le monde ! Découvrez notre {incroyable|superbe} {nouveau|dernier} produit !"></textarea>
                         <div class="char-count">
-                            <span id="charCount">0</span> characters
+                            <span id="charCount">0</span> caractères
                             <button type="button" onclick="previewSpintax()" class="btn-link" style="margin-left: 15px;">
-                                🔄 Preview Variations
+                                🔄 Aperçu des Variations
                             </button>
                         </div>
                     </div>
                     
                     <div class="form-group" style="border: 2px dashed #1877f2; padding: 20px; border-radius: 8px; background: #f0f8ff;">
-                        <label for="postMedia">📸🎥 Upload Media (Multiple Images/Videos Supported!)</label>
+                        <label for="postMedia">📸🎥 Importer des Médias (Images/Vidéos Multiples Supportées !)</label>
                         <input type="file" id="postMedia" accept="image/*,video/*" multiple onchange="previewMedia(event)">
-                        <p style="color: #666; font-size: 12px; margin-top: 5px;">Select multiple files: Images (JPG, PNG, GIF) or Videos (MP4, MOV)</p>
+                        <p style="color: #666; font-size: 12px; margin-top: 5px;">Sélectionnez plusieurs fichiers : Images (JPG, PNG, GIF) ou Vidéos (MP4, MOV)</p>
                         <div id="mediaPreview" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
                             <!-- Media previews will appear here -->
                         </div>
-                        <button type="button" onclick="clearAllMedia()" style="margin-top: 10px; padding: 5px 10px; display: none;" id="clearMediaBtn">Clear All</button>
+                        <button type="button" onclick="clearAllMedia()" style="margin-top: 10px; padding: 5px 10px; display: none;" id="clearMediaBtn">Tout Effacer</button>
                     </div>
                     
                     <!-- Improved Schedule Section -->
@@ -133,26 +133,26 @@ Example: {Hey|Hello} everyone! Check out our {amazing|incredible} {new|latest} p
                             <label style="font-weight:600; font-size: 15px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
                                 <input type="checkbox" id="schedulePost" onchange="toggleSchedule()" style="width: 20px; height: 20px; accent-color: #6366f1;"> 
                                 <span style="display: flex; align-items: center; gap: 8px;">
-                                    📅 <span>Schedule This Post</span>
+                                    📅 <span>Planifier cette Publication</span>
                                 </span>
                             </label>
                             <span id="nextRunLabel" class="schedule-badge" style="display:none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(99,102,241,0.3);">
-                                ⏰ Next: —
+                                ⏰ Prochain : —
                             </span>
                         </div>
                         
                         <div id="scheduleOptions" style="display: none; margin-top: 16px;">
                             <!-- Quick Schedule Buttons -->
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
-                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('30m')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">⚡ In 30 min</button>
-                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('1h')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">🕐 In 1 hour</button>
-                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('3h')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">🕒 In 3 hours</button>
-                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('tomorrow')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">🌅 Tomorrow 9AM</button>
+                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('30m')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">⚡ Dans 30 min</button>
+                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('1h')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">🕐 Dans 1 heure</button>
+                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('3h')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">🕒 Dans 3 heures</button>
+                                <button type="button" class="quick-schedule-btn" onclick="setQuickSchedule('tomorrow')" style="padding: 8px 16px; border: 2px solid #e0e7ff; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;">🌅 Demain 9h</button>
                             </div>
                             
                             <!-- Date/Time Picker -->
                             <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; margin-bottom: 16px;">
-                                <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">📆 Pick exact date & time</label>
+                                <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">📆 Choisir la date et l'heure exactes</label>
                                 <input type="datetime-local" id="scheduleTime" onchange="previewNextRun()" style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 15px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
                                 <div id="schedulePreview" style="margin-top: 10px; padding: 10px; background: #f0fdf4; border-radius: 8px; display: none;">
                                     <span style="color: #15803d; font-size: 13px;">✓ <span id="schedulePreviewText"></span></span>
@@ -163,49 +163,49 @@ Example: {Hey|Hello} everyone! Check out our {amazing|incredible} {new|latest} p
                             <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb;">
                                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px;">
                                     <input type="checkbox" id="recurring" onchange="toggleRecurring()" style="width: 18px; height: 18px; accent-color: #6366f1;">
-                                    <span style="font-weight: 500;">🔄 Make this a recurring post</span>
+                                    <span style="font-weight: 500;">🔄 Rendre cette publication récurrente</span>
                                 </label>
                                 
                                 <div id="recurringOptions" style="display: none; padding-left: 28px;">
                                     <!-- Interval Setting -->
                                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
-                                        <span style="color: #64748b; font-size: 14px;">Repeat every</span>
+                                        <span style="color: #64748b; font-size: 14px;">Répéter toutes les</span>
                                         <input type="number" id="intervalHours" min="1" value="1" style="width: 70px; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; text-align: center; font-size: 14px;">
                                         <select id="intervalUnit" style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
-                                            <option value="hours" selected>Hours</option>
-                                            <option value="days">Days</option>
-                                            <option value="weeks">Weeks</option>
+                                            <option value="hours" selected>Heures</option>
+                                            <option value="days">Jours</option>
+                                            <option value="weeks">Semaines</option>
                                         </select>
                                     </div>
                                     
                                     <!-- Duration Setting -->
                                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding: 14px; background: #fef3c7; border-radius: 10px; border: 1px solid #fcd34d;">
-                                        <span style="color: #92400e; font-size: 14px; font-weight: 500;">⏱️ Duration:</span>
+                                        <span style="color: #92400e; font-size: 14px; font-weight: 500;">⏱️ Durée :</span>
                                         <select id="durationType" onchange="toggleDurationInput()" style="padding: 8px 12px; border: 2px solid #fcd34d; border-radius: 8px; font-size: 14px; background: white;">
-                                            <option value="forever">Run forever</option>
-                                            <option value="days">Run for X days</option>
-                                            <option value="times">Run X times</option>
+                                            <option value="forever">Indéfiniment</option>
+                                            <option value="days">Pendant X jours</option>
+                                            <option value="times">X fois</option>
                                         </select>
                                         <div id="durationValueContainer" style="display: none; align-items: center; gap: 8px;">
                                             <input type="number" id="durationValue" min="1" value="7" style="width: 70px; padding: 8px 12px; border: 2px solid #fcd34d; border-radius: 8px; text-align: center; font-size: 14px;">
-                                            <span id="durationLabel" style="color: #92400e; font-size: 14px;">days</span>
+                                            <span id="durationLabel" style="color: #92400e; font-size: 14px;">jours</span>
                                         </div>
                                     </div>
                                     
                                     <!-- Quick Presets -->
                                     <div style="margin-top: 12px;">
-                                        <span style="color: #64748b; font-size: 12px; display: block; margin-bottom: 8px;">Quick presets:</span>
+                                        <span style="color: #64748b; font-size: 12px; display: block; margin-bottom: 8px;">Préréglages rapides :</span>
                                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                            <button type="button" onclick="setRecurringPreset(1, 'hours', 7, 'days')" class="preset-btn" style="padding: 8px 14px; border: 2px solid #10b981; background: #ecfdf5; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; color: #059669;">🔥 Every hour for 7 days</button>
-                                            <button type="button" onclick="setRecurringPreset(1, 'days', 0, 'forever')" class="preset-btn" style="padding: 6px 12px; border: 1px solid #d1d5db; background: #f9fafb; border-radius: 6px; cursor: pointer; font-size: 12px;">Daily forever</button>
-                                            <button type="button" onclick="setRecurringPreset(12, 'hours', 30, 'days')" class="preset-btn" style="padding: 6px 12px; border: 1px solid #d1d5db; background: #f9fafb; border-radius: 6px; cursor: pointer; font-size: 12px;">Twice daily for 30 days</button>
-                                            <button type="button" onclick="setRecurringPreset(1, 'weeks', 0, 'forever')" class="preset-btn" style="padding: 6px 12px; border: 1px solid #d1d5db; background: #f9fafb; border-radius: 6px; cursor: pointer; font-size: 12px;">Weekly forever</button>
+                                            <button type="button" onclick="setRecurringPreset(1, 'hours', 7, 'days')" class="preset-btn" style="padding: 8px 14px; border: 2px solid #10b981; background: #ecfdf5; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; color: #059669;">🔥 Toutes les heures pendant 7 jours</button>
+                                            <button type="button" onclick="setRecurringPreset(1, 'days', 0, 'forever')" class="preset-btn" style="padding: 6px 12px; border: 1px solid #d1d5db; background: #f9fafb; border-radius: 6px; cursor: pointer; font-size: 12px;">Quotidien indéfiniment</button>
+                                            <button type="button" onclick="setRecurringPreset(12, 'hours', 30, 'days')" class="preset-btn" style="padding: 6px 12px; border: 1px solid #d1d5db; background: #f9fafb; border-radius: 6px; cursor: pointer; font-size: 12px;">2x par jour pendant 30 jours</button>
+                                            <button type="button" onclick="setRecurringPreset(1, 'weeks', 0, 'forever')" class="preset-btn" style="padding: 6px 12px; border: 1px solid #d1d5db; background: #f9fafb; border-radius: 6px; cursor: pointer; font-size: 12px;">Hebdomadaire indéfiniment</button>
                                         </div>
                                     </div>
                                     
                                     <!-- Summary -->
                                     <div id="recurringSummary" style="margin-top: 16px; padding: 12px 16px; background: linear-gradient(135deg, #dbeafe, #e0e7ff); border-radius: 10px; display: none;">
-                                        <span style="color: #3730a3; font-size: 13px; font-weight: 500;" id="recurringSummaryText">📊 Summary will appear here</span>
+                                        <span style="color: #3730a3; font-size: 13px; font-weight: 500;" id="recurringSummaryText">📊 Le résumé apparaîtra ici</span>
                                     </div>
                                 </div>
                             </div>
@@ -242,20 +242,20 @@ Example: {Hey|Hello} everyone! Check out our {amazing|incredible} {new|latest} p
                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
-                            Post to Groups/Pages
+                            Publier dans les Groupes/Pages
                             <span id="selectedCount" style="background: #1877f2; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: bold;">0</span>
                         </h4>
                         
                         <div id="groupsList" class="groups-selector">
-                            <div class="loading">Loading your groups...</div>
+                            <div class="loading">Chargement de vos groupes...</div>
                         </div>
                         
                         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e5e5;">
                             <button type="button" class="btn btn-outline" onclick="selectAllGroups()" style="margin-right: 8px; font-size: 13px;">
-                                ✓ Select All
+                                ✓ Tout Sélectionner
                             </button>
                             <button type="button" class="btn btn-outline" onclick="deselectAllGroups()" style="font-size: 13px;">
-                                ✕ Deselect All
+                                ✕ Tout Désélectionner
                             </button>
                         </div>
                     </div>
@@ -266,31 +266,31 @@ Example: {Hey|Hello} everyone! Check out our {amazing|incredible} {new|latest} p
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
                             </svg>
-                            Preview
+                            Aperçu
                         </button>
                         <button type="submit" class="btn btn-primary" id="postBtn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                             </svg>
-                            Post to All Groups
+                            Publier dans Tous les Groupes
                         </button>
                     </div>
                 </form>
             </div>
             
             <div class="post-preview">
-                <h3>Preview</h3>
+                <h3>Aperçu</h3>
                 <div class="preview-card">
                     <div class="preview-header">
                         <div class="preview-avatar"></div>
                         <div>
-                            <strong>Your Name</strong>
-                            <p class="text-muted">Just now</p>
+                            <strong>Votre Nom</strong>
+                            <p class="text-muted">À l'instant</p>
                         </div>
                     </div>
                     <div class="preview-content" id="previewContent">
-                        <p class="text-muted">Your post content will appear here...</p>
+                        <p class="text-muted">Le contenu de votre publication apparaîtra ici...</p>
                     </div>
                 </div>
             </div>

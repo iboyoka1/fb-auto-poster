@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Manual Login - {{ app_name|default('FB Auto Poster') }}{% endblock %}
+{% block title %}Connexion Manuelle - {{ app_name|default('FB Auto Poster') }}{% endblock %}
 
 {% block body %}
 <div class="dashboard">
@@ -12,41 +12,41 @@
       <span>{{ app_name|default('FB Auto Poster') }}</span>
     </div>
     <ul class="nav-menu">
-      <li class="nav-item"><a href="/dashboard">Dashboard</a></li>
-      <li class="nav-item"><a href="/groups">Manage Groups</a></li>
-      <li class="nav-item"><a href="/post">Create Post</a></li>
-      <li class="nav-item"><a href="/history">Post History</a></li>
-      <li class="nav-item active"><a href="/manual-login">Manual Login</a></li>
+      <li class="nav-item"><a href="/dashboard">Tableau de Bord</a></li>
+      <li class="nav-item"><a href="/groups">Gérer les Groupes</a></li>
+      <li class="nav-item"><a href="/post">Créer une Publication</a></li>
+      <li class="nav-item"><a href="/history">Historique</a></li>
+      <li class="nav-item active"><a href="/manual-login">Connexion Manuelle</a></li>
     </ul>
     <div class="sidebar-footer">
-      <a href="/logout" class="btn-logout">Logout</a>
+      <a href="/logout" class="btn-logout">Déconnexion</a>
     </div>
   </nav>
 
   <main class="main-content">
     <header class="content-header">
-      <h2>Manual Facebook Login</h2>
-      <button id="startManualLogin" class="btn btn-primary">Start Manual Login</button>
+      <h2>Connexion Manuelle Facebook</h2>
+      <button id="startManualLogin" class="btn btn-primary">Démarrer la Connexion Manuelle</button>
     </header>
 
     <div class="card">
       <div class="card-body">
-        <h3>🔐 Persistent Login Session</h3>
+        <h3>🔐 Session de Connexion Persistante</h3>
         <p style="margin-bottom: 15px; color: #28a745;">
-          <strong>The browser remembers your login!</strong> Once you login, you won't need to do it again until the session expires.
+          <strong>Le navigateur se souvient de votre connexion !</strong> Une fois connecté, vous n'aurez pas besoin de le refaire jusqu'à l'expiration de la session.
         </p>
-        <h4>Steps:</h4>
+        <h4>Étapes :</h4>
         <ol>
-          <li>Click "Start Manual Login" - a browser window will open.</li>
-          <li>Login to Facebook with your account.</li>
-          <li>Complete any 2FA or security checks.</li>
-          <li>Wait until you see your Facebook home/feed.</li>
-          <li>The session is saved automatically to a persistent browser profile.</li>
-          <li>You can now close the browser and start posting!</li>
+          <li>Cliquez sur "Démarrer la Connexion Manuelle" - une fenêtre de navigateur s'ouvrira.</li>
+          <li>Connectez-vous à Facebook avec votre compte.</li>
+          <li>Complétez la vérification 2FA ou les contrôles de sécurité.</li>
+          <li>Attendez de voir votre fil d'actualité Facebook.</li>
+          <li>La session est sauvegardée automatiquement dans un profil de navigateur persistant.</li>
+          <li>Vous pouvez maintenant fermer le navigateur et commencer à publier !</li>
         </ol>
         <div id="statusBox" class="status-box">
-          <p><strong>Status:</strong> <span id="sessionStatus">Checking...</span></p>
-          <p class="hint">Tip: After login completes in the opened browser, return here. Status updates every few seconds.</p>
+          <p><strong>Statut :</strong> <span id="sessionStatus">Vérification...</span></p>
+          <p class="hint">Conseil : Après avoir terminé la connexion dans le navigateur ouvert, revenez ici. Le statut se met à jour toutes les quelques secondes.</p>
         </div>
       </div>
     </div>
@@ -54,22 +54,22 @@
     <!-- Cookie Upload Section for Cloud Deployment -->
     <div class="card" style="margin-top: 20px;">
       <div class="card-body">
-        <h3>🍪 Upload Cookies (For Cloud Hosting)</h3>
+        <h3>🍪 Importer les Cookies (Pour Hébergement Cloud)</h3>
         <p style="color: #666; margin-bottom: 15px;">
-          If you're running on Railway/Render (no browser window), extract cookies from your browser and paste them here.
+          Si vous utilisez Railway/Render (pas de fenêtre navigateur), extrayez les cookies de votre navigateur et collez-les ici.
         </p>
         <div style="margin-bottom: 15px;">
-          <strong>How to get cookies:</strong>
+          <strong>Comment obtenir les cookies :</strong>
           <ol style="margin-top: 10px; padding-left: 20px;">
-            <li>Install <a href="https://chrome.google.com/webstore/detail/editthiscookie" target="_blank">EditThisCookie</a> extension</li>
-            <li>Go to facebook.com and login</li>
-            <li>Click EditThisCookie icon → Export (copies JSON)</li>
-            <li>Paste the JSON below</li>
+            <li>Installez l'extension <a href="https://chrome.google.com/webstore/detail/editthiscookie" target="_blank">EditThisCookie</a></li>
+            <li>Allez sur facebook.com et connectez-vous</li>
+            <li>Cliquez sur l'icône EditThisCookie → Exporter (copie le JSON)</li>
+            <li>Collez le JSON ci-dessous</li>
           </ol>
         </div>
         <textarea id="cookieJson" rows="8" style="width: 100%; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder='[{"name": "c_user", "value": "...", "domain": ".facebook.com", ...}]'></textarea>
         <br><br>
-        <button id="uploadCookies" class="btn btn-primary">📤 Upload Cookies</button>
+        <button id="uploadCookies" class="btn btn-primary">📤 Importer les Cookies</button>
         <span id="uploadStatus" style="margin-left: 15px;"></span>
       </div>
     </div>

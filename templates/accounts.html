@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Accounts - FB Auto Poster{% endblock %}
+{% block title %}Comptes - FB Auto Poster{% endblock %}
 
 {% block body %}
 <div class="dashboard">
@@ -29,7 +29,7 @@
                         <rect x="14" y="14" width="7" height="7"></rect>
                         <rect x="3" y="14" width="7" height="7"></rect>
                     </svg>
-                    Dashboard
+                    Tableau de Bord
                 </a>
             </li>
             <li class="nav-item">
@@ -40,7 +40,7 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    Manage Groups
+                    Gérer les Groupes
                 </a>
             </li>
             <li class="nav-item">
@@ -49,7 +49,7 @@
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
-                    Create Post
+                    Créer une Publication
                 </a>
             </li>
             <!-- Hidden: Templates, Media Library, Analytics -->
@@ -59,7 +59,7 @@
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                    Accounts
+                    Comptes
                 </a>
             </li>
             <li class="nav-item">
@@ -68,7 +68,7 @@
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    Post History
+                    Historique
                 </a>
             </li>
         </ul>
@@ -80,14 +80,14 @@
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>
                 </svg>
-                Logout
+                Déconnexion
             </a>
         </div>
     </nav>
     
     <main class="main-content">
         <header class="content-header">
-            <h2>Facebook Accounts</h2>
+            <h2>Comptes Facebook</h2>
             <button class="btn btn-primary" onclick="showAddAccountModal()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -95,7 +95,7 @@
                     <line x1="20" y1="8" x2="20" y2="14"></line>
                     <line x1="23" y1="11" x2="17" y2="11"></line>
                 </svg>
-                Add Account
+                Ajouter un Compte
             </button>
         </header>
         
@@ -106,27 +106,27 @@
                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
             <div>
-                <strong>Multi-Account Support</strong>
-                <p>Manage multiple Facebook accounts and switch between them for posting. Each account has its own session and groups.</p>
+                <strong>Support Multi-Comptes</strong>
+                <p>Gérez plusieurs comptes Facebook et basculez entre eux pour publier. Chaque compte a sa propre session et ses propres groupes.</p>
             </div>
         </div>
         
         <div class="dashboard-section">
             <div class="section-header">
-                <h3>Your Accounts</h3>
+                <h3>Vos Comptes</h3>
             </div>
             <div id="accountsList" class="accounts-grid">
-                <div class="loading">Loading accounts...</div>
+                <div class="loading">Chargement des comptes...</div>
             </div>
         </div>
 
         <div class="dashboard-section">
             <div class="section-header">
-                <h3>Session Backups</h3>
-                <button class="btn btn-sm btn-secondary" onclick="createBackup()">Create Backup</button>
+                <h3>Sauvegardes de Session</h3>
+                <button class="btn btn-sm btn-secondary" onclick="createBackup()">Créer une Sauvegarde</button>
             </div>
             <div id="backupsList" class="backups-list">
-                <div class="loading">Loading backups...</div>
+                <div class="loading">Chargement des sauvegardes...</div>
             </div>
         </div>
     </main>
@@ -136,22 +136,22 @@
 <div id="addAccountModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Add Facebook Account</h3>
+            <h3>Ajouter un Compte Facebook</h3>
             <button class="btn-close" onclick="closeAddAccountModal()">&times;</button>
         </div>
         <form id="addAccountForm">
             <div class="form-group">
-                <label for="accountName">Account Name *</label>
-                <input type="text" id="accountName" required placeholder="e.g., Business Account">
+                <label for="accountName">Nom du Compte *</label>
+                <input type="text" id="accountName" required placeholder="ex: Compte Business">
             </div>
             <div class="form-group">
-                <label for="accountEmail">Email (optional)</label>
-                <input type="email" id="accountEmail" placeholder="email@example.com">
-                <span class="form-help">For reference only - won't be used for login</span>
+                <label for="accountEmail">Email (optionnel)</label>
+                <input type="email" id="accountEmail" placeholder="email@exemple.com">
+                <span class="form-help">Pour référence uniquement - ne sera pas utilisé pour la connexion</span>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeAddAccountModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Add Account</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddAccountModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">Ajouter le Compte</button>
             </div>
         </form>
     </div>
@@ -161,11 +161,11 @@
 <div id="loginModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Login to Account</h3>
+            <h3>Connexion au Compte</h3>
             <button class="btn-close" onclick="closeLoginModal()">&times;</button>
         </div>
         <div class="login-options">
-            <p>Choose how to login to this Facebook account:</p>
+            <p>Choisissez comment vous connecter à ce compte Facebook :</p>
             <div class="login-option-cards">
                 <div class="login-option" onclick="startManualLogin()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -173,8 +173,8 @@
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                     </svg>
-                    <h4>Manual Login</h4>
-                    <p>Open browser and login yourself (recommended)</p>
+                    <h4>Connexion Manuelle</h4>
+                    <p>Ouvrir le navigateur et vous connecter vous-même (recommandé)</p>
                 </div>
                 <div class="login-option" onclick="showAutoLogin()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -182,20 +182,20 @@
                         <polyline points="10 17 15 12 10 7"></polyline>
                         <line x1="15" y1="12" x2="3" y2="12"></line>
                     </svg>
-                    <h4>Auto Login</h4>
-                    <p>Enter credentials for automatic login</p>
+                    <h4>Connexion Automatique</h4>
+                    <p>Entrez vos identifiants pour une connexion automatique</p>
                 </div>
             </div>
             <div id="autoLoginForm" style="display:none; margin-top:20px;">
                 <div class="form-group">
-                    <label for="loginEmail">Email/Phone</label>
-                    <input type="text" id="loginEmail" placeholder="Enter Facebook email or phone">
+                    <label for="loginEmail">Email/Téléphone</label>
+                    <input type="text" id="loginEmail" placeholder="Entrez votre email ou téléphone Facebook">
                 </div>
                 <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter password">
+                    <label for="loginPassword">Mot de passe</label>
+                    <input type="password" id="loginPassword" placeholder="Entrez votre mot de passe">
                 </div>
-                <button class="btn btn-primary btn-block" onclick="performAutoLogin()">Login</button>
+                <button class="btn btn-primary btn-block" onclick="performAutoLogin()">Se Connecter</button>
             </div>
         </div>
     </div>

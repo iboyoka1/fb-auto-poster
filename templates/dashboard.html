@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - {{ app_name|default('FB Auto Poster') }}{% endblock %}
+{% block title %}Tableau de Bord - {{ app_name|default('FB Auto Poster') }}{% endblock %}
 
 {% block body %}
 <div class="dashboard">
@@ -33,7 +33,7 @@
                         <rect x="14" y="14" width="7" height="7"></rect>
                         <rect x="3" y="14" width="7" height="7"></rect>
                     </svg>
-                    Dashboard
+                    Tableau de Bord
                 </a>
             </li>
             <li class="nav-item">
@@ -44,7 +44,7 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    Manage Groups
+                    Gérer les Groupes
                 </a>
             </li>
             <li class="nav-item">
@@ -53,7 +53,7 @@
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
-                    Create Post
+                    Créer une Publication
                 </a>
             </li>
             <li class="nav-item">
@@ -62,7 +62,7 @@
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    Post History
+                    Historique
                 </a>
             </li>
             <!-- Hidden: Templates, Media Library, Analytics -->
@@ -72,7 +72,7 @@
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                    Accounts
+                    Comptes
                 </a>
             </li>
             <li class="nav-item">
@@ -81,7 +81,7 @@
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
-                    Manual Login
+                    Connexion Manuelle
                 </a>
             </li>
             <li class="nav-item">
@@ -90,7 +90,7 @@
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
-                    Settings
+                    Paramètres
                 </a>
             </li>
         </ul>
@@ -102,15 +102,15 @@
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>
                 </svg>
-                Logout
+                Déconnexion
             </a>
         </div>
     </nav>
     
     <main class="main-content">
         <header class="content-header">
-            <h2>Dashboard Overview</h2>
-            <span class="badge badge-primary">Live</span>
+            <h2>Vue d'ensemble</h2>
+            <span class="badge badge-primary">En ligne</span>
         </header>
         
         <!-- Facebook Session Status Card -->
@@ -118,7 +118,7 @@
             <div style="display: flex; align-items: center; gap: 16px;">
                 <div id="sessionIcon" style="font-size: 32px;">⚠️</div>
                 <div style="flex: 1;">
-                    <h3 id="sessionTitle" style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600;">Facebook Session Status</h3>
+                    <h3 id="sessionTitle" style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600;">Statut de la Session Facebook</h3>
                     <p id="sessionMessage" style="margin: 0; color: #65676b; font-size: 14px;"></p>
                 </div>
                 <button id="sessionActionBtn" type="button" class="btn btn-primary" style="display: none;"></button>
@@ -128,24 +128,24 @@
         <!-- Quick Setup Section -->
         <div class="quick-setup-card" id="quickSetupSection" style="display:none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; color: white;">Quick Setup Guide</h3>
-                <button onclick="dismissQuickSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Dismiss</button>
+                <h3 style="margin: 0; color: white;">Guide de Démarrage Rapide</h3>
+                <button onclick="dismissQuickSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Fermer</button>
             </div>
             <div class="setup-steps" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
                 <div class="step" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; text-align: center;">
                     <div style="font-size: 32px; margin-bottom: 10px;">1</div>
-                    <p style="margin: 0; font-weight: 500;">Discover Groups</p>
-                    <a href="/groups" style="color: white; text-decoration: underline; font-size: 13px;">Go to Groups</a>
+                    <p style="margin: 0; font-weight: 500;">Découvrir les Groupes</p>
+                    <a href="/groups" style="color: white; text-decoration: underline; font-size: 13px;">Aller aux Groupes</a>
                 </div>
                 <div class="step" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; text-align: center;">
                     <div style="font-size: 32px; margin-bottom: 10px;">2</div>
-                    <p style="margin: 0; font-weight: 500;">Create Content</p>
-                    <a href="/post" style="color: white; text-decoration: underline; font-size: 13px;">Create Post</a>
+                    <p style="margin: 0; font-weight: 500;">Créer du Contenu</p>
+                    <a href="/post" style="color: white; text-decoration: underline; font-size: 13px;">Créer une Publication</a>
                 </div>
                 <div class="step" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; text-align: center;">
                     <div style="font-size: 32px; margin-bottom: 10px;">3</div>
-                    <p style="margin: 0; font-weight: 500;">Start Posting</p>
-                    <a href="/post" style="color: white; text-decoration: underline; font-size: 13px;">Create Post</a>
+                    <p style="margin: 0; font-weight: 500;">Commencer à Publier</p>
+                    <a href="/post" style="color: white; text-decoration: underline; font-size: 13px;">Créer une Publication</a>
                 </div>
             </div>
         </div>
@@ -162,7 +162,7 @@
                 </div>
                 <div class="stat-content">
                     <h3 id="totalGroups">0</h3>
-                    <p>Total Groups</p>
+                    <p>Total Groupes</p>
                 </div>
             </div>
             
@@ -175,7 +175,7 @@
                 </div>
                 <div class="stat-content">
                     <h3 id="sessionStatus">✓</h3>
-                    <p>FB Session</p>
+                    <p>Session FB</p>
                 </div>
             </div>
             <div class="stat-card" id="postingIndicatorCard" style="display:none;">
@@ -187,7 +187,7 @@
                 </div>
                 <div class="stat-content">
                     <h3 id="postingCount">0</h3>
-                    <p>Posting…</p>
+                    <p>En cours…</p>
                 </div>
             </div>
             
@@ -200,7 +200,7 @@
                 </div>
                 <div class="stat-content">
                     <h3 id="recentPosts">0</h3>
-                    <p>Recent Posts</p>
+                    <p>Publications Récentes</p>
                 </div>
             </div>
             <div class="stat-card">
@@ -212,38 +212,38 @@
                 </div>
                 <div class="stat-content">
                     <h3 id="scheduledCount">0</h3>
-                    <p>Scheduled</p>
+                    <p>Planifiées</p>
                 </div>
             </div>
         </div>
         
         <div class="dashboard-section">
             <div class="section-header">
-                <h3>Facebook Session</h3>
+                <h3>Session Facebook</h3>
             </div>
             <div class="session-status" id="sessionStatusBox">
-                <div class="loading">Checking session...</div>
+                <div class="loading">Vérification de la session...</div>
             </div>
             
             <div class="fb-login-form" id="fbLoginForm" style="display: none; margin-top: 20px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
-                <h4 style="margin-top: 0;">🔐 Login to Facebook</h4>
-                <p style="color: #666; font-size: 14px;">Choose your preferred login method:</p>
+                <h4 style="margin-top: 0;">🔐 Connexion à Facebook</h4>
+                <p style="color: #666; font-size: 14px;">Choisissez votre méthode de connexion préférée :</p>
                 
                 <!-- Auto Login Form -->
                 <div id="autoLoginSection" style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 6px;">
-                    <h5 style="margin-top: 0;">Option 1: Auto-Login (Quick)</h5>
+                    <h5 style="margin-top: 0;">Option 1 : Connexion Automatique (Rapide)</h5>
                     <form id="autoLoginForm">
                         <div class="form-group">
-                            <label for="fbEmail">Facebook Email/Phone</label>
-                            <input type="text" id="fbEmail" required placeholder="Enter your email or phone" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <label for="fbEmail">Email/Téléphone Facebook</label>
+                            <input type="text" id="fbEmail" required placeholder="Entrez votre email ou téléphone" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
                         </div>
                         <div class="form-group" style="margin-top: 15px;">
-                            <label for="fbPassword">Facebook Password</label>
-                            <input type="password" id="fbPassword" required placeholder="Enter your password" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <label for="fbPassword">Mot de passe Facebook</label>
+                            <input type="password" id="fbPassword" required placeholder="Entrez votre mot de passe" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
                             <div style="margin-top: 8px;">
                                 <label style="font-size: 13px; color: #666;">
                                     <input type="checkbox" id="rememberMe" style="margin-right: 5px;">
-                                    Remember my credentials (saved in browser only)
+                                    Se souvenir de mes identifiants (sauvegardés dans le navigateur uniquement)
                                 </label>
                             </div>
                         </div>
@@ -254,7 +254,7 @@
                                     <polyline points="10 17 15 12 10 7"></polyline>
                                     <line x1="15" y1="12" x2="3" y2="12"></line>
                                 </svg>
-                                Auto-Login
+                                Connexion Automatique
                             </button>
                         </div>
                     </form>
@@ -262,51 +262,51 @@
                 
                 <!-- Manual Login Option -->
                 <div style="padding: 15px; background: white; border-radius: 6px;">
-                    <h5 style="margin-top: 0;">Option 2: Manual Login (Recommended)</h5>
-                    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Opens a browser where you login yourself - more reliable!</p>
+                    <h5 style="margin-top: 0;">Option 2 : Connexion Manuelle (Recommandée)</h5>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Ouvre un navigateur où vous vous connectez vous-même - plus fiable !</p>
                     <button type="button" class="btn btn-success" id="manualLoginBtn" style="width: 100%;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                             <polyline points="15 3 21 3 21 9"></polyline>
                             <line x1="10" y1="14" x2="21" y2="3"></line>
                         </svg>
-                        Open Browser & Login Manually
+                        Ouvrir le Navigateur et Se Connecter
                     </button>
                 </div>
                 
                 <!-- Upload Cookies Option (for Cloud Deployment) -->
                 <div style="padding: 15px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
-                    <h5 style="margin-top: 0; color: #856404;">☁️ Option 3: Upload Cookies (Cloud Mode)</h5>
-                    <p style="color: #856404; font-size: 13px; margin-bottom: 15px;">For cloud deployments: Login on your PC first, then paste cookies here.</p>
-                    <textarea id="cookiesInput" placeholder='Paste your facebook-cookies.json content here...' style="width: 100%; height: 80px; margin-bottom: 10px; font-size: 11px; font-family: monospace; border-radius: 4px; border: 1px solid #ddd; padding: 8px;"></textarea>
+                    <h5 style="margin-top: 0; color: #856404;">☁️ Option 3 : Importer les Cookies (Mode Cloud)</h5>
+                    <p style="color: #856404; font-size: 13px; margin-bottom: 15px;">Pour les déploiements cloud : Connectez-vous d'abord sur votre PC, puis collez les cookies ici.</p>
+                    <textarea id="cookiesInput" placeholder='Collez le contenu de votre fichier facebook-cookies.json ici...' style="width: 100%; height: 80px; margin-bottom: 10px; font-size: 11px; font-family: monospace; border-radius: 4px; border: 1px solid #ddd; padding: 8px;"></textarea>
                     <button type="button" class="btn btn-warning" id="uploadCookiesBtn" style="width: 100%;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 5px;">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        Upload Cookies
+                        Importer les Cookies
                     </button>
                     <p style="color: #856404; font-size: 11px; margin-top: 8px; margin-bottom: 0;">
-                        📁 Find cookies at: <code>sessions/facebook-cookies.json</code> on your local PC
+                        📁 Trouvez les cookies dans : <code>sessions/facebook-cookies.json</code> sur votre PC local
                     </p>
                 </div>
                 
                 <!-- Upload Groups Option (for Cloud Deployment) -->
                 <div style="padding: 15px; background: #d1ecf1; border-radius: 6px; border: 1px solid #17a2b8; margin-top: 10px;">
-                    <h5 style="margin-top: 0; color: #0c5460;">📋 Upload Groups (Cloud Mode)</h5>
-                    <p style="color: #0c5460; font-size: 13px; margin-bottom: 15px;">Upload your groups.json to post to your groups on the cloud.</p>
-                    <textarea id="groupsInput" placeholder='Paste your groups.json content here...' style="width: 100%; height: 80px; margin-bottom: 10px; font-size: 11px; font-family: monospace; border-radius: 4px; border: 1px solid #ddd; padding: 8px;"></textarea>
+                    <h5 style="margin-top: 0; color: #0c5460;">📋 Importer les Groupes (Mode Cloud)</h5>
+                    <p style="color: #0c5460; font-size: 13px; margin-bottom: 15px;">Importez votre groups.json pour publier dans vos groupes depuis le cloud.</p>
+                    <textarea id="groupsInput" placeholder='Collez le contenu de votre groups.json ici...' style="width: 100%; height: 80px; margin-bottom: 10px; font-size: 11px; font-family: monospace; border-radius: 4px; border: 1px solid #ddd; padding: 8px;"></textarea>
                     <button type="button" class="btn btn-info" id="uploadGroupsBtn" style="width: 100%; background: #17a2b8; border-color: #17a2b8;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 5px;">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        Upload Groups
+                        Importer les Groupes
                     </button>
                     <p style="color: #0c5460; font-size: 11px; margin-top: 8px; margin-bottom: 0;">
-                        📁 Find groups at: <code>groups.json</code> on your local PC
+                        📁 Trouvez les groupes dans : <code>groups.json</code> sur votre PC local
                     </p>
                 </div>
             </div>
@@ -314,7 +314,7 @@
         
         <div class="dashboard-section">
             <div class="section-header">
-                <h3>Quick Actions</h3>
+                <h3>Actions Rapides</h3>
             </div>
             <div class="quick-actions">
                 <a href="/groups" class="action-card">
@@ -324,8 +324,8 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    <h4>Manage Groups</h4>
-                    <p>Add, edit, or remove Facebook groups</p>
+                    <h4>Gérer les Groupes</h4>
+                    <p>Ajouter, modifier ou supprimer des groupes Facebook</p>
                 </a>
                 
                 <a href="/post" class="action-card">
@@ -333,8 +333,8 @@
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
-                    <h4>Create Post</h4>
-                    <p>Write and post to all groups</p>
+                    <h4>Créer une Publication</h4>
+                    <p>Écrire et publier dans tous les groupes</p>
                 </a>
                 
                 <a href="/history" class="action-card">
@@ -342,25 +342,25 @@
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    <h4>View History</h4>
-                    <p>See all previous posts</p>
+                    <h4>Voir l'Historique</h4>
+                    <p>Consulter toutes les publications précédentes</p>
                 </a>
             </div>
         </div>
 
         <div class="dashboard-section">
             <div class="section-header">
-                <h3>Scheduled Posts</h3>
-                <a href="/post" class="btn btn-sm btn-secondary">Create / Schedule</a>
+                <h3>Publications Planifiées</h3>
+                <a href="/post" class="btn btn-sm btn-secondary">Créer / Planifier</a>
             </div>
             <div id="scheduleList" class="schedules-list">
-                <div class="loading">Loading schedules...</div>
+                <div class="loading">Chargement des planifications...</div>
             </div>
         </div>
 
         <div class="dashboard-section" id="activePostingSection" style="display:none;">
             <div class="section-header">
-                <h3>Active Posting</h3>
+                <h3>Publication en Cours</h3>
             </div>
             <div id="activePostingList"></div>
         </div>
@@ -396,9 +396,9 @@
 
 <div class="card" style="margin-top: 20px;">
     <div class="card-body">
-        <h3>Facebook Session</h3>
-        <p id="dashSessionStatus">Checking...</p>
-        <a href="/manual-login" class="btn btn-secondary">Open Manual Login Instructions</a>
+        <h3>Session Facebook</h3>
+        <p id="dashSessionStatus">Vérification...</p>
+        <a href="/manual-login" class="btn btn-secondary">Ouvrir les Instructions de Connexion Manuelle</a>
     </div>
     <script>
         (async () => {

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Login - FB Auto Poster{% endblock %}
+{% block title %}Connexion - FB Auto Poster{% endblock %}
 
 {% block body %}
 <div class="login-container">
@@ -10,7 +10,7 @@
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
             </svg>
             <h1>Facebook Auto Poster</h1>
-            <p>Dashboard & Facebook Login</p>
+            <p>Tableau de Bord & Connexion Facebook</p>
         </div>
         
         <!-- Tabs -->
@@ -22,7 +22,7 @@
                     <rect x="14" y="14" width="7" height="7"></rect>
                     <rect x="3" y="14" width="7" height="7"></rect>
                 </svg>
-                Dashboard
+                Tableau de Bord
             </button>
             <button type="button" class="login-tab" data-tab="facebook" onclick="switchTab('facebook')">
                 <svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;">
@@ -35,24 +35,24 @@
         <!-- Dashboard Login Tab -->
         <div id="tab-dashboard" class="login-tab-content active">
             <div class="alert alert-info" style="margin-bottom: 20px; border-radius: 8px; background-color: #e7f3ff; border-left: 4px solid #1877f2;">
-                <strong>💡 Default Credentials:</strong> Use <code style="background: white; padding: 2px 6px; border-radius: 3px;">admin</code> / <code style="background: white; padding: 2px 6px; border-radius: 3px;">password123</code>
+                <strong>💡 Identifiants par défaut :</strong> Utilisez <code style="background: white; padding: 2px 6px; border-radius: 3px;">admin</code> / <code style="background: white; padding: 2px 6px; border-radius: 3px;">password123</code>
             </div>
             <div id="dashboardErrorMsg" class="alert alert-danger" style="display: none; margin-bottom: 15px;"></div>
             <div class="login-form">
                 <div class="form-group">
-                    <label for="username">Username</label>
+                    <label for="username">Nom d'utilisateur</label>
                     <input type="text" id="username" value="admin" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Password</label>
+                    <label for="password">Mot de passe</label>
                     <input type="password" id="password" placeholder="password123" required>
                 </div>
                 
                 <button type="button" class="btn btn-primary btn-block" onclick="handleDashboardLogin()" style="padding: 12px; font-weight: 600; border-radius: 6px;">
-                    <span class="btn-text">Login to Dashboard</span>
+                    <span class="btn-text">Se Connecter au Tableau de Bord</span>
                     <span class="btn-loader" style="display: none;">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Logging in...
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Connexion...
                     </span>
                 </button>
             </div>
@@ -74,41 +74,41 @@
             <!-- Facebook Login Form -->
                 <form id="fbLoginForm" style="display: none; animation: slideDown 0.3s ease;">
                     <div class="form-group">
-                        <label for="fbEmail">Email or Phone:</label>
-                        <input type="text" id="fbEmail" class="form-control" placeholder="Enter Facebook email or phone" required>
+                        <label for="fbEmail">Email ou Téléphone :</label>
+                        <input type="text" id="fbEmail" class="form-control" placeholder="Entrez votre email ou téléphone Facebook" required>
                     </div>
                     <div class="form-group">
-                        <label for="fbPassword">Password:</label>
-                        <input type="password" id="fbPassword" class="form-control" placeholder="Enter password" required>
+                        <label for="fbPassword">Mot de passe :</label>
+                        <input type="password" id="fbPassword" class="form-control" placeholder="Entrez votre mot de passe" required>
                     </div>
                     <div id="fbErrorMsg" class="alert alert-danger" style="display: none; margin-bottom: 15px; border-radius: 6px; animation: shake 0.3s ease;"></div>
                     <button type="button" class="btn btn-primary btn-block" id="fbLoginBtn" onclick="handleFacebookLogin()" style="padding: 12px; font-weight: 600; border-radius: 6px; transition: all 0.3s ease;">
-                        <span id="fbLoginBtnText">Auto-Login to Facebook</span>
+                        <span id="fbLoginBtnText">Connexion Automatique à Facebook</span>
                         <span id="fbLoginSpinner" style="display: none; margin-left: 8px;">
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         </span>
                     </button>
                     <button type="button" class="btn btn-secondary btn-block mt-2" onclick="handleManualFacebookLogin()" id="fbManualLoginBtn" style="border-radius: 6px; transition: all 0.3s ease;">
-                        Manual Login (Open Browser)
+                        Connexion Manuelle (Ouvrir le Navigateur)
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-block mt-2" onclick="logoutFromFacebook()" id="fbLogoutBtn" style="display: none; border-radius: 6px; transition: all 0.3s ease;">
-                        Logout from Facebook
+                        Déconnexion de Facebook
                     </button>
 
                 <div id="fbSuccessMsg" class="alert alert-success" style="display: none; margin-top: 15px; border-radius: 6px; animation: slideDown 0.3s ease;">
-                    <strong>✓ Success!</strong> You are now connected to Facebook. Redirecting to dashboard...
+                    <strong>✓ Succès !</strong> Vous êtes maintenant connecté à Facebook. Redirection vers le tableau de bord...
                 </div>
             </form>
 
             <!-- Info Section -->
             <div id="fbInfoSection" class="fb-login-info" style="animation: slideDown 0.3s ease;">
-                <h5 style="margin-bottom: 20px; color: #1877f2; font-weight: 600;">How It Works</h5>
+                <h5 style="margin-bottom: 20px; color: #1877f2; font-weight: 600;">Comment ça Marche</h5>
                 <div class="info-box">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: #1877f2; margin-bottom: 8px;">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     </svg>
-                    <h4>Step 1: Connect Facebook</h4>
-                    <p>Login with your Facebook email and password above</p>
+                    <h4>Étape 1 : Connecter Facebook</h4>
+                    <p>Connectez-vous avec votre email et mot de passe Facebook ci-dessus</p>
                 </div>
                 
                 <div class="info-box">
@@ -116,8 +116,8 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
                     </svg>
-                    <h4>Step 2: Discover Groups</h4>
-                    <p>Use "Auto-Discover Groups" to find your Facebook groups</p>
+                    <h4>Étape 2 : Découvrir les Groupes</h4>
+                    <p>Utilisez "Découverte Automatique" pour trouver vos groupes Facebook</p>
                 </div>
                 
                 <div class="info-box">
@@ -125,8 +125,8 @@
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    <h4>Step 3: Create & Post</h4>
-                    <p>Create posts and distribute them to all your groups</p>
+                    <h4>Étape 3 : Créer & Publier</h4>
+                    <p>Créez des publications et distribuez-les dans tous vos groupes</p>
                 </div>
             </div>
         </div>
