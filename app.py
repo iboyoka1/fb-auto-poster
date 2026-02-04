@@ -730,12 +730,12 @@ def update_group(index):
 @app.route('/api/discover-groups', methods=['POST'])
 @login_required
 def discover_groups_api():
-    """Auto-discover Facebook groups using mobile Facebook (m.facebook.com) - server-rendered HTML"""
+    """Auto-discover Facebook groups using multiple methods"""
     import requests
     import re
     
     try:
-        logger.info("=== GROUP DISCOVERY (Mobile Facebook) ===")
+        logger.info("=== GROUP DISCOVERY ===")
         
         # Load session cookies
         cookie_file = f"{PROJECT_ROOT}/sessions/facebook-cookies.json"
@@ -764,13 +764,16 @@ def discover_groups_api():
         
         user_id = cookies.get('c_user', '')
         
-        # Mobile User-Agent for server-rendered HTML
+        # Desktop headers (better for finding groups)
         headers = {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
         }
         
         discovered = []
@@ -778,18 +781,20 @@ def discover_groups_api():
         all_html = ""
         
         # Create a session for persistent cookies
-        session = requests.Session()
-        session.cookies.update(cookies)
-        session.headers.update(headers)
+        session_req = requests.Session()
+        session_req.cookies.update(cookies)
+        session_req.headers.update(headers)
         
-        # URLs to try for discovering groups (mobile Facebook has server-rendered HTML)
+        # URLs to try - desktop and mobile
         urls_to_try = [
+            # Desktop URLs
+            'https://www.facebook.com/groups/joins/',
+            f'https://www.facebook.com/{user_id}/groups' if user_id else None,
+            'https://www.facebook.com/groups/?category=membership',
+            'https://www.facebook.com/groups/feed/',
+            # Mobile URLs (fallback)
             'https://m.facebook.com/groups/?category=membership',
             'https://m.facebook.com/groups/joins/',
-            f'https://m.facebook.com/profile.php?id={user_id}&sk=groups' if user_id else None,
-            f'https://m.facebook.com/{user_id}/groups' if user_id else None,
-            'https://m.facebook.com/groups/',
-            'https://touch.facebook.com/groups/?category=membership',
             'https://mbasic.facebook.com/groups/?category=membership',
         ]
         
@@ -802,11 +807,11 @@ def discover_groups_api():
                 
             try:
                 logger.info(f"Trying URL: {url}")
-                response = session.get(url, timeout=20, allow_redirects=True)
+                response = session_req.get(url, timeout=30, allow_redirects=True)
                 
                 # Check if redirected to login
-                if '/login' in response.url or 'login' in response.url.lower():
-                    logger.warning(f"URL {url} redirected to login")
+                if '/login' in response.url or 'checkpoint' in response.url.lower():
+                    logger.warning(f"URL {url} redirected to login/checkpoint")
                     continue
                 
                 html = response.text
@@ -815,22 +820,24 @@ def discover_groups_api():
                 
                 # Extract groups using multiple patterns
                 patterns = [
-                    # Mobile patterns
-                    r'href="/groups/(\d+)[/\?"]',
-                    r'href="[^"]*?/groups/(\d+)[/\?"]',
+                    # Standard group URL patterns
+                    r'href="[^"]*?/groups/(\d{10,})[/\?"]',
                     r'/groups/(\d{10,})',
-                    # Named group patterns
-                    r'href="/groups/([a-zA-Z][a-zA-Z0-9._]{2,49})/?["\?]',
-                    # Group ID in data attributes
-                    r'data-group-id="(\d+)"',
+                    # Named groups
+                    r'href="[^"]*?/groups/([a-zA-Z][a-zA-Z0-9._]{2,49})/?["\?]',
+                    # JSON patterns in page data
                     r'"groupID":"(\d+)"',
                     r'"group_id":"?(\d+)"?',
+                    r'"id":"(\d{10,})"[^}]*?"__typename":"Group"',
+                    r'data-group-id="(\d+)"',
+                    # Mobile patterns
+                    r'href="/groups/(\d+)[/\?"]',
                 ]
                 
                 for pattern in patterns:
                     matches = re.findall(pattern, html)
                     for group_id in matches:
-                        if group_id and group_id not in seen_ids:
+                        if group_id and group_id not in seen_ids and len(group_id) >= 5:
                             seen_ids.add(group_id)
                 
             except requests.Timeout:
