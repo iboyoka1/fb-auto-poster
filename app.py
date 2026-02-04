@@ -1186,7 +1186,6 @@ def create_post():
                 for file in uploaded_files:
                     if file and file.filename:
                         # Save file temporarily
-                        import os
                         from werkzeug.utils import secure_filename
                         filename = secure_filename(file.filename)
                         filepath = os.path.join(PROJECT_ROOT, 'uploads', filename)
