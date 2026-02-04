@@ -25,9 +25,8 @@ ENV SERVER_HOST=0.0.0.0
 # Expose port (Railway uses PORT env var)
 EXPOSE ${PORT:-8080}
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8080}/api/health || exit 1
+# Railway handles health checks via railway.json, remove Docker HEALTHCHECK
+# to avoid conflicts and let Railway manage it
 
-# Run with gunicorn - longer timeout for Railway
-CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 4 --timeout 300 app:app
+# Run with gunicorn - preload app for faster startup, single worker for Railway free tier
+CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --threads 4 --timeout 300 --preload app:app
