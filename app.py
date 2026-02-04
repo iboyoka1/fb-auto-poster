@@ -1191,7 +1191,7 @@ def create_post():
             # Handle file uploads
             content = request.form.get('content', '')
             selected_groups = request.form.getlist('groups[]')
-            selected_groups = [int(g) for g in selected_groups if g.isdigit()]
+            # Keep as strings - usernames can be numeric IDs or alphanumeric names
             
             # Handle uploaded files
             media_files = []
