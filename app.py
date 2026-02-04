@@ -603,43 +603,96 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+# =============== SETTINGS ===============
+try:
+    from settings_manager import load_settings, save_settings, reset_settings, get_app_name
+except ImportError:
+    load_settings = lambda: {}
+    save_settings = lambda x: False
+    reset_settings = lambda: False
+    get_app_name = lambda: 'FB Auto Poster'
+
+@app.route('/settings')
+@login_required
+def settings_page():
+    settings = load_settings()
+    return render_template('settings.html', settings=settings, app_name=get_app_name())
+
+@app.route('/api/settings', methods=['GET'])
+@login_required
+def api_get_settings():
+    try:
+        settings = load_settings()
+        return jsonify({'success': True, 'settings': settings})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/settings', methods=['POST'])
+@login_required
+def api_save_settings():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        if save_settings(data):
+            logger.info(f"Settings saved: {list(data.keys())}")
+            return jsonify({'success': True, 'message': 'Settings saved'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to save settings'})
+    except Exception as e:
+        logger.error(f"Error saving settings: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/settings/reset', methods=['POST'])
+@login_required
+def api_reset_settings():
+    try:
+        if reset_settings():
+            logger.info("Settings reset to defaults")
+            return jsonify({'success': True, 'message': 'Settings reset to defaults'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to reset settings'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    return render_template('dashboard.html', app_name=get_app_name())
 
 @app.route('/groups')
 @login_required
 def groups():
-    return render_template('groups.html')
+    return render_template('groups.html', app_name=get_app_name())
 
 @app.route('/post')
 @login_required
 def post():
-    return render_template('post.html')
+    return render_template('post.html', app_name=get_app_name())
 
 @app.route('/history')
 @login_required
 def history():
-    return render_template('history.html')
+    return render_template('history.html', app_name=get_app_name())
 
 @app.route('/templates')
 @login_required
 def templates_page():
-    return render_template('templates.html')
+    return render_template('templates.html', app_name=get_app_name())
 
 @app.route('/media')
 @login_required
 def media_page():
-    return render_template('media.html')
+    return render_template('media.html', app_name=get_app_name())
 
 @app.route('/accounts')
 @login_required
 def accounts():
-    return render_template('accounts.html')
+    return render_template('accounts.html', app_name=get_app_name())
 @login_required
 def accounts_page():
-    return render_template('accounts.html')
+    return render_template('accounts.html', app_name=get_app_name())
 
 @app.route('/analytics')
 @login_required
@@ -1637,7 +1690,7 @@ def check_login_status():
 @login_required
 def manual_login_page():
     """Render manual login instructions page"""
-    return render_template('manual_login.html')
+    return render_template('manual_login.html', app_name=get_app_name())
 
 @app.route('/api/fb-auto-login', methods=['POST'])
 @login_required

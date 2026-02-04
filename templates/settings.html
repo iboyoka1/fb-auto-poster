@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - {{ app_name }}{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+      <span>{{ app_name }}</span>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item"><a href="/dashboard">Dashboard</a></li>
+      <li class="nav-item"><a href="/groups">Manage Groups</a></li>
+      <li class="nav-item"><a href="/post">Create Post</a></li>
+      <li class="nav-item"><a href="/history">Post History</a></li>
+      <li class="nav-item"><a href="/manual-login">Manual Login</a></li>
+      <li class="nav-item active"><a href="/settings">⚙️ Settings</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <header class="content-header">
+      <h2>⚙️ Settings</h2>
+      <button id="saveSettings" class="btn btn-primary">💾 Save Settings</button>
+    </header>
+
+    <div class="settings-container">
+      <!-- Branding Section -->
+      <div class="card">
+        <div class="card-header">
+          <h3>🎨 Branding</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="appName">App Name</label>
+            <input type="text" id="appName" class="form-control" value="{{ settings.app_name }}" placeholder="FB Auto Poster">
+            <small>This name appears in the sidebar and browser title</small>
+          </div>
+          <div class="form-group">
+            <label for="primaryColor">Primary Color</label>
+            <input type="color" id="primaryColor" value="{{ settings.primary_color or '#1877f2' }}" style="width: 80px; height: 40px;">
+            <small>Main accent color for buttons and links</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Posting Settings -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📝 Posting Settings</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="minDelay">Min Delay Between Posts (seconds)</label>
+              <input type="number" id="minDelay" class="form-control" value="{{ settings.min_delay }}" min="5" max="600">
+            </div>
+            <div class="form-group">
+              <label for="maxDelay">Max Delay Between Posts (seconds)</label>
+              <input type="number" id="maxDelay" class="form-control" value="{{ settings.max_delay }}" min="10" max="900">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="postsPerHour">Max Posts Per Hour</label>
+              <input type="number" id="postsPerHour" class="form-control" value="{{ settings.posts_per_hour }}" min="1" max="60">
+              <small>Rate limit to avoid Facebook blocks</small>
+            </div>
+            <div class="form-group">
+              <label for="groupsPerPost">Max Groups Per Post</label>
+              <input type="number" id="groupsPerPost" class="form-control" value="{{ settings.groups_per_post }}" min="1" max="100">
+              <small>Maximum groups to post to in one batch</small>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="retryCount">Retry Count Per Group</label>
+            <input type="number" id="retryCount" class="form-control" value="{{ settings.retry_count }}" min="0" max="5">
+            <small>Number of retries if posting fails</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Hours -->
+      <div class="card">
+        <div class="card-header">
+          <h3>🕐 Activity Hours</h3>
+        </div>
+        <div class="card-body">
+          <p class="hint">Only post during these hours to appear more natural</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="activityStart">Start Hour (24h format)</label>
+              <input type="number" id="activityStart" class="form-control" value="{{ settings.activity_start }}" min="0" max="23">
+            </div>
+            <div class="form-group">
+              <label for="activityEnd">End Hour (24h format)</label>
+              <input type="number" id="activityEnd" class="form-control" value="{{ settings.activity_end }}" min="0" max="23">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="timezone">Timezone</label>
+            <select id="timezone" class="form-control">
+              <option value="UTC" {% if settings.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+              <option value="Europe/Paris" {% if settings.timezone == 'Europe/Paris' %}selected{% endif %}>Europe/Paris</option>
+              <option value="Europe/London" {% if settings.timezone == 'Europe/London' %}selected{% endif %}>Europe/London</option>
+              <option value="America/New_York" {% if settings.timezone == 'America/New_York' %}selected{% endif %}>America/New York</option>
+              <option value="America/Los_Angeles" {% if settings.timezone == 'America/Los_Angeles' %}selected{% endif %}>America/Los Angeles</option>
+              <option value="Asia/Dubai" {% if settings.timezone == 'Asia/Dubai' %}selected{% endif %}>Asia/Dubai</option>
+              <option value="Asia/Tokyo" {% if settings.timezone == 'Asia/Tokyo' %}selected{% endif %}>Asia/Tokyo</option>
+              <option value="Africa/Cairo" {% if settings.timezone == 'Africa/Cairo' %}selected{% endif %}>Africa/Cairo</option>
+              <option value="Africa/Casablanca" {% if settings.timezone == 'Africa/Casablanca' %}selected{% endif %}>Africa/Casablanca</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="card">
+        <div class="card-header">
+          <h3>🚀 Features</h3>
+        </div>
+        <div class="card-body">
+          <div class="toggle-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="enableScheduling" {% if settings.enable_scheduling %}checked{% endif %}>
+              <span>Enable Scheduling</span>
+            </label>
+            <small>Allow scheduling posts for later</small>
+          </div>
+          <div class="toggle-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="enableSpintax" {% if settings.enable_spintax %}checked{% endif %}>
+              <span>Enable Spintax</span>
+            </label>
+            <small>Allow {word1|word2|word3} syntax for variation</small>
+          </div>
+          <div class="toggle-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="enableMediaLibrary" {% if settings.enable_media_library %}checked{% endif %}>
+              <span>Enable Media Library</span>
+            </label>
+            <small>Allow uploading and reusing images/videos</small>
+          </div>
+          <div class="toggle-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="enableTemplates" {% if settings.enable_templates %}checked{% endif %}>
+              <span>Enable Content Templates</span>
+            </label>
+            <small>Save and reuse post templates</small>
+          </div>
+          <div class="toggle-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="useGaussianDelays" {% if settings.use_gaussian_delays %}checked{% endif %}>
+              <span>Use Smart Delays</span>
+            </label>
+            <small>More natural random delays between posts</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Session Settings -->
+      <div class="card">
+        <div class="card-header">
+          <h3>🔐 Session Settings</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="sessionCheckInterval">Session Check Interval (minutes)</label>
+            <input type="number" id="sessionCheckInterval" class="form-control" value="{{ settings.session_check_interval }}" min="5" max="120">
+            <small>How often to verify Facebook session is still valid</small>
+          </div>
+          <div class="form-group">
+            <label for="browserLocale">Browser Language</label>
+            <select id="browserLocale" class="form-control">
+              <option value="en-US" {% if settings.browser_locale == 'en-US' %}selected{% endif %}>English (US)</option>
+              <option value="fr-FR" {% if settings.browser_locale == 'fr-FR' %}selected{% endif %}>French</option>
+              <option value="ar-SA" {% if settings.browser_locale == 'ar-SA' %}selected{% endif %}>Arabic</option>
+              <option value="es-ES" {% if settings.browser_locale == 'es-ES' %}selected{% endif %}>Spanish</option>
+              <option value="de-DE" {% if settings.browser_locale == 'de-DE' %}selected{% endif %}>German</option>
+              <option value="pt-BR" {% if settings.browser_locale == 'pt-BR' %}selected{% endif %}>Portuguese</option>
+            </select>
+            <small>Language for Facebook interactions</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="card card-danger">
+        <div class="card-header">
+          <h3>⚠️ Danger Zone</h3>
+        </div>
+        <div class="card-body">
+          <button id="clearAllData" class="btn btn-danger">🗑️ Clear All Data</button>
+          <small>Remove all groups, posts history, and sessions</small>
+          <br><br>
+          <button id="resetSettings" class="btn btn-warning">🔄 Reset to Defaults</button>
+          <small>Reset all settings to default values</small>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<style>
+.settings-container {
+  display: grid;
+  gap: 20px;
+  max-width: 800px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.form-group {
+  margin-bottom: 15px;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+.form-group small {
+  color: #666;
+  font-size: 12px;
+}
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.toggle-group {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.toggle-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+.card-danger {
+  border-color: #dc3545;
+}
+.card-danger .card-header {
+  background: #fff5f5;
+  color: #dc3545;
+}
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-warning {
+  background: #ffc107;
+  color: #333;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.card-header {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  background: #f8f9fa;
+}
+.card-header h3 {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveSettings() {
+  const btn = document.getElementById('saveSettings');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  
+  const settings = {
+    app_name: document.getElementById('appName').value,
+    primary_color: document.getElementById('primaryColor').value,
+    min_delay: parseInt(document.getElementById('minDelay').value),
+    max_delay: parseInt(document.getElementById('maxDelay').value),
+    posts_per_hour: parseInt(document.getElementById('postsPerHour').value),
+    groups_per_post: parseInt(document.getElementById('groupsPerPost').value),
+    retry_count: parseInt(document.getElementById('retryCount').value),
+    activity_start: parseInt(document.getElementById('activityStart').value),
+    activity_end: parseInt(document.getElementById('activityEnd').value),
+    timezone: document.getElementById('timezone').value,
+    enable_scheduling: document.getElementById('enableScheduling').checked,
+    enable_spintax: document.getElementById('enableSpintax').checked,
+    enable_media_library: document.getElementById('enableMediaLibrary').checked,
+    enable_templates: document.getElementById('enableTemplates').checked,
+    use_gaussian_delays: document.getElementById('useGaussianDelays').checked,
+    session_check_interval: parseInt(document.getElementById('sessionCheckInterval').value),
+    browser_locale: document.getElementById('browserLocale').value
+  };
+  
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('✅ Settings saved successfully!');
+      location.reload();
+    } else {
+      alert('❌ Error: ' + (data.error || 'Unknown error'));
+    }
+  } catch (e) {
+    alert('❌ Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Save Settings';
+  }
+}
+
+async function clearAllData() {
+  if (!confirm('⚠️ This will delete ALL groups, post history, and sessions. Are you sure?')) return;
+  if (!confirm('⚠️ LAST WARNING: This cannot be undone. Continue?')) return;
+  
+  try {
+    const res = await fetch('/api/clear-all-data', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      alert('✅ All data cleared!');
+      location.reload();
+    } else {
+      alert('❌ Error: ' + (data.error || 'Unknown error'));
+    }
+  } catch (e) {
+    alert('❌ Error: ' + e.message);
+  }
+}
+
+async function resetSettings() {
+  if (!confirm('Reset all settings to defaults?')) return;
+  
+  try {
+    const res = await fetch('/api/settings/reset', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      alert('✅ Settings reset to defaults!');
+      location.reload();
+    } else {
+      alert('❌ Error: ' + (data.error || 'Unknown error'));
+    }
+  } catch (e) {
+    alert('❌ Error: ' + e.message);
+  }
+}
+
+document.getElementById('saveSettings').addEventListener('click', saveSettings);
+document.getElementById('clearAllData').addEventListener('click', clearAllData);
+document.getElementById('resetSettings').addEventListener('click', resetSettings);
+</script>
+{% endblock %}
