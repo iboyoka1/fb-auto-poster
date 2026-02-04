@@ -228,47 +228,6 @@ def health_check():
     """Health check endpoint for Railway deployment"""
     return jsonify({'status': 'ok', 'healthy': True}), 200
 
-@app.route('/api/upload-cookies', methods=['POST'])
-@login_required
-def upload_cookies():
-    """Upload Facebook cookies from local machine to server (for cloud deployment)"""
-    try:
-        data = request.get_json(silent=True) or {}
-        cookies = data.get('cookies', [])
-        
-        if not cookies:
-            return jsonify({'success': False, 'error': 'No cookies provided'}), 400
-        
-        # Validate cookies have required fields
-        cookie_names = {c.get('name') for c in cookies}
-        if 'c_user' not in cookie_names or 'xs' not in cookie_names:
-            return jsonify({'success': False, 'error': 'Invalid cookies - missing c_user or xs'}), 400
-        
-        # Save cookies to file
-        cookie_path = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
-        os.makedirs(os.path.dirname(cookie_path), exist_ok=True)
-        
-        with open(cookie_path, 'w', encoding='utf-8') as f:
-            json.dump(cookies, f, indent=2)
-        
-        # Update session
-        c_user = next((c.get('value') for c in cookies if c.get('name') == 'c_user'), None)
-        session['facebook_connected'] = True
-        session['facebook_authenticated'] = True
-        session['facebook_email'] = f"User {c_user}"
-        session.modified = True
-        
-        logger.info(f"[UPLOAD COOKIES] Successfully uploaded cookies for user {c_user}")
-        return jsonify({
-            'success': True, 
-            'message': 'Cookies uploaded successfully',
-            'user_id': c_user
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"[UPLOAD COOKIES] Error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 @app.route('/api/upload-groups', methods=['POST'])
 @login_required
 def upload_groups():
