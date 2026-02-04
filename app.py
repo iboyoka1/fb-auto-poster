@@ -1205,13 +1205,23 @@ def create_post():
         # Load all groups
         with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
             all_groups = json.load(f)
-        
-        # Filter selected groups or use all if none selected
+
+        # Accept both indices and usernames for selected_groups
+        groups_to_post = []
         if selected_groups:
-            groups_to_post = [all_groups[i] for i in selected_groups if i < len(all_groups)]
+            for g in selected_groups:
+                if isinstance(g, int):
+                    # Index
+                    if 0 <= g < len(all_groups):
+                        groups_to_post.append(all_groups[g])
+                elif isinstance(g, str):
+                    # Username
+                    match = next((grp for grp in all_groups if str(grp.get('username')) == str(g)), None)
+                    if match:
+                        groups_to_post.append(match)
         else:
             groups_to_post = all_groups
-        
+
         if not groups_to_post:
             conn = sqlite3.connect(DATABASE)
             c = conn.cursor()
