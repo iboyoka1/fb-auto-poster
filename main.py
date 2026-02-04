@@ -258,7 +258,10 @@ class FacebookGroupSpam:
 
     def load_cookie(self, cookie_path=None):
         if not cookie_path:
-            cookie_path = os.path.join('sessions', 'facebook-cookies.json')
+            # Use absolute path based on script location
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            cookie_path = os.path.join(script_dir, 'sessions', 'facebook-cookies.json')
+        logger.info(f"Loading cookies from: {cookie_path}")
         if os.path.exists(cookie_path):
             with open(cookie_path, 'r', encoding='utf-8') as f:
                 cookies = json.load(f)
@@ -318,6 +321,8 @@ class FacebookGroupSpam:
                     logger.info("Session warmup: Successfully loaded Facebook (not on login page)")
             except Exception as e:
                 logger.warning(f"Session warmup failed: {e}")
+        else:
+            logger.error(f"Cookie file not found: {cookie_path}")
 
     def post_to_groups(self, groups, progress_callback=None, should_cancel=None):
         """Post content to multiple Facebook groups using Playwright."""

@@ -1232,12 +1232,13 @@ def create_post():
         
         # Post in background to hide bot movement
         import threading
-        def do_post_background(post_id_arg: int, content_arg: str, groups_arg: list, media_files_arg: list):
+        cookie_path = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
+        def do_post_background(post_id_arg: int, content_arg: str, groups_arg: list, media_files_arg: list, cookie_path_arg: str):
             try:
                 from main import FacebookGroupSpam
                 poster = FacebookGroupSpam(post_content=content_arg, headless=True, media_files=media_files_arg if media_files_arg else None)
                 poster.start_browser()
-                poster.load_cookie()
+                poster.load_cookie(cookie_path_arg)
                 # Init active post tracking
                 ACTIVE_POSTS[post_id_arg] = {
                     'total': len(groups_arg),
@@ -1326,7 +1327,7 @@ def create_post():
                     pass
                 ACTIVE_POSTS.pop(post_id_arg, None)
 
-        thread = threading.Thread(target=do_post_background, args=(post_id, content, groups_to_post, media_files))
+        thread = threading.Thread(target=do_post_background, args=(post_id, content, groups_to_post, media_files, cookie_path))
         thread.daemon = True
         thread.start()
 
