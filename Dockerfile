@@ -22,12 +22,12 @@ ENV FLASK_APP=app.py
 ENV PYTHONUNBUFFERED=1
 ENV SERVER_HOST=0.0.0.0
 
-# Expose port (Render uses PORT env var)
-EXPOSE 10000
+# Expose port (Railway uses PORT env var)
+EXPOSE ${PORT:-8080}
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-10000}/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-8080}/api/health || exit 1
 
-# Run with 2 workers so health checks can respond while long operations run
-CMD gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 2 --threads 4 --timeout 120 app:app
+# Run with gunicorn - longer timeout for Railway
+CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 4 --timeout 300 app:app
