@@ -1612,13 +1612,18 @@ def upload_cookies():
         if not data or 'cookies' not in data:
             return jsonify({'success': False, 'error': 'No cookies provided'})
         
-        cookie_text = data['cookies']
+        cookie_data = data['cookies']
         
-        # Parse the cookies JSON
-        try:
-            cookies = json.loads(cookie_text)
-        except json.JSONDecodeError as e:
-            return jsonify({'success': False, 'error': f'Invalid JSON: {str(e)}'})
+        # Handle both string (JSON text) and already-parsed list
+        if isinstance(cookie_data, str):
+            try:
+                cookies = json.loads(cookie_data)
+            except json.JSONDecodeError as e:
+                return jsonify({'success': False, 'error': f'Invalid JSON: {str(e)}'})
+        elif isinstance(cookie_data, list):
+            cookies = cookie_data
+        else:
+            return jsonify({'success': False, 'error': 'Cookies must be a JSON array or string'})
         
         if not isinstance(cookies, list):
             return jsonify({'success': False, 'error': 'Cookies must be a JSON array'})
