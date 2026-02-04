@@ -113,7 +113,9 @@ app = Flask(__name__,
     static_folder=os.path.join(APP_DIR, 'static'),
     static_url_path='/static',
     template_folder=os.path.join(APP_DIR, 'templates'))
-app.secret_key = os.urandom(24)
+
+# Use a fixed secret key (or from environment variable) to keep sessions valid across restarts
+app.secret_key = os.environ.get('SECRET_KEY', 'fb-auto-poster-secret-key-2024-stable')
 
 # Debug: Print paths at startup
 print(f"[STARTUP] APP_DIR: {APP_DIR}")
