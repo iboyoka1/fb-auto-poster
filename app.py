@@ -730,12 +730,11 @@ def update_group(index):
 @app.route('/api/discover-groups', methods=['POST'])
 @login_required
 def discover_groups_api():
-    """Auto-discover Facebook groups using multiple methods"""
-    import requests
+    """Auto-discover Facebook groups using Playwright (handles JavaScript)"""
     import re
     
     try:
-        logger.info("=== GROUP DISCOVERY ===")
+        logger.info("=== GROUP DISCOVERY (Playwright) ===")
         
         # Load session cookies
         cookie_file = f"{PROJECT_ROOT}/sessions/facebook-cookies.json"
@@ -743,148 +742,152 @@ def discover_groups_api():
             return jsonify({
                 'success': False,
                 'error': 'No saved session found',
-                'message': 'Please upload cookies first'
+                'message': 'Veuillez d\'abord télécharger vos cookies'
             }), 400
         
         with open(cookie_file, 'r') as f:
             cookies_list = json.load(f)
         
-        # Convert cookies list to requests format
-        cookies = {}
-        for c in cookies_list:
-            cookies[c['name']] = c['value']
-        
         # Check we have required cookies
-        if 'c_user' not in cookies or 'xs' not in cookies:
+        cookie_names = {c.get('name') for c in cookies_list}
+        if 'c_user' not in cookie_names or 'xs' not in cookie_names:
             return jsonify({
                 'success': False,
                 'error': 'Invalid cookies',
-                'message': 'Missing c_user or xs cookie. Please re-upload cookies.'
+                'message': 'Cookies invalides. Veuillez les re-télécharger.'
             }), 400
         
-        user_id = cookies.get('c_user', '')
-        
-        # Desktop headers (better for finding groups)
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-        }
+        user_id = next((c.get('value') for c in cookies_list if c.get('name') == 'c_user'), '')
         
         discovered = []
         seen_ids = set()
-        all_html = ""
         
-        # Create a session for persistent cookies
-        session_req = requests.Session()
-        session_req.cookies.update(cookies)
-        session_req.headers.update(headers)
+        # Use Playwright to fetch groups (handles JavaScript)
+        from playwright.sync_api import sync_playwright
         
-        # URLs to try - desktop and mobile
-        urls_to_try = [
-            # Desktop URLs
-            'https://www.facebook.com/groups/joins/',
-            f'https://www.facebook.com/{user_id}/groups' if user_id else None,
-            'https://www.facebook.com/groups/?category=membership',
-            'https://www.facebook.com/groups/feed/',
-            # Mobile URLs (fallback)
-            'https://m.facebook.com/groups/?category=membership',
-            'https://m.facebook.com/groups/joins/',
-            'https://mbasic.facebook.com/groups/?category=membership',
-        ]
-        
-        # Filter out None values
-        urls_to_try = [u for u in urls_to_try if u]
-        
-        for url in urls_to_try:
-            if len(discovered) >= 50:  # Stop if we have enough
-                break
-                
-            try:
-                logger.info(f"Trying URL: {url}")
-                response = session_req.get(url, timeout=30, allow_redirects=True)
-                
-                # Check if redirected to login
-                if '/login' in response.url or 'checkpoint' in response.url.lower():
-                    logger.warning(f"URL {url} redirected to login/checkpoint")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                viewport={'width': 1280, 'height': 720}
+            )
+            
+            # Add cookies to context
+            fb_cookies = []
+            for c in cookies_list:
+                cookie = {
+                    'name': c.get('name'),
+                    'value': c.get('value'),
+                    'domain': '.facebook.com',
+                    'path': '/'
+                }
+                fb_cookies.append(cookie)
+            
+            context.add_cookies(fb_cookies)
+            page = context.new_page()
+            
+            # URLs to try
+            urls_to_try = [
+                'https://www.facebook.com/groups/joins/',
+                f'https://www.facebook.com/{user_id}/groups' if user_id else None,
+                'https://www.facebook.com/groups/?category=membership',
+            ]
+            urls_to_try = [u for u in urls_to_try if u]
+            
+            all_html = ""
+            
+            for url in urls_to_try:
+                if len(seen_ids) >= 50:
+                    break
+                    
+                try:
+                    logger.info(f"Playwright: Loading {url}")
+                    page.goto(url, timeout=60000)
+                    page.wait_for_load_state('networkidle', timeout=30000)
+                    
+                    # Check if redirected to login
+                    if '/login' in page.url or 'checkpoint' in page.url.lower():
+                        logger.warning(f"Redirected to login: {page.url}")
+                        continue
+                    
+                    # Scroll to load more content
+                    for _ in range(3):
+                        page.evaluate("window.scrollBy(0, 1000)")
+                        page.wait_for_timeout(1000)
+                    
+                    html = page.content()
+                    all_html += html
+                    logger.info(f"Got {len(html)} bytes from {url}")
+                    
+                    # Extract group IDs from HTML
+                    patterns = [
+                        r'/groups/(\d{10,})/?["\?\s]',
+                        r'"groupID":"(\d+)"',
+                        r'"group_id":"?(\d+)"?',
+                        r'"id":"(\d{10,})"[^}]*?"__typename":"Group"',
+                        r'href="/groups/([a-zA-Z][a-zA-Z0-9._]{4,49})/?["\?]',
+                    ]
+                    
+                    for pattern in patterns:
+                        matches = re.findall(pattern, html)
+                        for gid in matches:
+                            if gid and len(gid) >= 5 and gid != user_id:
+                                seen_ids.add(gid)
+                    
+                    # Also try to extract from links directly
+                    links = page.locator('a[href*="/groups/"]').all()
+                    for link in links[:100]:  # Limit to avoid timeout
+                        try:
+                            href = link.get_attribute('href', timeout=1000)
+                            if href:
+                                match = re.search(r'/groups/(\d{10,})', href)
+                                if match:
+                                    seen_ids.add(match.group(1))
+                                else:
+                                    match = re.search(r'/groups/([a-zA-Z][a-zA-Z0-9._]{4,49})/?$', href)
+                                    if match and match.group(1) not in ['joins', 'feed', 'discover', 'create']:
+                                        seen_ids.add(match.group(1))
+                        except:
+                            continue
+                            
+                except Exception as e:
+                    logger.warning(f"Error loading {url}: {e}")
                     continue
-                
-                html = response.text
-                logger.info(f"Got {len(html)} bytes from {url}")
-                all_html += html
-                
-                # Extract groups using multiple patterns
-                patterns = [
-                    # Standard group URL patterns
-                    r'href="[^"]*?/groups/(\d{10,})[/\?"]',
-                    r'/groups/(\d{10,})',
-                    # Named groups
-                    r'href="[^"]*?/groups/([a-zA-Z][a-zA-Z0-9._]{2,49})/?["\?]',
-                    # JSON patterns in page data
-                    r'"groupID":"(\d+)"',
-                    r'"group_id":"?(\d+)"?',
-                    r'"id":"(\d{10,})"[^}]*?"__typename":"Group"',
-                    r'data-group-id="(\d+)"',
-                    # Mobile patterns
-                    r'href="/groups/(\d+)[/\?"]',
-                ]
-                
-                for pattern in patterns:
-                    matches = re.findall(pattern, html)
-                    for group_id in matches:
-                        if group_id and group_id not in seen_ids and len(group_id) >= 5:
-                            seen_ids.add(group_id)
-                
-            except requests.Timeout:
-                logger.warning(f"Timeout fetching {url}")
-                continue
-            except Exception as e:
-                logger.warning(f"Error fetching {url}: {e}")
-                continue
+            
+            browser.close()
         
         # Filter and create group entries
         skip_keywords = {'feed', 'discover', 'joins', 'create', 'notifications', 'settings', 
                         'search', 'groups', 'profile', 'help', 'pages', 'events', 'marketplace',
-                        'gaming', 'watch', 'saved', 'memories', 'friends', 'messages', 'null', 'undefined'}
+                        'gaming', 'watch', 'saved', 'memories', 'friends', 'messages', 'null', 'undefined',
+                        'your', 'new', 'suggested'}
         
         for group_id in seen_ids:
-            if len(discovered) >= 50:  # Limit results
+            if len(discovered) >= 50:
                 break
                 
-            # Skip invalid
-            if not group_id:
+            if not group_id or group_id.lower() in skip_keywords:
                 continue
-            if group_id.lower() in skip_keywords:
+            if len(group_id) < 5:
                 continue
-            if len(group_id) < 3:
-                continue
-            # Skip if it's a user ID (same as logged in user)
             if group_id == user_id:
                 continue
             
-            # Try to extract group name from collected HTML
-            group_name = group_id
+            # Try to find group name in HTML
+            group_name = f"Groupe {group_id}"
             name_patterns = [
-                rf'/groups/{re.escape(group_id)}[^>]*?>([^<]+?)</a>',
-                rf'/groups/{re.escape(group_id)}[^>]*?aria-label="([^"]+)"',
-                rf'"name":"([^"]+)"[^}}]*?"id":"{group_id}"',
+                rf'href="[^"]*?/groups/{re.escape(group_id)}[^"]*?"[^>]*?>([^<]+)</a>',
+                rf'aria-label="([^"]+)"[^>]*?href="[^"]*?/groups/{re.escape(group_id)}',
             ]
             
             for pattern in name_patterns:
-                name_match = re.search(pattern, all_html, re.IGNORECASE)
-                if name_match:
-                    potential_name = name_match.group(1).strip()
-                    # Clean HTML entities
-                    potential_name = potential_name.replace('&amp;', '&').replace('&#039;', "'").replace('&quot;', '"')
-                    if len(potential_name) >= 2 and len(potential_name) <= 150:
-                        if potential_name.lower() not in skip_keywords:
-                            group_name = potential_name
-                            break
+                match = re.search(pattern, all_html, re.IGNORECASE)
+                if match:
+                    name = match.group(1).strip()
+                    name = name.replace('&amp;', '&').replace('&#039;', "'").replace('&quot;', '"')
+                    if 2 <= len(name) <= 150 and name.lower() not in skip_keywords:
+                        group_name = name
+                        break
             
             discovered.append({
                 'name': group_name,
@@ -894,29 +897,21 @@ def discover_groups_api():
                 'url': f"https://www.facebook.com/groups/{group_id}"
             })
         
-        logger.info(f"Discovered {len(discovered)} valid groups from {len(seen_ids)} found IDs")
+        logger.info(f"Discovered {len(discovered)} valid groups from {len(seen_ids)} IDs")
         
         if len(discovered) == 0:
             return jsonify({
                 'success': False,
                 'error': 'No groups found',
-                'message': 'Could not find any groups. Make sure cookies are valid and you are a member of groups.'
+                'message': 'Aucun groupe trouvé. Vérifiez que vos cookies sont valides et que vous êtes membre de groupes.'
             }), 404
         
         return jsonify({
             'success': True,
             'groups': discovered,
             'count': len(discovered),
-            'message': f'Found {len(discovered)} groups!'
+            'message': f'{len(discovered)} groupes trouvés!'
         })
-    
-    except requests.Timeout:
-        logger.error("Request timeout")
-        return jsonify({
-            'success': False,
-            'error': 'Timeout',
-            'message': 'Request timed out. Try again.'
-        }), 408
     
     except Exception as e:
         logger.error(f"Group discovery error: {str(e)}")
@@ -925,7 +920,7 @@ def discover_groups_api():
         return jsonify({
             'success': False,
             'error': str(e),
-            'message': 'Failed to discover groups'
+            'message': 'Échec de la découverte des groupes'
         }), 500
 
 
