@@ -697,12 +697,25 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         
         try {
             const duration = getDurationData();
+            // Get selected groups for scheduling
+            const scheduleSelectedGroups = [];
+            document.querySelectorAll('.group-checkbox input:checked').forEach(cb => {
+                scheduleSelectedGroups.push(cb.value);
+            });
+            
+            if (scheduleSelectedGroups.length === 0) {
+                alert('Please select at least one group to post to.');
+                btn.disabled = false;
+                btn.innerHTML = 'Post to All Groups';
+                return;
+            }
+            
             const response = await fbAutoPoster.csrfFetch('/api/schedule', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     content,
-                    groups: groups.map(g => g.username),
+                    groups: scheduleSelectedGroups,
                     schedule_time: scheduleTime,
                     recurring: document.getElementById('recurring').checked,
                     interval_hours: getIntervalInHours(),
@@ -743,16 +756,27 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     
     // Post with media if selected
     if (selectedMedia.length > 0) {
+        // Get selected groups for media post
+        const mediaSelectedGroups = [];
+        document.querySelectorAll('.group-checkbox input:checked').forEach(cb => {
+            mediaSelectedGroups.push(cb.value);
+        });
+        
+        if (mediaSelectedGroups.length === 0) {
+            alert('Please select at least one group to post to.');
+            return;
+        }
+        
         const formData = new FormData();
         formData.append('content', content);
         selectedMedia.forEach(file => {
             formData.append('media', file);
         });
-        formData.append('groups', JSON.stringify([]));
+        formData.append('groups', JSON.stringify(mediaSelectedGroups));
         
         const btn = document.getElementById('postBtn');
         btn.disabled = true;
-        btn.innerHTML = `<span class="spinner"></span> Posting with ${selectedMedia.length} media file(s)...`;
+        btn.innerHTML = `<span class="spinner"></span> Posting to ${mediaSelectedGroups.length} group(s) with ${selectedMedia.length} media file(s)...`;
         
         try {
             const response = await fbAutoPoster.csrfFetch('/api/post-with-image', {
@@ -778,7 +802,18 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     }
     
     // Regular post
-    if (!confirm(`Post this content to ${groups.length} group(s)?`)) {
+    // Get ONLY the selected groups from checkboxes
+    const selectedGroupUsernames = [];
+    document.querySelectorAll('.group-checkbox input:checked').forEach(cb => {
+        selectedGroupUsernames.push(cb.value);
+    });
+    
+    if (selectedGroupUsernames.length === 0) {
+        alert('Please select at least one group to post to.');
+        return;
+    }
+    
+    if (!confirm(`Post this content to ${selectedGroupUsernames.length} group(s)?`)) {
         return;
     }
     
@@ -786,7 +821,7 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     btn.disabled = true;
     btn.innerHTML = `
         <span class="spinner"></span>
-        Posting...
+        Posting to ${selectedGroupUsernames.length} group(s)...
     `;
     
     try {
@@ -794,8 +829,8 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         const formData = new FormData();
         formData.append('content', content);
         
-        // Add selected groups
-        groups.forEach(g => formData.append('groups[]', g));
+        // Add ONLY selected groups (by username)
+        selectedGroupUsernames.forEach(username => formData.append('groups[]', username));
         
         // Add media files if any
         const mediaInput = document.getElementById('postMedia');
