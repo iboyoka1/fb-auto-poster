@@ -25,8 +25,6 @@ ENV SERVER_HOST=0.0.0.0
 # Expose port (Railway uses PORT env var)
 EXPOSE ${PORT:-8080}
 
-# Railway handles health checks via railway.json, remove Docker HEALTHCHECK
-# to avoid conflicts and let Railway manage it
-
-# Run with gunicorn - preload app for faster startup, single worker for Railway free tier
-CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --threads 4 --timeout 300 --preload app:app
+# Use simple Python startup for faster health check response
+# gunicorn can be slow to start, use Flask directly with threaded mode
+CMD python -c "from app import app; import os; app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), threaded=True)"
