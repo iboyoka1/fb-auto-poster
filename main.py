@@ -53,6 +53,15 @@ class FacebookGroupSpam:
         # Use persistent context to remember login session
         if self.use_persistent:
             try:
+                # Check if profile is locked (another browser using it)
+                lock_file = os.path.join(BROWSER_PROFILE_DIR, 'SingletonLock')
+                if os.path.exists(lock_file):
+                    logger.warning("Browser profile is locked, trying to clean up...")
+                    try:
+                        os.remove(lock_file)
+                    except:
+                        pass
+                
                 logger.info(f"Using persistent browser profile: {BROWSER_PROFILE_DIR}")
                 self.context = self.playwright.chromium.launch_persistent_context(
                     BROWSER_PROFILE_DIR,

@@ -1288,7 +1288,8 @@ def create_post():
         def do_post_background(post_id_arg: int, content_arg: str, groups_arg: list, media_files_arg: list, cookie_path_arg: str):
             try:
                 from main import FacebookGroupSpam
-                poster = FacebookGroupSpam(post_content=content_arg, headless=True, media_files=media_files_arg if media_files_arg else None)
+                # Use non-persistent mode to avoid browser lock issues
+                poster = FacebookGroupSpam(post_content=content_arg, headless=True, media_files=media_files_arg if media_files_arg else None, use_persistent=False)
                 poster.start_browser()
                 poster.load_cookie(cookie_path_arg)
                 # Init active post tracking
@@ -1454,12 +1455,12 @@ def fb_manual_login():
         login_status = {'success': False, 'message': '', 'cookies_saved': False}
 
         def run_manual_login():
-            # Open browser with PERSISTENT PROFILE and wait for user to complete login
-            # This saves the session to the browser profile for future use
-            poster = FacebookGroupSpam(headless=False, use_persistent=True)
+            # Open browser WITHOUT persistent profile for manual login
+            # Persistent profile can have lock issues - use regular browser + save cookies
+            poster = FacebookGroupSpam(headless=False, use_persistent=False)
             try:
                 poster.start_browser()
-                logger.info("Manual login: browser opened with PERSISTENT PROFILE for manual login")
+                logger.info("Manual login: browser opened for manual login")
                 login_status['message'] = 'Browser opened. Please login to Facebook...'
                 
                 # Navigate to Facebook
@@ -1854,7 +1855,8 @@ def post_with_image():
         import threading
         def do_post_media_bg(content_arg: str, groups_arg: list, media_files_arg: list):
             try:
-                poster = FacebookGroupSpam(post_content=content_arg, media_files=media_files_arg, headless=True)
+                # Use non-persistent mode to avoid browser lock issues
+                poster = FacebookGroupSpam(post_content=content_arg, media_files=media_files_arg, headless=True, use_persistent=False)
                 poster.start_browser()
                 poster.load_cookie()
                 poster.post_to_groups(groups_arg)

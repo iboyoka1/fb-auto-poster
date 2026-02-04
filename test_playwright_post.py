@@ -31,9 +31,9 @@ def test_post():
     test_group = groups[0]
     print(f"\n>>> Testing with group: {test_group['name']}")
     
-    # Create poster
+    # Create poster - use_persistent=False to avoid lock issues during testing
     test_content = "🔥 Test post from auto-poster - please ignore 🔥"
-    poster = FacebookGroupSpam(post_content=test_content, headless=False)  # Visible for debugging
+    poster = FacebookGroupSpam(post_content=test_content, headless=False, use_persistent=False)
     
     print("\nStarting browser...")
     poster.start_browser()
