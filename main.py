@@ -312,18 +312,17 @@ class FacebookGroupSpam:
                 # Create a copy to avoid modifying original
                 c = dict(cookie)
                 
-                # Fix sameSite value - Playwright expects "Strict", "Lax", or "None"
-                same_site = c.get('sameSite', 'Lax')
-                if same_site in ('Strict', 'Lax', 'None'):
-                    pass  # Already valid
-                elif same_site.lower() == 'strict':
+                # Fix sameSite value - Playwright expects exactly "Strict", "Lax", or "None"
+                same_site = str(c.get('sameSite', '')).lower().strip()
+                if same_site == 'strict':
                     c['sameSite'] = 'Strict'
-                elif same_site.lower() == 'lax':
+                elif same_site == 'lax':
                     c['sameSite'] = 'Lax'
-                elif same_site.lower() in ('none', 'no_restriction', 'unspecified', ''):
+                elif same_site in ('none', 'no_restriction', 'unspecified', ''):
                     c['sameSite'] = 'None'
                 else:
-                    c['sameSite'] = 'Lax'  # Default to Lax for unknown values
+                    # Remove invalid sameSite rather than setting a default
+                    c.pop('sameSite', None)
                 
                 # Ensure domain is set correctly for Facebook
                 if 'domain' not in c or not c['domain']:
@@ -331,7 +330,7 @@ class FacebookGroupSpam:
                 
                 # Remove any fields that Playwright doesn't accept
                 allowed_fields = {'name', 'value', 'domain', 'path', 'expires', 'httpOnly', 'secure', 'sameSite'}
-                c = {k: v for k, v in c.items() if k in allowed_fields}
+                c = {k: v for k, v in c.items() if k in allowed_fields and v is not None}
                 
                 sanitized_cookies.append(c)
             
@@ -489,74 +488,101 @@ class FacebookGroupSpam:
                         except:
                             pass
                         
-                        # Method 0: Try clicking the create post area directly (new FB UI)
+                        # Method 0: Try clicking the GROUP create post area (top of page, not comments)
+                        # The group composer is usually in a fixed position near the top
                         if not post_box_clicked:
                             try:
-                                # Look for the "Create post" or "Write something" container
+                                # Scroll to top first - composer is always at top
+                                self.page.evaluate("window.scrollTo(0, 0)")
+                                time.sleep(1)
+                                
+                                # Look for the GROUP "Create post" container - NOT comment boxes
+                                # Group composer usually has specific aria-labels or is in main content area
                                 composer_selectors = [
-                                    'div[aria-label*="Create"]',
-                                    'div[aria-label*="Créer"]',  # French
-                                    'div[aria-label*="post"]',
-                                    'div[aria-label*="publication"]',  # French
-                                    'span:has-text("Write something")',
-                                    'span:has-text("Exprimez-vous")',
-                                    'span:has-text("Écrivez quelque chose")',
+                                    # French group composer - specific to groups
+                                    'div[role="main"] span:has-text("Exprimez-vous")',
+                                    'div[role="main"] span:has-text("Écrivez quelque chose")',
+                                    # English group composer
+                                    'div[role="main"] span:has-text("Write something")',
+                                    'div[role="main"] span:has-text("What\'s on your mind")',
+                                    # Composer box at top (not in feed items)
+                                    'div[data-pagelet="GroupInlineComposer"] div[role="button"]',
+                                    'div[aria-label*="Create a post"] >> visible=true',
+                                    'div[aria-label*="Créer une publication"] >> visible=true',
                                 ]
                                 for selector in composer_selectors:
                                     try:
                                         el = self.page.locator(selector).first
-                                        if el.is_visible(timeout=1000):
+                                        if el.is_visible(timeout=2000):
                                             el.click()
                                             post_box_clicked = True
-                                            logger.info(f"✓ Method 0: Clicked composer via: {selector}")
+                                            logger.info(f"✓ Method 0: Clicked GROUP composer via: {selector}")
+                                            time.sleep(2)
                                             break
                                     except:
                                         continue
                             except Exception as e:
                                 logger.debug(f"Method 0 failed: {e}")
                         
-                        # Method 1: French "Exprimez-vous" (most common for French FB)
+                        # Method 1: French "Exprimez-vous" in MAIN area (not comments)
                         if not post_box_clicked:
                             try:
-                                self.page.click('div[role="button"]:has-text("Exprimez")', timeout=5000)
-                                post_box_clicked = True
-                                logger.info("✓ Method 1: Clicked 'Exprimez' (French)")
+                                # Use first visible button with Exprimez that's near top of page
+                                el = self.page.locator('div[role="main"] >> div[role="button"]:has-text("Exprimez")').first
+                                if el.is_visible(timeout=3000):
+                                    el.click()
+                                    post_box_clicked = True
+                                    logger.info("✓ Method 1: Clicked 'Exprimez' (French) in main area")
+                                    time.sleep(2)
                             except Exception as e:
                                 logger.debug(f"Method 1 failed: {e}")
                         
-                        # Method 2: English "Write"
+                        # Method 2: English "Write" in MAIN area
                         if not post_box_clicked:
                             try:
-                                self.page.click('div[role="button"]:has-text("Write")', timeout=5000)
-                                post_box_clicked = True
-                                logger.info("✓ Method 2: Clicked 'Write' button")
+                                el = self.page.locator('div[role="main"] >> div[role="button"]:has-text("Write")').first
+                                if el.is_visible(timeout=3000):
+                                    el.click()
+                                    post_box_clicked = True
+                                    logger.info("✓ Method 2: Clicked 'Write' button in main area")
+                                    time.sleep(2)
                             except Exception as e:
                                 logger.debug(f"Method 2 failed: {e}")
                         
-                        # Method 3: Try Arabic text (for Arabic Facebook)
+                        # Method 3: Try Arabic text in MAIN area
                         if not post_box_clicked:
                             try:
-                                self.page.click('div[role="button"]:has-text("اكتب")', timeout=5000)
-                                post_box_clicked = True
-                                logger.info("✓ Method 3: Clicked composer via Arabic text")
+                                el = self.page.locator('div[role="main"] >> div[role="button"]:has-text("اكتب")').first
+                                if el.is_visible(timeout=3000):
+                                    el.click()
+                                    post_box_clicked = True
+                                    logger.info("✓ Method 3: Clicked composer via Arabic text in main area")
+                                    time.sleep(2)
                             except Exception as e:
                                 logger.debug(f"Method 3 failed: {e}")
                         
-                        # Method 4: French "Écrivez"
+                        # Method 4: French "Écrivez" in MAIN area
                         if not post_box_clicked:
                             try:
-                                self.page.click('div[role="button"]:has-text("Écrivez")', timeout=5000)
-                                post_box_clicked = True
-                                logger.info("✓ Method 4: Clicked 'Écrivez' (French)")
+                                el = self.page.locator('div[role="main"] >> div[role="button"]:has-text("Écrivez")').first
+                                if el.is_visible(timeout=3000):
+                                    el.click()
+                                    post_box_clicked = True
+                                    logger.info("✓ Method 4: Clicked 'Écrivez' (French) in main area")
+                                    time.sleep(2)
                             except Exception as e:
                                 logger.debug(f"Method 4 failed: {e}")
                         
-                        # Method 5: Click on contenteditable area directly
+                        # Method 5: Click the FIRST contenteditable in main area (composer, not comments)
                         if not post_box_clicked:
                             try:
-                                self.page.click('div[contenteditable="true"]', timeout=5000)
-                                post_box_clicked = True
-                                logger.info("✓ Method 5: Clicked contenteditable div")
+                                # Comments are usually lower on page, composer is first
+                                el = self.page.locator('div[role="main"] >> div[contenteditable="true"]').first
+                                if el.is_visible(timeout=3000):
+                                    el.click()
+                                    post_box_clicked = True
+                                    logger.info("✓ Method 5: Clicked first contenteditable in main area")
+                                    time.sleep(2)
                             except Exception as e:
                                 logger.debug(f"Method 5 failed: {e}")
                         
