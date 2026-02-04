@@ -25,6 +25,5 @@ ENV SERVER_HOST=0.0.0.0
 # Expose port (Railway uses PORT env var)
 EXPOSE ${PORT:-8080}
 
-# Use simple Python startup for faster health check response
-# gunicorn can be slow to start, use Flask directly with threaded mode
-CMD python -c "from app import app; import os; app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), threaded=True)"
+# Use gunicorn with simple settings - no preload to avoid import issues
+CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --threads 2 --timeout 120 --log-level debug app:app
