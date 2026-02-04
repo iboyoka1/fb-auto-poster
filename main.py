@@ -309,6 +309,10 @@ class FacebookGroupSpam:
                 self.page.goto('https://www.facebook.com/', timeout=30000)
                 self.page.wait_for_load_state('domcontentloaded', timeout=15000)
                 time.sleep(3)
+                
+                # Handle "Continue as [Name]" popup if it appears
+                self._handle_continue_popup()
+                
                 current_url = self.page.url
                 page_title = self.page.title()
                 logger.info(f"Warmup complete - URL: {current_url}")
@@ -323,6 +327,50 @@ class FacebookGroupSpam:
                 logger.warning(f"Session warmup failed: {e}")
         else:
             logger.error(f"Cookie file not found: {cookie_path}")
+
+    def _handle_continue_popup(self):
+        """Handle Facebook's 'Continue as [Name]' popup that appears after loading cookies"""
+        try:
+            logger.info("Checking for 'Continue as' popup...")
+            
+            # Multiple selectors for the "Continue" button in different languages
+            continue_selectors = [
+                # English
+                'div[role="button"]:has-text("Continue")',
+                'button:has-text("Continue")',
+                '[aria-label*="Continue"]',
+                # French
+                'div[role="button"]:has-text("Continuer")',
+                'button:has-text("Continuer")',
+                '[aria-label*="Continuer"]',
+                # Arabic
+                'div[role="button"]:has-text("متابعة")',
+                'button:has-text("متابعة")',
+                # Generic - look for button with user name
+                'div[role="dialog"] div[role="button"]',
+                'div[role="dialog"] button',
+                # "Continue as X" pattern
+                'div[role="button"][aria-label*="Continue as"]',
+                'div[role="button"][aria-label*="Continuer en tant que"]',
+            ]
+            
+            for selector in continue_selectors:
+                try:
+                    el = self.page.locator(selector).first
+                    if el.is_visible(timeout=2000):
+                        el.click()
+                        logger.info(f"✓ Clicked 'Continue' popup via: {selector}")
+                        time.sleep(3)  # Wait for page to reload after clicking
+                        return True
+                except:
+                    continue
+            
+            logger.info("No 'Continue as' popup found (or already dismissed)")
+            return False
+            
+        except Exception as e:
+            logger.debug(f"Continue popup handler error: {e}")
+            return False
 
     def post_to_groups(self, groups, progress_callback=None, should_cancel=None):
         """Post content to multiple Facebook groups using Playwright."""
@@ -353,8 +401,11 @@ class FacebookGroupSpam:
                 self.page.goto(group_url, timeout=120000)  # 2 minutes for Render
                 self.page.wait_for_load_state('networkidle', timeout=60000)
                 
+                # Handle "Continue as [Name]" popup if it appears
+                self._handle_continue_popup()
+                
                 # Wait for dynamic content to fully load
-                time.sleep(5)
+                time.sleep(3)
                 
                 # Scroll down a bit to trigger lazy loading, then back up
                 self.page.evaluate("window.scrollBy(0, 300)")
@@ -377,8 +428,17 @@ class FacebookGroupSpam:
                         # Step 1: Find and click the post creation box
                         post_box_clicked = False
                         
-                        # Wait for page to fully render
-                        time.sleep(5)
+                        # Wait for page to fully render and scroll to find composer
+                        time.sleep(3)
+                        
+                        # Scroll down slowly to trigger lazy loading of composer
+                        for scroll_pos in [200, 400, 600]:
+                            self.page.evaluate(f"window.scrollTo(0, {scroll_pos})")
+                            time.sleep(0.5)
+                        
+                        # Scroll back to top where composer usually is
+                        self.page.evaluate("window.scrollTo(0, 0)")
+                        time.sleep(2)
                         
                         logger.info("=== ATTEMPTING TO CLICK COMPOSER ===")
                         
@@ -389,10 +449,36 @@ class FacebookGroupSpam:
                         except:
                             pass
                         
+                        # Method 0: Try clicking the create post area directly (new FB UI)
+                        if not post_box_clicked:
+                            try:
+                                # Look for the "Create post" or "Write something" container
+                                composer_selectors = [
+                                    'div[aria-label*="Create"]',
+                                    'div[aria-label*="Créer"]',  # French
+                                    'div[aria-label*="post"]',
+                                    'div[aria-label*="publication"]',  # French
+                                    'span:has-text("Write something")',
+                                    'span:has-text("Exprimez-vous")',
+                                    'span:has-text("Écrivez quelque chose")',
+                                ]
+                                for selector in composer_selectors:
+                                    try:
+                                        el = self.page.locator(selector).first
+                                        if el.is_visible(timeout=1000):
+                                            el.click()
+                                            post_box_clicked = True
+                                            logger.info(f"✓ Method 0: Clicked composer via: {selector}")
+                                            break
+                                    except:
+                                        continue
+                            except Exception as e:
+                                logger.debug(f"Method 0 failed: {e}")
+                        
                         # Method 1: French "Exprimez-vous" (most common for French FB)
                         if not post_box_clicked:
                             try:
-                                self.page.click('div[role="button"]:has-text("Exprimez")', timeout=8000)
+                                self.page.click('div[role="button"]:has-text("Exprimez")', timeout=5000)
                                 post_box_clicked = True
                                 logger.info("✓ Method 1: Clicked 'Exprimez' (French)")
                             except Exception as e:
@@ -486,15 +572,21 @@ class FacebookGroupSpam:
                         if not post_box_clicked:
                             result['error'] = 'Could not find post creation area'
                             logger.error(f"Could not find post box in {group_name}")
-                            # Save debug screenshot
+                            # Save debug screenshot and HTML
                             try:
                                 debug_dir = os.path.join('logs', 'playwright')
                                 os.makedirs(debug_dir, exist_ok=True)
-                                debug_path = os.path.join(debug_dir, f'no-composer-{group_id}-{int(time.time())}.png')
+                                timestamp = int(time.time())
+                                debug_path = os.path.join(debug_dir, f'no-composer-{group_id}-{timestamp}.png')
                                 self.page.screenshot(path=debug_path)
                                 logger.info(f"Debug screenshot saved: {debug_path}")
-                            except:
-                                pass
+                                # Also save HTML for analysis
+                                html_path = os.path.join(debug_dir, f'no-composer-{group_id}-{timestamp}.html')
+                                with open(html_path, 'w', encoding='utf-8') as f:
+                                    f.write(self.page.content())
+                                logger.info(f"Debug HTML saved: {html_path}")
+                            except Exception as save_err:
+                                logger.error(f"Failed to save debug files: {save_err}")
                         else:
                             # Wait for post dialog to open
                             time.sleep(4)
