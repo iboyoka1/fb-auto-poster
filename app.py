@@ -2259,7 +2259,16 @@ def post_with_image():
         with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
             all_groups = json.load(f)
         
-        groups_to_post = [all_groups[i] for i in selected_groups if i < len(all_groups)] if selected_groups else all_groups
+        # Filter groups by username (selected_groups contains usernames, not indices)
+        if selected_groups:
+            groups_to_post = [g for g in all_groups if g.get('username') in selected_groups]
+        else:
+            groups_to_post = all_groups
+        
+        if not groups_to_post:
+            return jsonify({'success': False, 'error': 'No valid groups selected'})
+        
+        print(f"[*] Posting to {len(groups_to_post)} groups with {len(media_files)} media files")
         
         # Background posting with media to hide bot movement
         import threading
