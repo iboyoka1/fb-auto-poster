@@ -440,8 +440,11 @@ async function loadDashboardStats() {
     } catch (_) {}
 }
 
-document.getElementById('manualLoginBtn').addEventListener('click', async () => {
-    const btn = document.getElementById('manualLoginBtn');
+// Manual login button (only if element exists)
+const manualLoginBtn = document.getElementById('manualLoginBtn');
+if (manualLoginBtn) {
+    manualLoginBtn.addEventListener('click', async () => {
+    const btn = manualLoginBtn;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Opening browser...';
 
@@ -490,6 +493,7 @@ document.getElementById('manualLoginBtn').addEventListener('click', async () => 
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg> Open Browser & Login Manually';
     }
 });
+}
 
 // Upload Cookies handler
 document.getElementById('uploadCookiesBtn').addEventListener('click', async () => {
@@ -610,7 +614,10 @@ document.getElementById('uploadGroupsBtn').addEventListener('click', async () =>
     }
 });
 
-document.getElementById('autoLoginForm').addEventListener('submit', async (e) => {
+// Auto login form (only if element exists)
+const autoLoginForm = document.getElementById('autoLoginForm');
+if (autoLoginForm) {
+    autoLoginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const btn = document.getElementById('autoLoginBtn');
@@ -659,8 +666,9 @@ document.getElementById('autoLoginForm').addEventListener('submit', async (e) =>
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Auto-Login to Facebook';
     }
 });
+}
 
-loadDashboardStats();
+// Initialize dashboard stats
 // Poll posting status and update indicator
 async function pollPostingStatus() {
     try {
