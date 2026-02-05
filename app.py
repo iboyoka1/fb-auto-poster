@@ -104,7 +104,10 @@ try:
         save_cookies_to_db, load_cookies_from_db, delete_cookies_from_db, delete_all_cookies_from_db,
         save_groups_to_db, load_groups_from_db, add_group_to_db, update_group_in_db, delete_group_from_db,
         save_accounts_to_db, load_accounts_from_db, delete_all_accounts_from_db,
-        save_credentials_to_db, load_credentials_from_db
+        save_credentials_to_db, load_credentials_from_db,
+        # User management
+        create_user, get_user_by_email, get_user_by_id, get_user_by_username,
+        verify_user_password, update_user, change_user_password, get_all_users, count_users
     )
     print("[MongoDB] Database module imported successfully")
 except ImportError as e:
@@ -114,17 +117,27 @@ except ImportError as e:
     save_cookies_to_db = lambda *a, **k: False
     load_cookies_from_db = lambda *a, **k: None
     delete_cookies_from_db = lambda *a, **k: False
-    delete_all_cookies_from_db = lambda: False
+    delete_all_cookies_from_db = lambda *a, **k: False
     save_groups_to_db = lambda *a, **k: False
-    load_groups_from_db = lambda: None
+    load_groups_from_db = lambda *a, **k: None
     add_group_to_db = lambda *a, **k: False
     update_group_in_db = lambda *a, **k: False
     delete_group_from_db = lambda *a, **k: False
     save_accounts_to_db = lambda *a, **k: False
-    load_accounts_from_db = lambda: None
-    delete_all_accounts_from_db = lambda: False
+    load_accounts_from_db = lambda *a, **k: None
+    delete_all_accounts_from_db = lambda *a, **k: False
     save_credentials_to_db = lambda *a, **k: False
     load_credentials_from_db = lambda *a, **k: None
+    # User management stubs
+    create_user = lambda *a, **k: None
+    get_user_by_email = lambda *a, **k: None
+    get_user_by_id = lambda *a, **k: None
+    get_user_by_username = lambda *a, **k: None
+    verify_user_password = lambda *a, **k: None
+    update_user = lambda *a, **k: False
+    change_user_password = lambda *a, **k: False
+    get_all_users = lambda *a, **k: []
+    count_users = lambda: 0
 
 # Initialize Sentry error monitoring
 try:
@@ -305,6 +318,7 @@ def health_check():
 def upload_groups():
     """Upload groups.json from local machine to server (for cloud deployment)"""
     try:
+        user_id = session.get('user_id')
         data = request.get_json(silent=True) or {}
         groups = data.get('groups', [])
         
@@ -320,7 +334,7 @@ def upload_groups():
                 normalized_groups.append({
                     'name': g,
                     'username': g,
-                    'status': 'member'
+                    'status': 'straight'  # Active by default
                 })
             elif isinstance(g, dict):
                 # Try to extract username from various fields
@@ -342,7 +356,7 @@ def upload_groups():
                 normalized_groups.append({
                     'name': name,
                     'username': username,
-                    'status': g.get('status', 'member')
+                    'status': g.get('status', 'straight')  # Active by default
                 })
             else:
                 logger.warning(f"[UPLOAD GROUPS] Skipping invalid group format: {g}")
@@ -356,10 +370,10 @@ def upload_groups():
         with open(groups_path, 'w', encoding='utf-8') as f:
             json.dump(normalized_groups, f, indent=2, ensure_ascii=False)
         
-        # Also save to MongoDB
-        save_groups_to_db(normalized_groups)
+        # Save to MongoDB with user_id for isolation
+        save_groups_to_db(normalized_groups, user_id=user_id)
         
-        logger.info(f"[UPLOAD GROUPS] Successfully uploaded {len(normalized_groups)} groups")
+        logger.info(f"[UPLOAD GROUPS] Successfully uploaded {len(normalized_groups)} groups for user {user_id}")
         return jsonify({
             'success': True, 
             'message': f'Uploaded {len(normalized_groups)} groups successfully',
@@ -374,17 +388,19 @@ def upload_groups():
 def facebook_status():
     """Check if user is connected to Facebook - checks session, cookie file, and MongoDB"""
     try:
+        user_id = session.get('user_id')
+        
         # First check Flask session
         fb_connected = session.get('facebook_connected', False)
         fb_email = session.get('facebook_email', '')
         fb_authenticated = session.get('facebook_authenticated', False)
         cookies = None
         
-        # Check MongoDB first for cookies (persisted across restarts)
-        mongo_cookies = load_cookies_from_db('default')
+        # Check MongoDB first for cookies (persisted across restarts, user-specific)
+        mongo_cookies = load_cookies_from_db('default', user_id=user_id)
         if mongo_cookies:
             cookies = mongo_cookies
-            logger.info(f"[MongoDB] Found {len(cookies)} cookies in database")
+            logger.info(f"[MongoDB] Found {len(cookies)} cookies in database for user {user_id}")
             
             # Restore cookies to local file if missing
             session_file = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
@@ -527,14 +543,12 @@ def facebook_logout():
     """
     try:
         email = session.get('facebook_email', 'Unknown user')
+        user_id = session.get('user_id')
 
         # Clear Flask session data completely
         session_keys = ['facebook_connected', 'facebook_email', 'facebook_authenticated', 'facebook_login_time']
         for k in session_keys:
             session.pop(k, None)
-        # Also clear login flags
-        session.pop('logged_in', None)
-        session.pop('username', None)
         session.modified = True
 
         # Remove saved cookie files in sessions/ (facebook-cookies.json and any account_* cookies)
@@ -562,11 +576,11 @@ def facebook_logout():
         except Exception as e:
             logger.warning(f"Failed to clear accounts.json: {e}")
         
-        # Also clear MongoDB data
+        # Clear MongoDB data for this user only
         try:
-            delete_all_cookies_from_db()
-            delete_all_accounts_from_db()
-            logger.info("[MongoDB] Cleared cookies and accounts from database")
+            delete_all_cookies_from_db(user_id=user_id)
+            delete_all_accounts_from_db(user_id=user_id)
+            logger.info(f"[MongoDB] Cleared cookies and accounts from database for user {user_id}")
         except Exception as e:
             logger.warning(f"Failed to clear MongoDB data: {e}")
 
@@ -657,32 +671,58 @@ def login():
     if request.method == 'POST':
         try:
             data = request.get_json(silent=True) or {}
-            username = (data.get('username') or '').strip()
+            email_or_username = (data.get('username') or data.get('email') or '').strip().lower()
             password = data.get('password') or ''
             
-            print(f"[LOGIN] Attempt: username='{username}', password length={len(password)}")
+            print(f"[LOGIN] Attempt: identifier='{email_or_username}', password length={len(password)}")
             
-            # Simple credential check (no bcrypt dependency)
+            # First try MongoDB user authentication if connected
+            if is_mongodb_connected():
+                # Try to find user by email or username
+                user = verify_user_password(email_or_username, password)
+                if not user:
+                    # Also try by username
+                    user_by_username = get_user_by_username(email_or_username)
+                    if user_by_username:
+                        user = verify_user_password(user_by_username.get('email', ''), password)
+                
+                if user:
+                    session['logged_in'] = True
+                    session['user_id'] = user.get('user_id')
+                    session['username'] = user.get('username', 'User')
+                    session['email'] = user.get('email', '')
+                    session['role'] = user.get('role', 'user')
+                    session.permanent = True
+                    session.modified = True
+                    
+                    print(f"[LOGIN] Success via MongoDB - user: {user.get('username')}, role: {user.get('role')}")
+                    return jsonify({'success': True, 'redirect': url_for('dashboard')}), 200
+                
+                # Check if any users exist - if not, allow fallback to config
+                if count_users() > 0:
+                    print(f"[LOGIN] Failed - invalid credentials (MongoDB)")
+                    return jsonify({'success': False, 'error': 'Invalid email or password'}), 200
+            
+            # Fallback to config-based auth (for initial setup or if no users exist)
             expected_username = DASHBOARD_USERNAME or 'admin'
             expected_password = DASHBOARD_PASSWORD or 'password123'
             
-            print(f"[LOGIN] Expected: username='{expected_username}', password length={len(expected_password)}")
+            print(f"[LOGIN] Trying config fallback: expected='{expected_username}'")
             
-            # Direct comparison - no hashing
-            # Allow empty password for demo mode, or match exact password
             password_valid = (password == expected_password) or (not expected_password and not password)
-            if username != expected_username or not password_valid:
+            if email_or_username != expected_username or not password_valid:
                 print(f"[LOGIN] Failed - credentials mismatch")
-                return jsonify({'success': False, 'error': 'Invalid credentials. Use username: admin, password: password123'}), 200
+                return jsonify({'success': False, 'error': 'Invalid credentials'}), 200
             
-            # Set session - MUST do this before returning
+            # Set session for config-based login
             session['logged_in'] = True
-            session['username'] = username or 'Admin'
-            session.permanent = True  # Make session persistent
-            session.modified = True   # Force session save
+            session['user_id'] = 'admin'  # Config admin uses 'admin' as user_id
+            session['username'] = expected_username
+            session['role'] = 'admin'
+            session.permanent = True
+            session.modified = True
             
-            print(f"[LOGIN] Success - session created for {username}")
-            print(f"[LOGIN] Session data: logged_in={session.get('logged_in')}, username={session.get('username')}")
+            print(f"[LOGIN] Success via config - username: {expected_username}")
             return jsonify({'success': True, 'redirect': url_for('dashboard')}), 200
         except Exception as e:
             print(f"[LOGIN] Error: {str(e)}")
@@ -691,6 +731,74 @@ def login():
     # Ensure CSRF cookie is set via template context
     resp = make_response(render_template('login.html'))
     return resp
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration page"""
+    if request.method == 'POST':
+        try:
+            data = request.get_json(silent=True) or {}
+            username = (data.get('username') or '').strip().lower()
+            email = (data.get('email') or '').strip().lower()
+            password = data.get('password') or ''
+            confirm_password = data.get('confirm_password') or ''
+            
+            # Validation
+            if not username or len(username) < 3:
+                return jsonify({'success': False, 'error': 'Username must be at least 3 characters'}), 200
+            
+            if not email or '@' not in email:
+                return jsonify({'success': False, 'error': 'Valid email is required'}), 200
+            
+            if not password or len(password) < 6:
+                return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 200
+            
+            if password != confirm_password:
+                return jsonify({'success': False, 'error': 'Passwords do not match'}), 200
+            
+            # Check MongoDB connection
+            if not is_mongodb_connected():
+                return jsonify({'success': False, 'error': 'Database not available. Please try again later.'}), 200
+            
+            # Check if email already exists
+            if get_user_by_email(email):
+                return jsonify({'success': False, 'error': 'Email already registered'}), 200
+            
+            # Check if username already exists
+            if get_user_by_username(username):
+                return jsonify({'success': False, 'error': 'Username already taken'}), 200
+            
+            # Determine role - first user is admin
+            role = 'admin' if count_users() == 0 else 'user'
+            
+            # Create user
+            user = create_user(username, email, password, role)
+            if not user:
+                return jsonify({'success': False, 'error': 'Failed to create account. Please try again.'}), 200
+            
+            print(f"[REGISTER] Created user: {username} ({email}), role: {role}")
+            
+            # Auto-login after registration
+            session['logged_in'] = True
+            session['user_id'] = user.get('user_id')
+            session['username'] = user.get('username')
+            session['email'] = user.get('email')
+            session['role'] = user.get('role')
+            session.permanent = True
+            session.modified = True
+            
+            return jsonify({
+                'success': True, 
+                'redirect': url_for('dashboard'),
+                'message': f'Account created successfully! You are the {"admin" if role == "admin" else "first user"}.'
+            }), 200
+            
+        except Exception as e:
+            print(f"[REGISTER] Error: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 200
+    
+    return render_template('register.html')
 
 @app.route('/auth/facebook', methods=['GET'])
 def facebook_auth():
@@ -817,12 +925,14 @@ def analytics_page():
 @login_required
 def get_groups():
     try:
-        # Try MongoDB first
-        groups = load_groups_from_db()
+        user_id = session.get('user_id')
+        
+        # Try MongoDB first (with user_id filtering)
+        groups = load_groups_from_db(user_id=user_id)
         if groups is not None:
             return jsonify({'success': True, 'groups': groups, 'source': 'mongodb'})
         
-        # Fall back to file
+        # Fall back to file (for backward compatibility / config-based admin)
         with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
             groups = json.load(f)
         return jsonify({'success': True, 'groups': groups, 'source': 'file'})
@@ -834,8 +944,18 @@ def get_groups():
 def add_group():
     try:
         data = request.json
-        with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
-            groups = json.load(f)
+        user_id = session.get('user_id')
+        
+        # Load existing groups for this user
+        groups = load_groups_from_db(user_id=user_id) or []
+        
+        # Also try to load from file if no MongoDB groups
+        if not groups:
+            try:
+                with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
+                    groups = json.load(f)
+            except:
+                groups = []
         
         new_group = {
             'name': data['name'],
@@ -844,11 +964,12 @@ def add_group():
         }
         groups.append(new_group)
         
+        # Save to file
         with open(f"{PROJECT_ROOT}/groups.json", "w", encoding='utf-8') as f:
             json.dump(groups, f, indent=2, ensure_ascii=False)
         
-        # Also save to MongoDB
-        save_groups_to_db(groups)
+        # Save to MongoDB with user_id
+        save_groups_to_db(groups, user_id=user_id)
         
         return jsonify({'success': True, 'message': 'Group added successfully'})
     except Exception as e:
@@ -858,15 +979,20 @@ def add_group():
 @login_required
 def delete_group(index):
     try:
-        with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
-            groups = json.load(f)
+        user_id = session.get('user_id')
+        
+        # Load groups for this user
+        groups = load_groups_from_db(user_id=user_id)
+        if groups is None:
+            with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
+                groups = json.load(f)
         
         if 0 <= index < len(groups):
             groups.pop(index)
             with open(f"{PROJECT_ROOT}/groups.json", "w", encoding='utf-8') as f:
                 json.dump(groups, f, indent=2, ensure_ascii=False)
             # Also update MongoDB
-            save_groups_to_db(groups)
+            save_groups_to_db(groups, user_id=user_id)
             return jsonify({'success': True, 'message': 'Group deleted successfully'})
         return jsonify({'success': False, 'error': 'Invalid index'})
     except Exception as e:
@@ -877,8 +1003,13 @@ def delete_group(index):
 def update_group(index):
     try:
         data = request.json
-        with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
-            groups = json.load(f)
+        user_id = session.get('user_id')
+        
+        # Load groups for this user
+        groups = load_groups_from_db(user_id=user_id)
+        if groups is None:
+            with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
+                groups = json.load(f)
         
         if 0 <= index < len(groups):
             groups[index] = {
@@ -889,7 +1020,7 @@ def update_group(index):
             with open(f"{PROJECT_ROOT}/groups.json", "w", encoding='utf-8') as f:
                 json.dump(groups, f, indent=2, ensure_ascii=False)
             # Also update MongoDB
-            save_groups_to_db(groups)
+            save_groups_to_db(groups, user_id=user_id)
             return jsonify({'success': True, 'message': 'Group updated successfully'})
         return jsonify({'success': False, 'error': 'Invalid index'})
     except Exception as e:
@@ -1305,15 +1436,21 @@ def discover_groups_batch():
 def bulk_add_groups():
     """Add multiple groups at once"""
     try:
+        user_id = session.get('user_id')
         data = request.json
         groups_to_add = data.get('groups', [])
         
         if not groups_to_add:
             return jsonify({'success': False, 'error': 'No groups provided'})
         
-        # Load existing groups
-        with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
-            existing_groups = json.load(f)
+        # Load existing groups for this user
+        existing_groups = load_groups_from_db(user_id=user_id)
+        if existing_groups is None:
+            try:
+                with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
+                    existing_groups = json.load(f)
+            except:
+                existing_groups = []
         
         # Get existing usernames to avoid duplicates
         existing_usernames = {g['username'] for g in existing_groups}
@@ -1334,8 +1471,8 @@ def bulk_add_groups():
         with open(f"{PROJECT_ROOT}/groups.json", "w", encoding='utf-8') as f:
             json.dump(existing_groups, f, indent=2, ensure_ascii=False)
         
-        # Also save to MongoDB
-        save_groups_to_db(existing_groups)
+        # Save to MongoDB with user_id for isolation
+        save_groups_to_db(existing_groups, user_id=user_id)
         
         return jsonify({
             'success': True,
@@ -1792,6 +1929,7 @@ def upload_cookies():
         import json
         import os
         
+        user_id = session.get('user_id')
         data = request.get_json()
         if not data or 'cookies' not in data:
             return jsonify({'success': False, 'error': 'No cookies provided'})
@@ -1825,10 +1963,10 @@ def upload_cookies():
         with open(cookie_path, 'w', encoding='utf-8') as f:
             json.dump(cookies, f, indent=2)
         
-        # Also save to MongoDB for persistence
-        save_cookies_to_db(cookies, account_id='default')
+        # Save to MongoDB for persistence (with user_id for isolation)
+        save_cookies_to_db(cookies, account_id='default', user_id=user_id)
         
-        logger.info(f"Cookies uploaded successfully: {len(cookies)} cookies saved")
+        logger.info(f"Cookies uploaded successfully: {len(cookies)} cookies saved for user {user_id}")
         
         # Update accounts.json
         try:
@@ -1850,8 +1988,8 @@ def upload_cookies():
                     })
                     with open(account_file, 'w', encoding='utf-8') as f:
                         json.dump(accounts, f, indent=2, ensure_ascii=False)
-                    # Also save to MongoDB
-                    save_accounts_to_db(accounts)
+                    # Also save to MongoDB with user isolation
+                    save_accounts_to_db(accounts, user_id=user_id)
         except Exception as e:
             logger.warning(f"Failed to update accounts.json: {e}")
         

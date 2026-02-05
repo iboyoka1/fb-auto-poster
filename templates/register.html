@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - FB Auto Poster{% endblock %}
+
+{% block body %}
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <svg class="facebook-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            <h1>Create Account</h1>
+            <p>Sign up to use Facebook Auto Poster</p>
+        </div>
+        
+        <div id="registerErrorMsg" class="alert alert-danger" style="display: none; margin-bottom: 15px; border-radius: 8px;"></div>
+        <div id="registerSuccessMsg" class="alert alert-success" style="display: none; margin-bottom: 15px; border-radius: 8px;"></div>
+        
+        <div class="login-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" class="form-control" placeholder="Choose a username" required minlength="3">
+                <small class="form-text text-muted">At least 3 characters</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-control" placeholder="Choose a password" required minlength="6">
+                <small class="form-text text-muted">At least 6 characters</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" class="form-control" placeholder="Confirm your password" required>
+            </div>
+            
+            <button type="button" class="btn btn-primary btn-block" onclick="handleRegister()" style="padding: 12px; font-weight: 600; border-radius: 6px;">
+                <span class="btn-text">Create Account</span>
+                <span class="btn-loader" style="display: none;">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...
+                </span>
+            </button>
+            
+            <div class="text-center mt-3">
+                <p>Already have an account? <a href="{{ url_for('login') }}" style="color: #1877f2; font-weight: 500;">Sign In</a></p>
+            </div>
+        </div>
+        
+        <div class="login-footer">
+            <p class="text-muted">🔒 Your password is securely encrypted</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-box {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.login-header .facebook-icon {
+    width: 48px;
+    height: 48px;
+    color: #1877f2;
+    margin-bottom: 15px;
+}
+
+.login-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1c1e21;
+    margin-bottom: 8px;
+}
+
+.login-header p {
+    color: #65676b;
+    font-size: 14px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #1c1e21;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #dddfe2;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #1877f2;
+    box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
+}
+
+.form-text {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-primary {
+    background: #1877f2;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background: #166fe5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.login-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.login-footer p {
+    font-size: 12px;
+    margin: 0;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+}
+
+.alert-danger {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+}
+
+.alert-success {
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.2em;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+}
+
+.spinner-border {
+    display: inline-block;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+</style>
+
+<script>
+async function handleRegister() {
+    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    const errorMsg = document.getElementById('registerErrorMsg');
+    const successMsg = document.getElementById('registerSuccessMsg');
+    const btn = document.querySelector('.btn-primary');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoader = btn.querySelector('.btn-loader');
+    
+    // Hide previous messages
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+    
+    // Validation
+    if (!username || username.length < 3) {
+        errorMsg.textContent = 'Username must be at least 3 characters';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    
+    if (!email || !email.includes('@')) {
+        errorMsg.textContent = 'Please enter a valid email address';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    
+    if (!password || password.length < 6) {
+        errorMsg.textContent = 'Password must be at least 6 characters';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        errorMsg.textContent = 'Passwords do not match';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    
+    // Show loading state
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'inline-block';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch('/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username,
+                email: email,
+                password: password,
+                confirm_password: confirmPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            successMsg.innerHTML = '<strong>✓ Success!</strong> ' + (data.message || 'Account created. Redirecting...');
+            successMsg.style.display = 'block';
+            
+            setTimeout(() => {
+                window.location.href = data.redirect || '/dashboard';
+            }, 1500);
+        } else {
+            errorMsg.textContent = data.error || 'Registration failed. Please try again.';
+            errorMsg.style.display = 'block';
+            
+            btnText.style.display = 'inline';
+            btnLoader.style.display = 'none';
+            btn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        errorMsg.textContent = 'Network error. Please try again.';
+        errorMsg.style.display = 'block';
+        
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
+// Allow Enter key to submit
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleRegister();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,12 +1,21 @@
 """
 MongoDB Database Module for Persistent Data Storage
-Handles cookies, groups, accounts, settings, and posts data
+Handles users, cookies, groups, accounts, settings, and posts data
 """
 import os
 import json
+import uuid
 from datetime import datetime
 from typing import List, Dict, Optional, Any
 from functools import wraps
+
+# Password hashing
+try:
+    import bcrypt
+    BCRYPT_AVAILABLE = True
+except ImportError:
+    BCRYPT_AVAILABLE = False
+    print("[MongoDB] bcrypt not installed, password hashing unavailable")
 
 # MongoDB connection
 try:
@@ -57,45 +66,285 @@ def is_mongodb_connected() -> bool:
     return db is not None
 
 
+# ============== USER MANAGEMENT ==============
+
+def create_user(username: str, email: str, password: str, role: str = 'user') -> Optional[Dict]:
+    """Create a new user with hashed password. Returns user dict or None if failed."""
+    db = get_db()
+    if db is None:
+        print("[MongoDB] Cannot create user - database not connected")
+        return None
+    
+    if not BCRYPT_AVAILABLE:
+        print("[MongoDB] Cannot create user - bcrypt not installed")
+        return None
+    
+    try:
+        collection = db.users
+        
+        # Check if email already exists
+        if collection.find_one({'email': email.lower()}):
+            print(f"[MongoDB] User with email {email} already exists")
+            return None
+        
+        # Check if username already exists
+        if collection.find_one({'username': username.lower()}):
+            print(f"[MongoDB] User with username {username} already exists")
+            return None
+        
+        # Hash password
+        salt = bcrypt.gensalt(rounds=12)
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+        
+        # Create user document
+        user_id = str(uuid.uuid4())
+        user = {
+            'user_id': user_id,
+            'username': username.lower(),
+            'email': email.lower(),
+            'password_hash': password_hash,
+            'role': role,  # 'admin' or 'user'
+            'created_at': datetime.utcnow(),
+            'last_login': None,
+            'is_active': True
+        }
+        
+        collection.insert_one(user)
+        print(f"[MongoDB] Created user: {username} ({email})")
+        
+        # Return user without password hash
+        user.pop('password_hash', None)
+        user.pop('_id', None)
+        return user
+        
+    except Exception as e:
+        print(f"[MongoDB] Error creating user: {e}")
+        return None
+
+
+def get_user_by_email(email: str) -> Optional[Dict]:
+    """Get user by email address"""
+    db = get_db()
+    if db is None:
+        return None
+    
+    try:
+        collection = db.users
+        user = collection.find_one({'email': email.lower()})
+        if user:
+            user.pop('_id', None)
+            return user
+        return None
+    except Exception as e:
+        print(f"[MongoDB] Error getting user by email: {e}")
+        return None
+
+
+def get_user_by_id(user_id: str) -> Optional[Dict]:
+    """Get user by user_id"""
+    db = get_db()
+    if db is None:
+        return None
+    
+    try:
+        collection = db.users
+        user = collection.find_one({'user_id': user_id})
+        if user:
+            user.pop('_id', None)
+            return user
+        return None
+    except Exception as e:
+        print(f"[MongoDB] Error getting user by id: {e}")
+        return None
+
+
+def get_user_by_username(username: str) -> Optional[Dict]:
+    """Get user by username"""
+    db = get_db()
+    if db is None:
+        return None
+    
+    try:
+        collection = db.users
+        user = collection.find_one({'username': username.lower()})
+        if user:
+            user.pop('_id', None)
+            return user
+        return None
+    except Exception as e:
+        print(f"[MongoDB] Error getting user by username: {e}")
+        return None
+
+
+def verify_user_password(email: str, password: str) -> Optional[Dict]:
+    """Verify user password and return user if valid"""
+    if not BCRYPT_AVAILABLE:
+        print("[MongoDB] Cannot verify password - bcrypt not installed")
+        return None
+    
+    user = get_user_by_email(email)
+    if not user:
+        return None
+    
+    try:
+        password_hash = user.get('password_hash', '')
+        if bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
+            # Update last login
+            update_user_last_login(user['user_id'])
+            # Return user without password hash
+            user.pop('password_hash', None)
+            return user
+        return None
+    except Exception as e:
+        print(f"[MongoDB] Error verifying password: {e}")
+        return None
+
+
+def update_user_last_login(user_id: str) -> bool:
+    """Update user's last login timestamp"""
+    db = get_db()
+    if db is None:
+        return False
+    
+    try:
+        collection = db.users
+        collection.update_one(
+            {'user_id': user_id},
+            {'$set': {'last_login': datetime.utcnow()}}
+        )
+        return True
+    except Exception as e:
+        print(f"[MongoDB] Error updating last login: {e}")
+        return False
+
+
+def update_user(user_id: str, updates: Dict) -> bool:
+    """Update user fields (except password)"""
+    db = get_db()
+    if db is None:
+        return False
+    
+    try:
+        # Don't allow password updates through this function
+        updates.pop('password_hash', None)
+        updates.pop('password', None)
+        updates['updated_at'] = datetime.utcnow()
+        
+        collection = db.users
+        result = collection.update_one(
+            {'user_id': user_id},
+            {'$set': updates}
+        )
+        return result.modified_count > 0
+    except Exception as e:
+        print(f"[MongoDB] Error updating user: {e}")
+        return False
+
+
+def change_user_password(user_id: str, new_password: str) -> bool:
+    """Change user's password"""
+    db = get_db()
+    if db is None or not BCRYPT_AVAILABLE:
+        return False
+    
+    try:
+        salt = bcrypt.gensalt(rounds=12)
+        password_hash = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
+        
+        collection = db.users
+        result = collection.update_one(
+            {'user_id': user_id},
+            {'$set': {'password_hash': password_hash, 'updated_at': datetime.utcnow()}}
+        )
+        return result.modified_count > 0
+    except Exception as e:
+        print(f"[MongoDB] Error changing password: {e}")
+        return False
+
+
+def get_all_users(include_inactive: bool = False) -> List[Dict]:
+    """Get all users (admin function)"""
+    db = get_db()
+    if db is None:
+        return []
+    
+    try:
+        collection = db.users
+        query = {} if include_inactive else {'is_active': True}
+        users = list(collection.find(query))
+        
+        # Remove sensitive data
+        for user in users:
+            user.pop('_id', None)
+            user.pop('password_hash', None)
+        
+        return users
+    except Exception as e:
+        print(f"[MongoDB] Error getting all users: {e}")
+        return []
+
+
+def count_users() -> int:
+    """Count total users"""
+    db = get_db()
+    if db is None:
+        return 0
+    
+    try:
+        return db.users.count_documents({'is_active': True})
+    except Exception as e:
+        print(f"[MongoDB] Error counting users: {e}")
+        return 0
+
+
 # ============== COOKIES STORAGE ==============
 
-def save_cookies_to_db(cookies: List[Dict], account_id: str = 'default') -> bool:
-    """Save cookies to MongoDB"""
+def save_cookies_to_db(cookies: List[Dict], account_id: str = 'default', user_id: str = None) -> bool:
+    """Save cookies to MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return False
     
     try:
         collection = db.cookies
+        query = {'account_id': account_id}
+        if user_id:
+            query['user_id'] = user_id
+        
         collection.update_one(
-            {'account_id': account_id},
+            query,
             {
                 '$set': {
                     'account_id': account_id,
+                    'user_id': user_id,
                     'cookies': cookies,
                     'updated_at': datetime.utcnow()
                 }
             },
             upsert=True
         )
-        print(f"[MongoDB] Saved {len(cookies)} cookies for account: {account_id}")
+        print(f"[MongoDB] Saved {len(cookies)} cookies for account: {account_id}, user: {user_id}")
         return True
     except Exception as e:
         print(f"[MongoDB] Error saving cookies: {e}")
         return False
 
 
-def load_cookies_from_db(account_id: str = 'default') -> Optional[List[Dict]]:
-    """Load cookies from MongoDB"""
+def load_cookies_from_db(account_id: str = 'default', user_id: str = None) -> Optional[List[Dict]]:
+    """Load cookies from MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return None
     
     try:
         collection = db.cookies
-        doc = collection.find_one({'account_id': account_id})
+        query = {'account_id': account_id}
+        if user_id:
+            query['user_id'] = user_id
+        
+        doc = collection.find_one(query)
         if doc and 'cookies' in doc:
-            print(f"[MongoDB] Loaded {len(doc['cookies'])} cookies for account: {account_id}")
+            print(f"[MongoDB] Loaded {len(doc['cookies'])} cookies for account: {account_id}, user: {user_id}")
             return doc['cookies']
         return None
     except Exception as e:
@@ -103,32 +352,37 @@ def load_cookies_from_db(account_id: str = 'default') -> Optional[List[Dict]]:
         return None
 
 
-def delete_cookies_from_db(account_id: str = 'default') -> bool:
-    """Delete cookies from MongoDB"""
+def delete_cookies_from_db(account_id: str = 'default', user_id: str = None) -> bool:
+    """Delete cookies from MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return False
     
     try:
         collection = db.cookies
-        result = collection.delete_one({'account_id': account_id})
-        print(f"[MongoDB] Deleted cookies for account: {account_id}")
+        query = {'account_id': account_id}
+        if user_id:
+            query['user_id'] = user_id
+        
+        result = collection.delete_one(query)
+        print(f"[MongoDB] Deleted cookies for account: {account_id}, user: {user_id}")
         return result.deleted_count > 0
     except Exception as e:
         print(f"[MongoDB] Error deleting cookies: {e}")
         return False
 
 
-def delete_all_cookies_from_db() -> bool:
-    """Delete all cookies from MongoDB"""
+def delete_all_cookies_from_db(user_id: str = None) -> bool:
+    """Delete all cookies from MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return False
     
     try:
         collection = db.cookies
-        result = collection.delete_many({})
-        print(f"[MongoDB] Deleted all cookies ({result.deleted_count} documents)")
+        query = {'user_id': user_id} if user_id else {}
+        result = collection.delete_many(query)
+        print(f"[MongoDB] Deleted cookies ({result.deleted_count} documents) for user: {user_id}")
         return True
     except Exception as e:
         print(f"[MongoDB] Error deleting all cookies: {e}")
@@ -137,155 +391,187 @@ def delete_all_cookies_from_db() -> bool:
 
 # ============== GROUPS STORAGE ==============
 
-def save_groups_to_db(groups: List[Dict]) -> bool:
-    """Save groups list to MongoDB"""
+def save_groups_to_db(groups: List[Dict], user_id: str = None) -> bool:
+    """Save groups list to MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return False
     
     try:
         collection = db.groups
-        # Clear existing and insert new (atomic replacement)
-        collection.delete_many({})
+        # Clear existing for this user and insert new
+        query = {'user_id': user_id} if user_id else {'user_id': None}
+        collection.delete_many(query)
+        
         if groups:
-            # Add _id to prevent duplicate issues
             for i, group in enumerate(groups):
-                group['_order'] = i  # Preserve order
+                group['_order'] = i
+                group['user_id'] = user_id
             collection.insert_many(groups)
-        print(f"[MongoDB] Saved {len(groups)} groups")
+        print(f"[MongoDB] Saved {len(groups)} groups for user: {user_id}")
         return True
     except Exception as e:
         print(f"[MongoDB] Error saving groups: {e}")
         return False
 
 
-def load_groups_from_db() -> Optional[List[Dict]]:
-    """Load groups list from MongoDB"""
+def load_groups_from_db(user_id: str = None) -> Optional[List[Dict]]:
+    """Load groups list from MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return None
     
     try:
         collection = db.groups
-        groups = list(collection.find({}).sort('_order', 1))
-        # Remove MongoDB _id and _order fields for compatibility
+        query = {'user_id': user_id} if user_id else {'user_id': None}
+        groups = list(collection.find(query).sort('_order', 1))
+        
         for group in groups:
             group.pop('_id', None)
             group.pop('_order', None)
-        print(f"[MongoDB] Loaded {len(groups)} groups")
+            group.pop('user_id', None)
+        print(f"[MongoDB] Loaded {len(groups)} groups for user: {user_id}")
         return groups
     except Exception as e:
         print(f"[MongoDB] Error loading groups: {e}")
         return None
 
 
-def add_group_to_db(group: Dict) -> bool:
-    """Add a single group to MongoDB"""
+def add_group_to_db(group: Dict, user_id: str = None) -> bool:
+    """Add a single group to MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return False
     
     try:
         collection = db.groups
-        # Get max order
-        max_order_doc = collection.find_one(sort=[('_order', -1)])
+        query = {'user_id': user_id} if user_id else {'user_id': None}
+        max_order_doc = collection.find_one(query, sort=[('_order', -1)])
         new_order = (max_order_doc.get('_order', 0) + 1) if max_order_doc else 0
         group['_order'] = new_order
+        group['user_id'] = user_id
         collection.insert_one(group)
-        print(f"[MongoDB] Added group: {group.get('name', 'unknown')}")
+        print(f"[MongoDB] Added group: {group.get('name', 'unknown')} for user: {user_id}")
         return True
     except Exception as e:
         print(f"[MongoDB] Error adding group: {e}")
         return False
 
 
-def update_group_in_db(username: str, updates: Dict) -> bool:
-    """Update a group in MongoDB"""
+def update_group_in_db(username: str, updates: Dict, user_id: str = None) -> bool:
+    """Update a group in MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return False
     
     try:
         collection = db.groups
-        result = collection.update_one(
-            {'username': username},
-            {'$set': updates}
-        )
-        print(f"[MongoDB] Updated group: {username}")
+        query = {'username': username}
+        if user_id:
+            query['user_id'] = user_id
+        
+        result = collection.update_one(query, {'$set': updates})
+        print(f"[MongoDB] Updated group: {username} for user: {user_id}")
         return result.modified_count > 0
     except Exception as e:
         print(f"[MongoDB] Error updating group: {e}")
         return False
 
 
-def delete_group_from_db(username: str) -> bool:
-    """Delete a group from MongoDB"""
+def delete_group_from_db(username: str, user_id: str = None) -> bool:
+    """Delete a group from MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return False
     
     try:
         collection = db.groups
-        result = collection.delete_one({'username': username})
-        print(f"[MongoDB] Deleted group: {username}")
+        query = {'username': username}
+        if user_id:
+            query['user_id'] = user_id
+        
+        result = collection.delete_one(query)
+        print(f"[MongoDB] Deleted group: {username} for user: {user_id}")
         return result.deleted_count > 0
     except Exception as e:
         print(f"[MongoDB] Error deleting group: {e}")
         return False
 
 
-# ============== ACCOUNTS STORAGE ==============
+# ============== FB ACCOUNTS STORAGE ==============
 
-def save_accounts_to_db(accounts: List[Dict]) -> bool:
-    """Save accounts list to MongoDB"""
+def save_fb_accounts_to_db(accounts: List[Dict], user_id: str = None) -> bool:
+    """Save Facebook accounts list to MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return False
     
     try:
-        collection = db.accounts
-        collection.delete_many({})
+        collection = db.fb_accounts
+        query = {'user_id': user_id} if user_id else {'user_id': None}
+        collection.delete_many(query)
+        
         if accounts:
+            for account in accounts:
+                account['user_id'] = user_id
             collection.insert_many(accounts)
-        print(f"[MongoDB] Saved {len(accounts)} accounts")
+        print(f"[MongoDB] Saved {len(accounts)} FB accounts for user: {user_id}")
         return True
     except Exception as e:
         print(f"[MongoDB] Error saving accounts: {e}")
         return False
 
 
-def load_accounts_from_db() -> Optional[List[Dict]]:
-    """Load accounts list from MongoDB"""
+def load_fb_accounts_from_db(user_id: str = None) -> Optional[List[Dict]]:
+    """Load Facebook accounts list from MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return None
     
     try:
-        collection = db.accounts
-        accounts = list(collection.find({}))
+        collection = db.fb_accounts
+        query = {'user_id': user_id} if user_id else {'user_id': None}
+        accounts = list(collection.find(query))
+        
         for account in accounts:
             account.pop('_id', None)
-        print(f"[MongoDB] Loaded {len(accounts)} accounts")
+            account.pop('user_id', None)
+        print(f"[MongoDB] Loaded {len(accounts)} FB accounts for user: {user_id}")
         return accounts
     except Exception as e:
         print(f"[MongoDB] Error loading accounts: {e}")
         return None
 
 
-def delete_all_accounts_from_db() -> bool:
-    """Delete all accounts from MongoDB"""
+def delete_all_fb_accounts_from_db(user_id: str = None) -> bool:
+    """Delete all Facebook accounts from MongoDB (per-user if user_id provided)"""
     db = get_db()
     if db is None:
         return False
     
     try:
-        collection = db.accounts
-        result = collection.delete_many({})
-        print(f"[MongoDB] Deleted all accounts ({result.deleted_count} documents)")
+        collection = db.fb_accounts
+        query = {'user_id': user_id} if user_id else {}
+        result = collection.delete_many(query)
+        print(f"[MongoDB] Deleted FB accounts ({result.deleted_count} documents) for user: {user_id}")
         return True
     except Exception as e:
         print(f"[MongoDB] Error deleting accounts: {e}")
         return False
+
+
+# Legacy aliases for backward compatibility
+def save_accounts_to_db(accounts: List[Dict], user_id: str = None) -> bool:
+    """Alias for save_fb_accounts_to_db"""
+    return save_fb_accounts_to_db(accounts, user_id)
+
+def load_accounts_from_db(user_id: str = None) -> Optional[List[Dict]]:
+    """Alias for load_fb_accounts_from_db"""
+    return load_fb_accounts_from_db(user_id)
+
+def delete_all_accounts_from_db(user_id: str = None) -> bool:
+    """Alias for delete_all_fb_accounts_from_db"""
+    return delete_all_fb_accounts_from_db(user_id)
 
 
 # ============== SETTINGS STORAGE ==============

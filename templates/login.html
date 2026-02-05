@@ -40,13 +40,13 @@
             <div id="dashboardErrorMsg" class="alert alert-danger" style="display: none; margin-bottom: 15px;"></div>
             <div class="login-form">
                 <div class="form-group">
-                    <label for="username">Nom d'utilisateur</label>
-                    <input type="text" id="username" value="admin" required>
+                    <label for="username">Email ou Nom d'utilisateur</label>
+                    <input type="text" id="username" placeholder="email@example.com ou admin" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="password">Mot de passe</label>
-                    <input type="password" id="password" placeholder="password123" required>
+                    <input type="password" id="password" placeholder="Votre mot de passe" required>
                 </div>
                 
                 <button type="button" class="btn btn-primary btn-block" onclick="handleDashboardLogin()" style="padding: 12px; font-weight: 600; border-radius: 6px;">
@@ -55,6 +55,10 @@
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Connexion...
                     </span>
                 </button>
+                
+                <div class="text-center mt-3">
+                    <p style="color: #65676b; font-size: 14px;">Pas encore de compte ? <a href="{{ url_for('register') }}" style="color: #1877f2; font-weight: 500;">Créer un compte</a></p>
+                </div>
             </div>
         </div>
         
