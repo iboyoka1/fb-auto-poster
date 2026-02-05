@@ -2247,13 +2247,23 @@ def post_with_image():
         
         # Get all uploaded files
         uploaded_files = request.files.getlist('media')
+        logger.info(f"[POST-IMAGE] Received {len(uploaded_files)} files from request")
+        
         for file in uploaded_files:
             if file.filename:
-                file_path = os.path.join(upload_dir, f"{int(datetime.now().timestamp())}_{file.filename}")
+                # Use secure filename and add timestamp
+                safe_filename = file.filename.replace(' ', '_').replace('/', '_').replace('\\', '_')
+                file_path = os.path.join(upload_dir, f"{int(datetime.now().timestamp())}_{safe_filename}")
                 file.save(file_path)
-                media_files.append(file_path)
+                # Verify file was saved
+                if os.path.exists(file_path):
+                    file_size = os.path.getsize(file_path)
+                    media_files.append(file_path)
+                    logger.info(f"[POST-IMAGE] ✓ Saved: {file_path} ({file_size} bytes)")
+                else:
+                    logger.error(f"[POST-IMAGE] ✗ Failed to save: {file_path}")
         
-        logger.info(f"[POST-IMAGE] Uploading {len(media_files)} media files")
+        logger.info(f"[POST-IMAGE] Total media files ready: {len(media_files)}")
         
         # Load groups
         with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:

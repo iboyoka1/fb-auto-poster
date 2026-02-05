@@ -692,95 +692,171 @@ class FacebookGroupSpam:
                                     
                                     media_uploaded = False
                                     
-                                    # Method 1: Click Photo/Video button first to reveal file input
-                                    try:
-                                        # Look for Photo/Video button in the composer dialog
+                                    # First, check if file exists
+                                    valid_media_files = []
+                                    for media_file in self.media_files:
+                                        if os.path.exists(media_file):
+                                            valid_media_files.append(media_file)
+                                            logger.info(f"Media file found: {media_file}")
+                                        else:
+                                            logger.warning(f"Media file NOT found: {media_file}")
+                                    
+                                    if not valid_media_files:
+                                        logger.error("No valid media files to upload!")
+                                    else:
+                                        # STRATEGY 1: Click Photo/Video button in the composer toolbar
+                                        photo_clicked = False
                                         photo_button_selectors = [
-                                            # French
+                                            # In the composer dialog toolbar (bottom icons)
+                                            'div[role="dialog"] div[aria-label="Photo/vidéo"]',
+                                            'div[role="dialog"] div[aria-label="Photo/video"]',
+                                            'div[role="dialog"] div[aria-label="Photo/Video"]',
+                                            'div[role="dialog"] [aria-label*="Photo"]',
+                                            # French variations
                                             'div[aria-label="Photo/vidéo"]',
-                                            'span:has-text("Photo/vidéo")',
-                                            '[aria-label*="Photo"]',
-                                            # English  
+                                            'div[aria-label="Ajouter des photos/vidéos"]',
+                                            # English variations
                                             'div[aria-label="Photo/video"]',
-                                            'span:has-text("Photo/video")',
-                                            'div[aria-label="Photo/Video"]',
-                                            # Icon-based (green camera icon)
-                                            'div[style*="background-position: 0px -25px"]',  # Photo icon
-                                            'i[style*="background-position"][style*="-25px"]',
+                                            'div[aria-label="Add Photos/Videos"]',
+                                            'div[aria-label="Add photos/videos"]',
+                                            # Generic icon buttons in toolbar
+                                            'div[role="dialog"] div[role="button"]:has(svg)',
                                             # Arabic
                                             'div[aria-label*="صورة"]',
+                                            'div[aria-label*="فيديو"]',
                                         ]
                                         
+                                        logger.info("Attempting to click Photo/Video button...")
                                         for selector in photo_button_selectors:
                                             try:
                                                 photo_btn = self.page.locator(selector).first
-                                                if photo_btn.is_visible(timeout=2000):
+                                                if photo_btn.is_visible(timeout=1500):
                                                     photo_btn.click()
+                                                    photo_clicked = True
                                                     logger.info(f"✓ Clicked photo button: {selector}")
                                                     time.sleep(2)
                                                     break
-                                            except:
+                                            except Exception as e:
+                                                logger.debug(f"Photo button selector failed: {selector} - {e}")
                                                 continue
-                                    except Exception as e:
-                                        logger.debug(f"Photo button click attempt: {e}")
-                                    
-                                    # Method 2: Try to find and use file input (may be hidden)
-                                    for media_file in self.media_files:
-                                        if not os.path.exists(media_file):
-                                            logger.warning(f"Media file not found: {media_file}")
-                                            continue
+                                        
+                                        if not photo_clicked:
+                                            logger.warning("Could not click Photo button, trying direct file input...")
+                                        
+                                        # STRATEGY 2: Find and use file input (may already exist or appear after clicking)
+                                        time.sleep(1)
+                                        
+                                        for media_file in valid_media_files:
+                                            file_uploaded = False
                                             
-                                        try:
-                                            # Try multiple selectors for file input
+                                            # List of file input selectors to try
                                             file_input_selectors = [
-                                                'input[type="file"][accept*="image"]',
-                                                'input[type="file"][accept*="video"]',
-                                                'input[type="file"][accept*="image/"][accept*="video/"]',
+                                                # Specific media inputs
+                                                'input[type="file"][accept*="image"][accept*="video"]',
+                                                'input[type="file"][accept="image/*,video/*"]',
+                                                'input[type="file"][accept*="image/"]',
+                                                'input[type="file"][accept*="video/"]',
                                                 'input[type="file"][multiple]',
+                                                # Any file input in the page
                                                 'input[type="file"]',
                                             ]
                                             
-                                            file_uploaded = False
+                                            # Try each selector
                                             for selector in file_input_selectors:
                                                 try:
-                                                    file_input = self.page.locator(selector).first
-                                                    # File inputs are usually hidden, use force
-                                                    file_input.set_input_files(media_file, timeout=5000)
-                                                    file_uploaded = True
-                                                    media_uploaded = True
-                                                    logger.info(f"✓ Uploaded media via {selector}: {os.path.basename(media_file)}")
-                                                    time.sleep(3)
-                                                    break
+                                                    # Get all matching inputs
+                                                    file_inputs = self.page.locator(selector).all()
+                                                    logger.info(f"Found {len(file_inputs)} file inputs for: {selector}")
+                                                    
+                                                    for idx, file_input in enumerate(file_inputs):
+                                                        try:
+                                                            # Set files - Playwright handles hidden inputs
+                                                            file_input.set_input_files(media_file)
+                                                            file_uploaded = True
+                                                            media_uploaded = True
+                                                            logger.info(f"✓ Uploaded {os.path.basename(media_file)} via {selector}[{idx}]")
+                                                            time.sleep(2)
+                                                            break
+                                                        except Exception as e:
+                                                            logger.debug(f"Input {idx} failed: {e}")
+                                                            continue
+                                                    
+                                                    if file_uploaded:
+                                                        break
+                                                        
                                                 except Exception as e:
-                                                    logger.debug(f"File input {selector} failed: {e}")
+                                                    logger.debug(f"Selector {selector} failed: {e}")
                                                     continue
                                             
                                             if not file_uploaded:
-                                                # Method 3: Try using page.set_input_files with all file inputs
+                                                # STRATEGY 3: Use JavaScript to find hidden file inputs
                                                 try:
-                                                    all_inputs = self.page.locator('input[type="file"]').all()
-                                                    for idx_input, inp in enumerate(all_inputs):
-                                                        try:
-                                                            inp.set_input_files(media_file, timeout=3000)
-                                                            logger.info(f"✓ Uploaded via input #{idx_input}: {os.path.basename(media_file)}")
-                                                            file_uploaded = True
-                                                            media_uploaded = True
-                                                            time.sleep(3)
-                                                            break
-                                                        except:
-                                                            continue
-                                                except Exception as e:
-                                                    logger.debug(f"All inputs method failed: {e}")
+                                                    logger.info("Trying JavaScript method to find file inputs...")
+                                                    js_result = self.page.evaluate("""
+                                                        () => {
+                                                            const inputs = document.querySelectorAll('input[type="file"]');
+                                                            return inputs.length;
+                                                        }
+                                                    """)
+                                                    logger.info(f"JavaScript found {js_result} file inputs")
                                                     
-                                        except Exception as e:
-                                            logger.warning(f"Media upload failed for {media_file}: {e}")
+                                                    if js_result > 0:
+                                                        # Try setting files via the first input
+                                                        all_inputs = self.page.locator('input[type="file"]').all()
+                                                        for i, inp in enumerate(all_inputs):
+                                                            try:
+                                                                inp.set_input_files(media_file)
+                                                                file_uploaded = True
+                                                                media_uploaded = True
+                                                                logger.info(f"✓ JS method - uploaded via input #{i}")
+                                                                break
+                                                            except:
+                                                                continue
+                                                except Exception as e:
+                                                    logger.debug(f"JavaScript method failed: {e}")
+                                            
+                                            if not file_uploaded:
+                                                logger.error(f"Failed to upload: {os.path.basename(media_file)}")
                                     
                                     if media_uploaded:
                                         # Wait for media to process/thumbnail to appear
-                                        logger.info("Waiting for media to process...")
-                                        time.sleep(5)
+                                        logger.info("Waiting for media to process and thumbnail to appear...")
+                                        time.sleep(3)
+                                        
+                                        # Try to verify media was added by looking for image preview
+                                        try:
+                                            # Look for media preview indicators
+                                            media_indicators = [
+                                                'div[role="dialog"] img[src*="blob:"]',  # Blob preview
+                                                'div[role="dialog"] img[src*="scontent"]',  # Facebook CDN preview
+                                                'div[role="dialog"] video',  # Video preview
+                                                'div[aria-label*="photo"]',  # Photo container
+                                                'div[aria-label*="Photo"]',
+                                                'div[data-visualcompletion="media-vc-image"]',  # Media completion indicator
+                                            ]
+                                            for indicator in media_indicators:
+                                                try:
+                                                    if self.page.locator(indicator).first.is_visible(timeout=2000):
+                                                        logger.info(f"✓ Media preview detected: {indicator}")
+                                                        break
+                                                except:
+                                                    continue
+                                        except:
+                                            pass
+                                        
+                                        # Extra wait for processing
+                                        time.sleep(4)
                                     else:
-                                        logger.warning("Could not upload media files - posting text only")
+                                        logger.warning("⚠️ Could not upload media files - posting text only")
+                                        # Save debug screenshot
+                                        try:
+                                            debug_dir = os.path.join('logs', 'playwright')
+                                            os.makedirs(debug_dir, exist_ok=True)
+                                            debug_path = os.path.join(debug_dir, f'media-fail-{int(time.time())}.png')
+                                            self.page.screenshot(path=debug_path)
+                                            logger.info(f"Media upload debug screenshot: {debug_path}")
+                                        except:
+                                            pass
                                 
                                 # Step 4: Click Post button
                                 posted = False
