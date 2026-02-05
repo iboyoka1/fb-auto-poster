@@ -97,6 +97,35 @@ try:
 except ImportError:
     api_docs = None
 
+# MongoDB Database Module
+try:
+    from database import (
+        is_mongodb_connected, get_mongodb_status,
+        save_cookies_to_db, load_cookies_from_db, delete_cookies_from_db, delete_all_cookies_from_db,
+        save_groups_to_db, load_groups_from_db, add_group_to_db, update_group_in_db, delete_group_from_db,
+        save_accounts_to_db, load_accounts_from_db, delete_all_accounts_from_db,
+        save_credentials_to_db, load_credentials_from_db
+    )
+    print("[MongoDB] Database module imported successfully")
+except ImportError as e:
+    print(f"[MongoDB] Database module not available: {e}")
+    is_mongodb_connected = lambda: False
+    get_mongodb_status = lambda: {'connected': False}
+    save_cookies_to_db = lambda *a, **k: False
+    load_cookies_from_db = lambda *a, **k: None
+    delete_cookies_from_db = lambda *a, **k: False
+    delete_all_cookies_from_db = lambda: False
+    save_groups_to_db = lambda *a, **k: False
+    load_groups_from_db = lambda: None
+    add_group_to_db = lambda *a, **k: False
+    update_group_in_db = lambda *a, **k: False
+    delete_group_from_db = lambda *a, **k: False
+    save_accounts_to_db = lambda *a, **k: False
+    load_accounts_from_db = lambda: None
+    delete_all_accounts_from_db = lambda: False
+    save_credentials_to_db = lambda *a, **k: False
+    load_credentials_from_db = lambda *a, **k: None
+
 # Initialize Sentry error monitoring
 try:
     from error_monitoring import init_sentry, capture_exception, monitored
@@ -195,6 +224,49 @@ def init_db():
 init_db()
 print("[DATABASE] Database initialized")
 
+# Restore data from MongoDB if local files don't exist
+def restore_from_mongodb():
+    """Restore local files from MongoDB on startup (for container restarts)"""
+    try:
+        if not is_mongodb_connected():
+            print("[MongoDB] Not connected, skipping restore")
+            return
+        
+        # Restore cookies
+        cookie_file = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
+        if not os.path.exists(cookie_file):
+            cookies = load_cookies_from_db('default')
+            if cookies:
+                os.makedirs(os.path.dirname(cookie_file), exist_ok=True)
+                with open(cookie_file, 'w', encoding='utf-8') as f:
+                    json.dump(cookies, f, indent=2)
+                print(f"[MongoDB] Restored {len(cookies)} cookies from database")
+        
+        # Restore groups
+        groups_file = os.path.join(PROJECT_ROOT, 'groups.json')
+        if not os.path.exists(groups_file) or os.path.getsize(groups_file) < 10:
+            groups = load_groups_from_db()
+            if groups:
+                with open(groups_file, 'w', encoding='utf-8') as f:
+                    json.dump(groups, f, indent=2, ensure_ascii=False)
+                print(f"[MongoDB] Restored {len(groups)} groups from database")
+        
+        # Restore accounts
+        accounts_file = os.path.join(PROJECT_ROOT, 'accounts.json')
+        if not os.path.exists(accounts_file):
+            accounts = load_accounts_from_db()
+            if accounts:
+                with open(accounts_file, 'w', encoding='utf-8') as f:
+                    json.dump(accounts, f, indent=2, ensure_ascii=False)
+                print(f"[MongoDB] Restored {len(accounts)} accounts from database")
+        
+        print("[MongoDB] Data restoration complete")
+    except Exception as e:
+        print(f"[MongoDB] Restore error: {e}")
+
+# Run restoration on startup
+restore_from_mongodb()
+
 @app.context_processor
 def inject_csrf():
     token = session.get('csrf_token')
@@ -284,6 +356,9 @@ def upload_groups():
         with open(groups_path, 'w', encoding='utf-8') as f:
             json.dump(normalized_groups, f, indent=2, ensure_ascii=False)
         
+        # Also save to MongoDB
+        save_groups_to_db(normalized_groups)
+        
         logger.info(f"[UPLOAD GROUPS] Successfully uploaded {len(normalized_groups)} groups")
         return jsonify({
             'success': True, 
@@ -297,34 +372,56 @@ def upload_groups():
 
 @app.route('/api/facebook-status', methods=['GET'])
 def facebook_status():
-    """Check if user is connected to Facebook - checks both session and cookie file"""
+    """Check if user is connected to Facebook - checks session, cookie file, and MongoDB"""
     try:
         # First check Flask session
         fb_connected = session.get('facebook_connected', False)
         fb_email = session.get('facebook_email', '')
         fb_authenticated = session.get('facebook_authenticated', False)
+        cookies = None
         
-        # Also check if we have valid cookies saved (in case session was lost)
-        session_file = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
-        logger.info(f"Checking cookie file: {session_file}, exists: {os.path.exists(session_file)}")
+        # Check MongoDB first for cookies (persisted across restarts)
+        mongo_cookies = load_cookies_from_db('default')
+        if mongo_cookies:
+            cookies = mongo_cookies
+            logger.info(f"[MongoDB] Found {len(cookies)} cookies in database")
+            
+            # Restore cookies to local file if missing
+            session_file = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
+            if not os.path.exists(session_file):
+                try:
+                    os.makedirs(os.path.dirname(session_file), exist_ok=True)
+                    with open(session_file, 'w', encoding='utf-8') as f:
+                        json.dump(cookies, f, indent=2)
+                    logger.info("[MongoDB] Restored cookies from database to local file")
+                except Exception as e:
+                    logger.warning(f"Failed to restore cookies to file: {e}")
         
-        if os.path.exists(session_file):
-            try:
-                with open(session_file, 'r', encoding='utf-8') as f:
-                    cookies = json.load(f)
-                cookie_names = {c.get('name') for c in cookies}
-                logger.info(f"Found cookies: {cookie_names}")
-                
-                if 'c_user' in cookie_names and 'xs' in cookie_names:
-                    c_user_value = next((c.get('value') for c in cookies if c.get('name') == 'c_user'), None)
-                    # Cookie file is valid - update response
-                    fb_connected = True
-                    fb_authenticated = True
-                    if not fb_email:
-                        fb_email = f"User {c_user_value}"
-                    logger.info(f"Facebook session valid for user: {c_user_value}")
-            except Exception as e:
-                logger.error(f"Error reading cookies file: {e}")
+        # Also check local file if MongoDB didn't have cookies
+        if not cookies:
+            session_file = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
+            logger.info(f"Checking cookie file: {session_file}, exists: {os.path.exists(session_file)}")
+            
+            if os.path.exists(session_file):
+                try:
+                    with open(session_file, 'r', encoding='utf-8') as f:
+                        cookies = json.load(f)
+                except Exception as e:
+                    logger.error(f"Error reading cookies file: {e}")
+        
+        # Validate cookies
+        if cookies:
+            cookie_names = {c.get('name') for c in cookies}
+            logger.info(f"Found cookies: {cookie_names}")
+            
+            if 'c_user' in cookie_names and 'xs' in cookie_names:
+                c_user_value = next((c.get('value') for c in cookies if c.get('name') == 'c_user'), None)
+                # Cookies are valid - update response
+                fb_connected = True
+                fb_authenticated = True
+                if not fb_email:
+                    fb_email = f"User {c_user_value}"
+                logger.info(f"Facebook session valid for user: {c_user_value}")
         
         return jsonify({
             'connected': fb_connected,
@@ -464,6 +561,14 @@ def facebook_logout():
                     json.dump([], f)
         except Exception as e:
             logger.warning(f"Failed to clear accounts.json: {e}")
+        
+        # Also clear MongoDB data
+        try:
+            delete_all_cookies_from_db()
+            delete_all_accounts_from_db()
+            logger.info("[MongoDB] Cleared cookies and accounts from database")
+        except Exception as e:
+            logger.warning(f"Failed to clear MongoDB data: {e}")
 
         logger.info(f"[FACEBOOK LOGOUT SUCCESS] User logged out: {email}. Removed files: {removed_files}")
         return jsonify({
@@ -476,6 +581,55 @@ def facebook_logout():
     except Exception as e:
         logger.error(f"[FACEBOOK LOGOUT ERROR] {str(e)}")
         return jsonify({'success': False, 'error': 'Logout failed. Please try again.'}), 200
+
+@app.route('/api/mongodb-status', methods=['GET'])
+@login_required
+def mongodb_status():
+    """Get MongoDB connection status and statistics"""
+    try:
+        status = get_mongodb_status()
+        return jsonify({'success': True, **status})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/sync-to-mongodb', methods=['POST'])
+@login_required
+def sync_to_mongodb():
+    """Sync local files to MongoDB (one-time migration)"""
+    try:
+        results = {}
+        
+        # Sync cookies
+        cookie_file = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
+        if os.path.exists(cookie_file):
+            with open(cookie_file, 'r', encoding='utf-8') as f:
+                cookies = json.load(f)
+            results['cookies'] = save_cookies_to_db(cookies)
+        else:
+            results['cookies'] = 'no file'
+        
+        # Sync groups
+        groups_file = os.path.join(PROJECT_ROOT, 'groups.json')
+        if os.path.exists(groups_file):
+            with open(groups_file, 'r', encoding='utf-8') as f:
+                groups = json.load(f)
+            results['groups'] = save_groups_to_db(groups)
+        else:
+            results['groups'] = 'no file'
+        
+        # Sync accounts
+        accounts_file = os.path.join(PROJECT_ROOT, 'accounts.json')
+        if os.path.exists(accounts_file):
+            with open(accounts_file, 'r', encoding='utf-8') as f:
+                accounts = json.load(f)
+            results['accounts'] = save_accounts_to_db(accounts)
+        else:
+            results['accounts'] = 'no file'
+        
+        return jsonify({'success': True, 'results': results, 'message': 'Data synced to MongoDB'})
+    except Exception as e:
+        logger.error(f"Sync to MongoDB error: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/facebook-check', methods=['GET'])
 def facebook_check():
@@ -663,9 +817,15 @@ def analytics_page():
 @login_required
 def get_groups():
     try:
+        # Try MongoDB first
+        groups = load_groups_from_db()
+        if groups is not None:
+            return jsonify({'success': True, 'groups': groups, 'source': 'mongodb'})
+        
+        # Fall back to file
         with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
             groups = json.load(f)
-        return jsonify({'success': True, 'groups': groups})
+        return jsonify({'success': True, 'groups': groups, 'source': 'file'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
@@ -677,14 +837,18 @@ def add_group():
         with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
             groups = json.load(f)
         
-        groups.append({
+        new_group = {
             'name': data['name'],
             'username': data['username'],
             'status': data.get('status', 'straight')
-        })
+        }
+        groups.append(new_group)
         
         with open(f"{PROJECT_ROOT}/groups.json", "w", encoding='utf-8') as f:
             json.dump(groups, f, indent=2, ensure_ascii=False)
+        
+        # Also save to MongoDB
+        save_groups_to_db(groups)
         
         return jsonify({'success': True, 'message': 'Group added successfully'})
     except Exception as e:
@@ -701,6 +865,8 @@ def delete_group(index):
             groups.pop(index)
             with open(f"{PROJECT_ROOT}/groups.json", "w", encoding='utf-8') as f:
                 json.dump(groups, f, indent=2, ensure_ascii=False)
+            # Also update MongoDB
+            save_groups_to_db(groups)
             return jsonify({'success': True, 'message': 'Group deleted successfully'})
         return jsonify({'success': False, 'error': 'Invalid index'})
     except Exception as e:
@@ -722,6 +888,8 @@ def update_group(index):
             }
             with open(f"{PROJECT_ROOT}/groups.json", "w", encoding='utf-8') as f:
                 json.dump(groups, f, indent=2, ensure_ascii=False)
+            # Also update MongoDB
+            save_groups_to_db(groups)
             return jsonify({'success': True, 'message': 'Group updated successfully'})
         return jsonify({'success': False, 'error': 'Invalid index'})
     except Exception as e:
@@ -1165,6 +1333,9 @@ def bulk_add_groups():
         # Save updated groups
         with open(f"{PROJECT_ROOT}/groups.json", "w", encoding='utf-8') as f:
             json.dump(existing_groups, f, indent=2, ensure_ascii=False)
+        
+        # Also save to MongoDB
+        save_groups_to_db(existing_groups)
         
         return jsonify({
             'success': True,
@@ -1646,13 +1817,16 @@ def upload_cookies():
         if 'c_user' not in cookie_names or 'xs' not in cookie_names:
             return jsonify({'success': False, 'error': 'Missing required cookies (c_user and xs). Make sure you are logged into Facebook.'})
         
-        # Save cookies to file
+        # Save cookies to file (local backup)
         sessions_dir = os.path.join(PROJECT_ROOT, 'sessions')
         os.makedirs(sessions_dir, exist_ok=True)
         cookie_path = os.path.join(sessions_dir, 'facebook-cookies.json')
         
         with open(cookie_path, 'w', encoding='utf-8') as f:
             json.dump(cookies, f, indent=2)
+        
+        # Also save to MongoDB for persistence
+        save_cookies_to_db(cookies, account_id='default')
         
         logger.info(f"Cookies uploaded successfully: {len(cookies)} cookies saved")
         
@@ -1676,6 +1850,8 @@ def upload_cookies():
                     })
                     with open(account_file, 'w', encoding='utf-8') as f:
                         json.dump(accounts, f, indent=2, ensure_ascii=False)
+                    # Also save to MongoDB
+                    save_accounts_to_db(accounts)
         except Exception as e:
             logger.warning(f"Failed to update accounts.json: {e}")
         
