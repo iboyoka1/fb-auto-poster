@@ -117,14 +117,24 @@ Exemple : {Salut|Bonjour} tout le monde ! Découvrez notre {incroyable|superbe} 
                         </div>
                     </div>
                     
-                    <div class="form-group" style="border: 2px dashed #1877f2; padding: 20px; border-radius: 8px; background: #f0f8ff;">
-                        <label for="postMedia">📸🎥 Importer des Médias (Images/Vidéos Multiples Supportées !)</label>
-                        <input type="file" id="postMedia" accept="image/*,video/*" multiple onchange="previewMedia(event)">
-                        <p style="color: #666; font-size: 12px; margin-top: 5px;">Sélectionnez plusieurs fichiers : Images (JPG, PNG, GIF) ou Vidéos (MP4, MOV)</p>
-                        <div id="mediaPreview" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
+                    <div class="form-group" style="border: 2px dashed #1877f2; padding: 24px; border-radius: 12px; background: linear-gradient(135deg, #f0f8ff 0%, #e8f4fd 100%);">
+                        <label for="postMedia" style="font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <span style="font-size: 24px;">📸🎥</span>
+                            Importer des Médias (Images/Vidéos)
+                        </label>
+                        <input type="file" id="postMedia" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/quicktime,video/webm,video/x-msvideo,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.avi" multiple onchange="previewMedia(event)" style="padding: 12px; border: 2px solid #1877f2; border-radius: 8px; width: 100%; background: white; cursor: pointer;">
+                        <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+                            <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ JPG</span>
+                            <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ PNG</span>
+                            <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ GIF</span>
+                            <span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ MP4</span>
+                            <span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ MOV</span>
+                            <span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ WEBM</span>
+                        </div>
+                        <div id="mediaPreview" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
                             <!-- Media previews will appear here -->
                         </div>
-                        <button type="button" onclick="clearAllMedia()" style="margin-top: 10px; padding: 5px 10px; display: none;" id="clearMediaBtn">Tout Effacer</button>
+                        <button type="button" onclick="clearAllMedia()" style="margin-top: 12px; padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; display: none; font-weight: 500;" id="clearMediaBtn">🗑️ Tout Effacer</button>
                     </div>
                     
                     <!-- Improved Schedule Section -->

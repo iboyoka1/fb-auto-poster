@@ -218,11 +218,19 @@
         </div>
         
         <div class="dashboard-section" style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); border: 1px solid #e4e6eb;">
-            <div class="section-header" style="margin-bottom: 16px;">
+            <div class="section-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="font-size: 18px; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 20px;">🔗</span>
                     Session Facebook
                 </h3>
+                <button type="button" id="disconnectSessionBtn" onclick="disconnectFacebookSession()" style="display: none; padding: 10px 18px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 15px rgba(239,68,68,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Déconnecter
+                </button>
             </div>
             <div class="session-status" id="sessionStatusBox" style="display: none;"></div>
             
@@ -378,10 +386,13 @@ async function loadDashboardStats() {
     const statusText = document.getElementById('sessionStatus');
     const sessionCard = document.getElementById('fbSessionCard');
     const fbLoginForm = document.getElementById('fbLoginForm');
+    const disconnectBtn = document.getElementById('disconnectSessionBtn');
     
     // Show cookie form immediately while loading
     fbLoginForm.style.display = 'block';
+    statusBox.style.display = 'block';
     statusBox.innerHTML = '<div style="padding: 15px; text-align: center; color: #666;">Vérification...</div>';
+    disconnectBtn.style.display = 'none';
     
     try {
         // Load groups count
@@ -398,19 +409,21 @@ async function loadDashboardStats() {
         const sessionData = await sessionRes.json();
         
         if (sessionData.has_session && sessionData.valid) {
-            // Session active
-            statusBox.innerHTML = '<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">✓ Session Facebook active</div>';
+            // Session active - show disconnect button, hide form
+            statusBox.innerHTML = '<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">✓ Session Facebook active et prête à publier</div>';
             statusText.textContent = '✓ Active';
             statusText.parentElement.parentElement.style.background = '#e8f5e9';
             sessionCard.style.display = 'none';
             fbLoginForm.style.display = 'none';
+            disconnectBtn.style.display = 'flex';
         } else {
-            // No session or expired
+            // No session or expired - show form, hide disconnect button
             statusBox.innerHTML = '<div style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">⚠️ Importez vos cookies Facebook ci-dessous</div>';
             statusText.textContent = '✗ Inactive';
             statusText.parentElement.parentElement.style.background = '#fff3e0';
             sessionCard.style.display = 'none';
             fbLoginForm.style.display = 'block';
+            disconnectBtn.style.display = 'none';
         }
     } catch (error) {
         // Error - show cookie form
@@ -419,6 +432,7 @@ async function loadDashboardStats() {
         statusText.textContent = '✗ Inactive';
         fbLoginForm.style.display = 'block';
         sessionCard.style.display = 'none';
+        disconnectBtn.style.display = 'none';
     }
     
     // Load recent posts
@@ -438,6 +452,42 @@ async function loadDashboardStats() {
             document.getElementById('scheduledCount').textContent = (schedData.schedules || []).length;
         }
     } catch (_) {}
+}
+
+// Disconnect Facebook Session
+async function disconnectFacebookSession() {
+    if (!confirm('Êtes-vous sûr de vouloir déconnecter la session Facebook ?\n\nVous devrez importer de nouveaux cookies pour publier à nouveau.')) {
+        return;
+    }
+    
+    const btn = document.getElementById('disconnectSessionBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Déconnexion...';
+    
+    try {
+        const response = await fetch('/api/facebook-logout', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': (window.csrfToken || '')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✓ Session Facebook déconnectée avec succès !');
+            window.location.reload();
+        } else {
+            alert('Erreur: ' + (data.error || 'Échec de la déconnexion'));
+            btn.disabled = false;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Déconnecter';
+        }
+    } catch (error) {
+        alert('Erreur: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Déconnecter';
+    }
 }
 
 // Manual login button (only if element exists)
