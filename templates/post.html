@@ -795,7 +795,7 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
             });
             const data = await response.json();
             if (data.success) {
-                alert(`Posted successfully to ${data.posted_to} groups!`);
+                alert(`✓ Publication lancée avec succès !\n\n${data.posted_to} groupe(s) avec ${data.media_count || selectedMedia.length} fichier(s) média.\n\nVérifiez l'historique pour les détails.`);
                 textarea.value = '';
                 clearAllMedia();
                 updatePreview();

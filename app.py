@@ -2290,7 +2290,12 @@ def post_with_image():
         thread.daemon = True
         thread.start()
 
-        return jsonify({'success': True, 'message': 'Posting with media started'})
+        return jsonify({
+            'success': True, 
+            'message': 'Posting with media started',
+            'posted_to': len(groups_to_post),
+            'media_count': len(media_files)
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
