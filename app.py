@@ -2141,14 +2141,14 @@ def fb_auto_login():
 
 @app.route('/api/session-status', methods=['GET'])
 def session_status():
-    """Check if Facebook session exists and appears valid (fast check without browser)"""
+    """Check if Facebook session exists, is valid, and when it expires"""
     session_file = f"{PROJECT_ROOT}/sessions/facebook-cookies.json"
     exists = os.path.exists(session_file)
     
     if not exists:
         return jsonify({'success': True, 'has_session': False, 'valid': False})
     
-    # Fast check: just verify cookies file has c_user and xs cookies
+    # Fast check: verify cookies and check expiration
     try:
         with open(session_file, 'r', encoding='utf-8') as f:
             cookies = json.load(f)
@@ -2157,16 +2157,69 @@ def session_status():
         has_c_user = 'c_user' in cookie_names
         has_xs = 'xs' in cookie_names
         
-        # Get user info
+        # Get user info and expiry
         c_user_value = next((c.get('value') for c in cookies if c.get('name') == 'c_user'), None)
         
+        # Find earliest expiration date from key cookies
+        import time
+        now = time.time()
+        expiry_times = []
+        
+        for c in cookies:
+            if c.get('name') in ['c_user', 'xs', 'datr', 'fr']:
+                exp = c.get('expirationDate') or c.get('expires')
+                if exp:
+                    try:
+                        exp_time = float(exp)
+                        expiry_times.append(exp_time)
+                    except:
+                        pass
+        
+        # Calculate time until expiry
+        expires_at = None
+        expires_in_hours = None
+        expires_warning = False
+        expires_critical = False
+        
+        if expiry_times:
+            earliest_expiry = min(expiry_times)
+            expires_at = datetime.fromtimestamp(earliest_expiry).isoformat()
+            hours_remaining = (earliest_expiry - now) / 3600
+            expires_in_hours = round(hours_remaining, 1)
+            
+            # Warning if less than 24 hours
+            if hours_remaining < 24:
+                expires_warning = True
+            # Critical if less than 6 hours
+            if hours_remaining < 6:
+                expires_critical = True
+            # Expired
+            if hours_remaining <= 0:
+                return jsonify({
+                    'success': True,
+                    'has_session': True,
+                    'valid': False,
+                    'expired': True,
+                    'message': 'Session has expired. Please upload new cookies.'
+                })
+        
         if has_c_user and has_xs:
+            message = 'Facebook session is active'
+            if expires_critical:
+                message = f'⚠️ Session expires in {expires_in_hours:.0f} hours! Upload new cookies soon.'
+            elif expires_warning:
+                message = f'⏰ Session expires in {expires_in_hours:.0f} hours. Consider refreshing cookies.'
+            
             return jsonify({
                 'success': True, 
                 'has_session': True, 
                 'valid': True,
                 'user_id': c_user_value,
-                'message': 'Facebook session is active'
+                'expires_at': expires_at,
+                'expires_in_hours': expires_in_hours,
+                'expires_warning': expires_warning,
+                'expires_critical': expires_critical,
+                'message': message
             })
         else:
             return jsonify({

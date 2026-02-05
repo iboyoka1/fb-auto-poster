@@ -114,12 +114,12 @@
         </header>
         
         <!-- Facebook Session Status Card -->
-        <div id="fbSessionCard" class="session-card" style="display: none; margin-bottom: 30px; padding: 20px; border-radius: 12px; border-left: 4px solid; background: #f0f7ff;">
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <div id="sessionIcon" style="font-size: 32px;">⚠️</div>
+        <div id="fbSessionCard" class="session-card" style="display: none; margin-bottom: 24px; padding: 20px 24px; border-radius: 16px; border-left: 5px solid; background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <div style="display: flex; align-items: center; gap: 18px;">
+                <div id="sessionIcon" style="font-size: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">⚠️</div>
                 <div style="flex: 1;">
-                    <h3 id="sessionTitle" style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600;">Statut de la Session Facebook</h3>
-                    <p id="sessionMessage" style="margin: 0; color: #65676b; font-size: 14px;"></p>
+                    <h3 id="sessionTitle" style="margin: 0 0 6px 0; font-size: 17px; font-weight: 700; color: #1a1a2e;">Statut de la Session Facebook</h3>
+                    <p id="sessionMessage" style="margin: 0; color: #5a5a7a; font-size: 14px; line-height: 1.5;"></p>
                 </div>
                 <button id="sessionActionBtn" type="button" class="btn btn-primary" style="display: none;"></button>
             </div>
@@ -217,104 +217,80 @@
             </div>
         </div>
         
-        <div class="dashboard-section">
-            <div class="section-header">
-                <h3>Session Facebook</h3>
+        <div class="dashboard-section" style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); border: 1px solid #e4e6eb;">
+            <div class="section-header" style="margin-bottom: 16px;">
+                <h3 style="font-size: 18px; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">🔗</span>
+                    Session Facebook
+                </h3>
             </div>
             <div class="session-status" id="sessionStatusBox">
-                <div class="loading">Vérification de la session...</div>
+                <div class="loading" style="padding: 20px; text-align: center; color: #65676b;">Vérification de la session...</div>
             </div>
             
-            <div class="fb-login-form" id="fbLoginForm" style="display: none; margin-top: 20px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
-                <h4 style="margin-top: 0;">🔐 Connexion à Facebook</h4>
-                <p style="color: #666; font-size: 14px;">Choisissez votre méthode de connexion préférée :</p>
+            <div class="fb-login-form" id="fbLoginForm" style="display: none; margin-top: 24px; padding: 28px; background: linear-gradient(135deg, #fafbfc 0%, #f0f2f5 100%); border-radius: 16px; border: 1px solid #e4e6eb;">
+                <h4 style="margin-top: 0; margin-bottom: 20px; font-size: 18px; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 10px;">
+                    <span style="background: linear-gradient(135deg, #1877f2, #42b72a); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🔐</span>
+                    Connecter Facebook
+                </h4>
                 
-                <!-- Auto Login Form -->
-                <div id="autoLoginSection" style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 6px;">
-                    <h5 style="margin-top: 0;">Option 1 : Connexion Automatique (Rapide)</h5>
-                    <form id="autoLoginForm">
-                        <div class="form-group">
-                            <label for="fbEmail">Email/Téléphone Facebook</label>
-                            <input type="text" id="fbEmail" required placeholder="Entrez votre email ou téléphone" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div class="form-group" style="margin-top: 15px;">
-                            <label for="fbPassword">Mot de passe Facebook</label>
-                            <input type="password" id="fbPassword" required placeholder="Entrez votre mot de passe" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                            <div style="margin-top: 8px;">
-                                <label style="font-size: 13px; color: #666;">
-                                    <input type="checkbox" id="rememberMe" style="margin-right: 5px;">
-                                    Se souvenir de mes identifiants (sauvegardés dans le navigateur uniquement)
-                                </label>
-                            </div>
-                        </div>
-                        <div style="margin-top: 15px;">
-                            <button type="submit" class="btn btn-primary" id="autoLoginBtn" style="width: 100%;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                                    <polyline points="10 17 15 12 10 7"></polyline>
-                                    <line x1="15" y1="12" x2="3" y2="12"></line>
-                                </svg>
-                                Connexion Automatique
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Manual Login Option -->
-                <div style="padding: 15px; background: white; border-radius: 6px;">
-                    <h5 style="margin-top: 0;">Option 2 : Connexion Manuelle (Recommandée)</h5>
-                    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Ouvre un navigateur où vous vous connectez vous-même - plus fiable !</p>
-                    <button type="button" class="btn btn-success" id="manualLoginBtn" style="width: 100%;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                            <polyline points="15 3 21 3 21 9"></polyline>
-                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                <!-- Upload Cookies Option (Primary for Cloud) -->
+                <div style="padding: 24px; background: white; border-radius: 14px; border: 2px solid #1877f2; box-shadow: 0 4px 20px rgba(24, 119, 242, 0.1);">
+                    <h5 style="margin-top: 0; margin-bottom: 12px; color: #1877f2; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 22px; height: 22px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        Ouvrir le Navigateur et Se Connecter
-                    </button>
-                </div>
-                
-                <!-- Upload Cookies Option (for Cloud Deployment) -->
-                <div style="padding: 15px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
-                    <h5 style="margin-top: 0; color: #856404;">☁️ Option 3 : Importer les Cookies (Mode Cloud)</h5>
-                    <p style="color: #856404; font-size: 13px; margin-bottom: 15px;">Pour les déploiements cloud : Connectez-vous d'abord sur votre PC, puis collez les cookies ici.</p>
-                    <textarea id="cookiesInput" placeholder='Collez le contenu de votre fichier facebook-cookies.json ici...' style="width: 100%; height: 80px; margin-bottom: 10px; font-size: 11px; font-family: monospace; border-radius: 4px; border: 1px solid #ddd; padding: 8px;"></textarea>
-                    <button type="button" class="btn btn-warning" id="uploadCookiesBtn" style="width: 100%;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 5px;">
+                        Importer vos Cookies Facebook
+                    </h5>
+                    <p style="color: #65676b; font-size: 13px; margin-bottom: 16px; line-height: 1.5;">
+                        Collez le contenu de votre fichier <code style="background: #f0f2f5; padding: 2px 6px; border-radius: 4px; font-size: 12px;">facebook-cookies.json</code>
+                    </p>
+                    <textarea id="cookiesInput" placeholder='[{"name": "c_user", "value": "...", ...}, ...]' style="width: 100%; height: 100px; margin-bottom: 14px; font-size: 12px; font-family: 'Monaco', 'Consolas', monospace; border-radius: 10px; border: 2px solid #e4e6eb; padding: 14px; resize: vertical; transition: border-color 0.2s, box-shadow 0.2s;" onfocus="this.style.borderColor='#1877f2'; this.style.boxShadow='0 0 0 3px rgba(24,119,242,0.1)'" onblur="this.style.borderColor='#e4e6eb'; this.style.boxShadow='none'"></textarea>
+                    <button type="button" class="btn btn-primary" id="uploadCookiesBtn" style="width: 100%; padding: 14px 20px; font-weight: 600; font-size: 15px; border-radius: 10px; background: linear-gradient(135deg, #1877f2, #0d65d9); border: none; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(24,119,242,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 18px; height: 18px;">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
                         Importer les Cookies
                     </button>
-                    <p style="color: #856404; font-size: 11px; margin-top: 8px; margin-bottom: 0;">
-                        📁 Trouvez les cookies dans : <code>sessions/facebook-cookies.json</code> sur votre PC local
-                    </p>
                 </div>
                 
-                <!-- Upload Groups Option (for Cloud Deployment) -->
-                <div style="padding: 15px; background: #d1ecf1; border-radius: 6px; border: 1px solid #17a2b8; margin-top: 10px;">
-                    <h5 style="margin-top: 0; color: #0c5460;">📋 Importer les Groupes (Mode Cloud)</h5>
-                    <p style="color: #0c5460; font-size: 13px; margin-bottom: 15px;">Importez votre groups.json pour publier dans vos groupes depuis le cloud.</p>
-                    <textarea id="groupsInput" placeholder='Collez le contenu de votre groups.json ici...' style="width: 100%; height: 80px; margin-bottom: 10px; font-size: 11px; font-family: monospace; border-radius: 4px; border: 1px solid #ddd; padding: 8px;"></textarea>
-                    <button type="button" class="btn btn-info" id="uploadGroupsBtn" style="width: 100%; background: #17a2b8; border-color: #17a2b8;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 5px;">
+                <!-- Upload Groups -->
+                <div style="padding: 24px; background: white; border-radius: 14px; margin-top: 16px; border: 2px solid #e4e6eb; transition: border-color 0.2s;">
+                    <h5 style="margin-top: 0; margin-bottom: 12px; color: #1a1a2e; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5" style="width: 22px; height: 22px;">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Importer vos Groupes
+                    </h5>
+                    <p style="color: #65676b; font-size: 13px; margin-bottom: 16px; line-height: 1.5;">
+                        Collez le contenu de votre fichier <code style="background: #f0f2f5; padding: 2px 6px; border-radius: 4px; font-size: 12px;">groups.json</code>
+                    </p>
+                    <textarea id="groupsInput" placeholder='[{"name": "Mon Groupe", "username": "123456789", "status": "straight"}, ...]' style="width: 100%; height: 80px; margin-bottom: 14px; font-size: 12px; font-family: 'Monaco', 'Consolas', monospace; border-radius: 10px; border: 2px solid #e4e6eb; padding: 14px; resize: vertical; transition: border-color 0.2s, box-shadow 0.2s;" onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.1)'" onblur="this.style.borderColor='#e4e6eb'; this.style.boxShadow='none'"></textarea>
+                    <button type="button" class="btn btn-secondary" id="uploadGroupsBtn" style="width: 100%; padding: 14px 20px; font-weight: 600; font-size: 15px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(99,102,241,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 18px; height: 18px;">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
                         Importer les Groupes
                     </button>
-                    <p style="color: #0c5460; font-size: 11px; margin-top: 8px; margin-bottom: 0;">
-                        📁 Trouvez les groupes dans : <code>groups.json</code> sur votre PC local
-                    </p>
                 </div>
             </div>
         </div>
         
-        <div class="dashboard-section">
-            <div class="section-header">
-                <h3>Actions Rapides</h3>
+        <div class="dashboard-section" style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); border: 1px solid #e4e6eb; margin-top: 24px;">
+            <div class="section-header" style="margin-bottom: 20px;">
+                <h3 style="font-size: 18px; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">⚡</span>
+                    Actions Rapides
+                </h3>
             </div>
             <div class="quick-actions">
                 <a href="/groups" class="action-card">
@@ -348,13 +324,16 @@
             </div>
         </div>
 
-        <div class="dashboard-section">
-            <div class="section-header">
-                <h3>Publications Planifiées</h3>
-                <a href="/post" class="btn btn-sm btn-secondary">Créer / Planifier</a>
+        <div class="dashboard-section" style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); border: 1px solid #e4e6eb; margin-top: 24px;">
+            <div class="section-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 18px; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">📅</span>
+                    Publications Planifiées
+                </h3>
+                <a href="/post" class="btn btn-sm" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">+ Créer</a>
             </div>
             <div id="scheduleList" class="schedules-list">
-                <div class="loading">Chargement des planifications...</div>
+                <div class="loading" style="padding: 30px; text-align: center; color: #65676b;">Chargement des planifications...</div>
             </div>
         </div>
 
@@ -394,29 +373,6 @@
     </main>
 </div>
 
-<div class="card" style="margin-top: 20px;">
-    <div class="card-body">
-        <h3>Session Facebook</h3>
-        <p id="dashSessionStatus">Vérification...</p>
-        <a href="/manual-login" class="btn btn-secondary">Ouvrir les Instructions de Connexion Manuelle</a>
-    </div>
-    <script>
-        (async () => {
-            try {
-                const res = await fetch('/api/session-status');
-                const data = await res.json();
-                const p = document.getElementById('dashSessionStatus');
-                if (!data.success) { p.textContent = 'Error checking session'; return; }
-                if (data.has_session && data.valid) p.textContent = 'Session valid — ready to post.';
-                else if (data.has_session) p.textContent = 'Session invalid — please login manually.';
-                else p.textContent = 'No session — please login manually.';
-            } catch (e) {
-                document.getElementById('dashSessionStatus').textContent = 'Error: ' + e.message;
-            }
-        })();
-    </script>
-</div>
-
 <script>
 // Load saved credentials from localStorage
 function loadSavedCredentials() {
@@ -435,9 +391,6 @@ function loadSavedCredentials() {
 
 async function loadDashboardStats() {
     try {
-        // Load saved credentials
-        loadSavedCredentials();
-        
         // Load groups count
         const groupsRes = await fetch('/api/groups');
         const groupsData = await groupsRes.json();
@@ -445,27 +398,70 @@ async function loadDashboardStats() {
             document.getElementById('totalGroups').textContent = groupsData.groups.length;
         }
         
-        // Check session status
+        // Check session status with expiry info
         const sessionRes = await fetch('/api/session-status');
         const sessionData = await sessionRes.json();
         const statusBox = document.getElementById('sessionStatusBox');
         const statusText = document.getElementById('sessionStatus');
+        const sessionCard = document.getElementById('fbSessionCard');
         
         if (sessionData.has_session && sessionData.valid) {
-            statusBox.innerHTML = '<div class="status-active">✓ Facebook session is active and valid</div>';
-            statusText.textContent = '✓ Active';
-            statusText.parentElement.parentElement.style.background = '#e8f5e9';
-            document.getElementById('fbLoginForm').style.display = 'none';
+            // Check for expiry warning
+            if (sessionData.expires_critical) {
+                // Critical - less than 6 hours
+                statusBox.innerHTML = `<div class="status-warning" style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">
+                    <strong>⚠️ Session expire bientôt!</strong><br>
+                    <span style="font-size: 14px;">Expire dans ${Math.round(sessionData.expires_in_hours)} heures. Importez de nouveaux cookies.</span>
+                </div>`;
+                statusText.textContent = '⚠️ Expire';
+                statusText.parentElement.parentElement.style.background = '#fff3e0';
+                sessionCard.style.display = 'block';
+                sessionCard.style.borderLeftColor = '#ff9800';
+                sessionCard.style.background = '#fff8e1';
+                document.getElementById('sessionIcon').textContent = '⚠️';
+                document.getElementById('sessionTitle').textContent = 'Session expire bientôt!';
+                document.getElementById('sessionMessage').textContent = `Votre session Facebook expire dans ${Math.round(sessionData.expires_in_hours)} heures. Importez de nouveaux cookies pour éviter une interruption.`;
+                document.getElementById('fbLoginForm').style.display = 'block';
+            } else if (sessionData.expires_warning) {
+                // Warning - less than 24 hours
+                statusBox.innerHTML = `<div class="status-warning" style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
+                    <strong>⏰ Session expire dans ${Math.round(sessionData.expires_in_hours)} heures</strong><br>
+                    <span style="font-size: 14px;">Pensez à rafraîchir vos cookies bientôt.</span>
+                </div>`;
+                statusText.textContent = '⏰ ' + Math.round(sessionData.expires_in_hours) + 'h';
+                statusText.parentElement.parentElement.style.background = '#e3f2fd';
+                sessionCard.style.display = 'block';
+                sessionCard.style.borderLeftColor = '#2196f3';
+                sessionCard.style.background = '#e3f2fd';
+                document.getElementById('sessionIcon').textContent = '⏰';
+                document.getElementById('sessionTitle').textContent = 'Session expire dans ' + Math.round(sessionData.expires_in_hours) + ' heures';
+                document.getElementById('sessionMessage').textContent = 'Votre session est active mais expirera bientôt. Pensez à importer de nouveaux cookies.';
+                document.getElementById('fbLoginForm').style.display = 'none';
+            } else {
+                // All good
+                statusBox.innerHTML = '<div class="status-active" style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">✓ Session Facebook active et valide</div>';
+                statusText.textContent = '✓ Active';
+                statusText.parentElement.parentElement.style.background = '#e8f5e9';
+                sessionCard.style.display = 'none';
+                document.getElementById('fbLoginForm').style.display = 'none';
+            }
         } else if (sessionData.has_session && !sessionData.valid) {
-            statusBox.innerHTML = '<div class="status-inactive">⚠ Session expired. Please login again.</div>';
-            statusText.textContent = '✗ Expired';
-            statusText.parentElement.parentElement.style.background = '#fff3e0';
-            document.getElementById('fbLoginForm').style.display = 'block';
-        } else {
-            statusBox.innerHTML = '<div class="status-inactive">⚠ No Facebook session. Click below to login.</div>';
-            statusText.textContent = '✗ Inactive';
+            statusBox.innerHTML = '<div class="status-inactive" style="background: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #f44336;">❌ Session expirée. Veuillez importer de nouveaux cookies.</div>';
+            statusText.textContent = '✗ Expirée';
             statusText.parentElement.parentElement.style.background = '#ffebee';
             document.getElementById('fbLoginForm').style.display = 'block';
+            sessionCard.style.display = 'block';
+            sessionCard.style.borderLeftColor = '#f44336';
+            sessionCard.style.background = '#ffebee';
+            document.getElementById('sessionIcon').textContent = '❌';
+            document.getElementById('sessionTitle').textContent = 'Session expirée';
+            document.getElementById('sessionMessage').textContent = 'Votre session Facebook a expiré. Importez de nouveaux cookies pour continuer à publier.';
+        } else {
+            statusBox.innerHTML = '<div class="status-inactive" style="background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #9e9e9e;">⚪ Aucune session Facebook. Importez vos cookies ci-dessous.</div>';
+            statusText.textContent = '✗ Inactive';
+            statusText.parentElement.parentElement.style.background = '#f5f5f5';
+            document.getElementById('fbLoginForm').style.display = 'block';
+            sessionCard.style.display = 'none';
         }
         
         // Load recent posts
