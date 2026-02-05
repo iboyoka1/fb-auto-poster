@@ -2253,7 +2253,7 @@ def post_with_image():
                 file.save(file_path)
                 media_files.append(file_path)
         
-        print(f"[*] Uploading {len(media_files)} media files")
+        logger.info(f"[POST-IMAGE] Uploading {len(media_files)} media files")
         
         # Load groups
         with open(f"{PROJECT_ROOT}/groups.json", "r", encoding='utf-8') as f:
@@ -2268,35 +2268,142 @@ def post_with_image():
         if not groups_to_post:
             return jsonify({'success': False, 'error': 'No valid groups selected'})
         
-        print(f"[*] Posting to {len(groups_to_post)} groups with {len(media_files)} media files")
+        logger.info(f"[POST-IMAGE] Posting to {len(groups_to_post)} groups with {len(media_files)} media files")
+        
+        # Save to database first (like regular /api/post does)
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        c.execute('INSERT INTO posts (content, status, groups_posted) VALUES (?, ?, ?)', (content, 'posting', json.dumps([])))
+        post_id = c.lastrowid
+        conn.commit()
+        conn.close()
+        logger.info(f"[POST-IMAGE] Created post record with ID: {post_id}")
         
         # Background posting with media to hide bot movement
         import threading
-        def do_post_media_bg(content_arg: str, groups_arg: list, media_files_arg: list):
+        cookie_path = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
+        
+        def do_post_media_bg(post_id_arg: int, content_arg: str, groups_arg: list, media_files_arg: list, cookie_path_arg: str):
             try:
+                from main import FacebookGroupSpam
+                logger.info(f"[POST-IMAGE-BG] Starting background post {post_id_arg}")
                 # Use non-persistent mode to avoid browser lock issues
                 poster = FacebookGroupSpam(post_content=content_arg, media_files=media_files_arg, headless=True, use_persistent=False)
                 poster.start_browser()
-                poster.load_cookie()
-                poster.post_to_groups(groups_arg)
+                poster.load_cookie(cookie_path_arg)
+                
+                # Track progress like regular posting
+                ACTIVE_POSTS[post_id_arg] = {
+                    'total': len(groups_arg),
+                    'completed': 0,
+                    'failed': 0,
+                    'start_ts': time.time(),
+                    'avg_ms': 0,
+                    'last_group': None,
+                    'groups': [{'name': g.get('name'), 'username': g.get('username'), 'status': 'pending'} for g in groups_arg],
+                    'cancel': False,
+                }
+                
+                def _progress(ev: Dict):
+                    try:
+                        ok = bool(ev['result'].get('success'))
+                        ACTIVE_POSTS[post_id_arg]['completed'] += 1
+                        if not ok:
+                            ACTIVE_POSTS[post_id_arg]['failed'] += 1
+                        ACTIVE_POSTS[post_id_arg]['last_group'] = ev['result'].get('name')
+                        idx = ev.get('index', 0)
+                        if isinstance(idx, int) and 0 <= idx < len(ACTIVE_POSTS[post_id_arg]['groups']):
+                            ACTIVE_POSTS[post_id_arg]['groups'][idx]['status'] = 'done' if ok else 'failed'
+                        # Update moving average
+                        elapsed = int(ev.get('elapsed_ms', 0))
+                        meta = ACTIVE_POSTS[post_id_arg]
+                        if elapsed > 0:
+                            if meta['avg_ms'] == 0:
+                                meta['avg_ms'] = elapsed
+                            else:
+                                meta['avg_ms'] = int((meta['avg_ms'] * 0.7) + (elapsed * 0.3))
+                        # Write analytics row
+                        try:
+                            conn_a = sqlite3.connect(DATABASE)
+                            c_a = conn_a.cursor()
+                            c_a.execute('INSERT INTO post_analytics (post_id, group_name, success, error_message) VALUES (?, ?, ?, ?)', (
+                                post_id_arg,
+                                ev['result'].get('name') or ev['result'].get('username') or '',
+                                1 if ok else 0,
+                                (ev['result'].get('error') or '')[:500]
+                            ))
+                            conn_a.commit()
+                            conn_a.close()
+                        except Exception:
+                            pass
+                        # Append successful group to posts table
+                        if ok:
+                            conn_p = sqlite3.connect(DATABASE)
+                            c_p = conn_p.cursor()
+                            c_p.execute('SELECT groups_posted FROM posts WHERE id = ?', (post_id_arg,))
+                            row = c_p.fetchone()
+                            posted = json.loads(row[0]) if row and row[0] else []
+                            posted.append(ev['result']['name'])
+                            c_p.execute('UPDATE posts SET groups_posted = ? WHERE id = ?', (json.dumps(posted), post_id_arg))
+                            conn_p.commit()
+                            conn_p.close()
+                    except Exception as prog_err:
+                        logger.error(f"[POST-IMAGE-BG] Progress callback error: {prog_err}")
+                
+                def _should_cancel():
+                    return bool(ACTIVE_POSTS.get(post_id_arg, {}).get('cancel'))
+                
+                results = poster.post_to_groups(groups_arg, progress_callback=_progress, should_cancel=_should_cancel)
                 poster.close_browser()
+                
+                successful_groups = [r['name'] for r in results if r['success']]
+                logger.info(f"[POST-IMAGE-BG] Post {post_id_arg} complete: {len(successful_groups)} successful")
+                
+                # Update final status in database
+                conn_b = sqlite3.connect(DATABASE)
+                c_b = conn_b.cursor()
+                status_b = 'posted' if successful_groups else 'failed'
+                c_b.execute('UPDATE posts SET status = ?, groups_posted = ? WHERE id = ?', (status_b, json.dumps(successful_groups), post_id_arg))
+                conn_b.commit()
+                conn_b.close()
+                
+                # Clear tracking
+                ACTIVE_POSTS.pop(post_id_arg, None)
+                
+            except Exception as bg_error:
+                logger.error(f"[POST-IMAGE-BG] Background posting error: {bg_error}")
+                import traceback
+                logger.error(traceback.format_exc())
+                try:
+                    conn_b = sqlite3.connect(DATABASE)
+                    c_b = conn_b.cursor()
+                    c_b.execute('UPDATE posts SET status = ? WHERE id = ?', ('failed', post_id_arg))
+                    conn_b.commit()
+                    conn_b.close()
+                except:
+                    pass
+                ACTIVE_POSTS.pop(post_id_arg, None)
             finally:
+                # Cleanup uploaded media files
                 for file_path in media_files_arg:
                     try:
                         os.remove(file_path)
                     except:
                         pass
-        thread = threading.Thread(target=do_post_media_bg, args=(content, groups_to_post, media_files))
+                        
+        thread = threading.Thread(target=do_post_media_bg, args=(post_id, content, groups_to_post, media_files, cookie_path))
         thread.daemon = True
         thread.start()
 
         return jsonify({
             'success': True, 
             'message': 'Posting with media started',
+            'post_id': post_id,
             'posted_to': len(groups_to_post),
             'media_count': len(media_files)
         })
     except Exception as e:
+        logger.error(f"[POST-IMAGE] Error: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/schedule', methods=['POST'])
