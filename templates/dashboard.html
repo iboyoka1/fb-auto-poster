@@ -374,22 +374,17 @@
 </div>
 
 <script>
-// Load saved credentials from localStorage
-function loadSavedCredentials() {
-    const savedEmail = localStorage.getItem('fb_email');
-    const savedPassword = localStorage.getItem('fb_password');
-    const rememberMe = localStorage.getItem('fb_remember') === 'true';
-    
-    if (rememberMe && savedEmail) {
-        document.getElementById('fbEmail').value = savedEmail;
-        document.getElementById('rememberMe').checked = true;
-    }
-    if (rememberMe && savedPassword) {
-        document.getElementById('fbPassword').value = savedPassword;
-    }
-}
-
+// Dashboard initialization - show cookie form immediately, then check status
 async function loadDashboardStats() {
+    const statusBox = document.getElementById('sessionStatusBox');
+    const statusText = document.getElementById('sessionStatus');
+    const sessionCard = document.getElementById('fbSessionCard');
+    const fbLoginForm = document.getElementById('fbLoginForm');
+    
+    // Show cookie form immediately while loading
+    fbLoginForm.style.display = 'block';
+    statusBox.innerHTML = '<div style="padding: 15px; text-align: center; color: #666;">Vérification...</div>';
+    
     try {
         // Load groups count
         const groupsRes = await fetch('/api/groups');
@@ -397,91 +392,54 @@ async function loadDashboardStats() {
         if (groupsData.success) {
             document.getElementById('totalGroups').textContent = groupsData.groups.length;
         }
-        
-        // Check session status with expiry info
+    } catch (_) {}
+    
+    try {
+        // Check session status
         const sessionRes = await fetch('/api/session-status');
         const sessionData = await sessionRes.json();
-        const statusBox = document.getElementById('sessionStatusBox');
-        const statusText = document.getElementById('sessionStatus');
-        const sessionCard = document.getElementById('fbSessionCard');
         
         if (sessionData.has_session && sessionData.valid) {
-            // Check for expiry warning
-            if (sessionData.expires_critical) {
-                // Critical - less than 6 hours
-                statusBox.innerHTML = `<div class="status-warning" style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">
-                    <strong>⚠️ Session expire bientôt!</strong><br>
-                    <span style="font-size: 14px;">Expire dans ${Math.round(sessionData.expires_in_hours)} heures. Importez de nouveaux cookies.</span>
-                </div>`;
-                statusText.textContent = '⚠️ Expire';
-                statusText.parentElement.parentElement.style.background = '#fff3e0';
-                sessionCard.style.display = 'block';
-                sessionCard.style.borderLeftColor = '#ff9800';
-                sessionCard.style.background = '#fff8e1';
-                document.getElementById('sessionIcon').textContent = '⚠️';
-                document.getElementById('sessionTitle').textContent = 'Session expire bientôt!';
-                document.getElementById('sessionMessage').textContent = `Votre session Facebook expire dans ${Math.round(sessionData.expires_in_hours)} heures. Importez de nouveaux cookies pour éviter une interruption.`;
-                document.getElementById('fbLoginForm').style.display = 'block';
-            } else if (sessionData.expires_warning) {
-                // Warning - less than 24 hours
-                statusBox.innerHTML = `<div class="status-warning" style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
-                    <strong>⏰ Session expire dans ${Math.round(sessionData.expires_in_hours)} heures</strong><br>
-                    <span style="font-size: 14px;">Pensez à rafraîchir vos cookies bientôt.</span>
-                </div>`;
-                statusText.textContent = '⏰ ' + Math.round(sessionData.expires_in_hours) + 'h';
-                statusText.parentElement.parentElement.style.background = '#e3f2fd';
-                sessionCard.style.display = 'block';
-                sessionCard.style.borderLeftColor = '#2196f3';
-                sessionCard.style.background = '#e3f2fd';
-                document.getElementById('sessionIcon').textContent = '⏰';
-                document.getElementById('sessionTitle').textContent = 'Session expire dans ' + Math.round(sessionData.expires_in_hours) + ' heures';
-                document.getElementById('sessionMessage').textContent = 'Votre session est active mais expirera bientôt. Pensez à importer de nouveaux cookies.';
-                document.getElementById('fbLoginForm').style.display = 'none';
-            } else {
-                // All good
-                statusBox.innerHTML = '<div class="status-active" style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">✓ Session Facebook active et valide</div>';
-                statusText.textContent = '✓ Active';
-                statusText.parentElement.parentElement.style.background = '#e8f5e9';
-                sessionCard.style.display = 'none';
-                document.getElementById('fbLoginForm').style.display = 'none';
-            }
-        } else if (sessionData.has_session && !sessionData.valid) {
-            statusBox.innerHTML = '<div class="status-inactive" style="background: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #f44336;">❌ Session expirée. Veuillez importer de nouveaux cookies.</div>';
-            statusText.textContent = '✗ Expirée';
-            statusText.parentElement.parentElement.style.background = '#ffebee';
-            document.getElementById('fbLoginForm').style.display = 'block';
-            sessionCard.style.display = 'block';
-            sessionCard.style.borderLeftColor = '#f44336';
-            sessionCard.style.background = '#ffebee';
-            document.getElementById('sessionIcon').textContent = '❌';
-            document.getElementById('sessionTitle').textContent = 'Session expirée';
-            document.getElementById('sessionMessage').textContent = 'Votre session Facebook a expiré. Importez de nouveaux cookies pour continuer à publier.';
-        } else {
-            statusBox.innerHTML = '<div class="status-inactive" style="background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #9e9e9e;">⚪ Aucune session Facebook. Importez vos cookies ci-dessous.</div>';
-            statusText.textContent = '✗ Inactive';
-            statusText.parentElement.parentElement.style.background = '#f5f5f5';
-            document.getElementById('fbLoginForm').style.display = 'block';
+            // Session active
+            statusBox.innerHTML = '<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">✓ Session Facebook active</div>';
+            statusText.textContent = '✓ Active';
+            statusText.parentElement.parentElement.style.background = '#e8f5e9';
             sessionCard.style.display = 'none';
+            fbLoginForm.style.display = 'none';
+        } else {
+            // No session or expired
+            statusBox.innerHTML = '<div style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">⚠️ Importez vos cookies Facebook ci-dessous</div>';
+            statusText.textContent = '✗ Inactive';
+            statusText.parentElement.parentElement.style.background = '#fff3e0';
+            sessionCard.style.display = 'none';
+            fbLoginForm.style.display = 'block';
         }
-        
-        // Load recent posts
+    } catch (error) {
+        // Error - show cookie form
+        console.error('Session check failed:', error);
+        statusBox.innerHTML = '<div style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">⚠️ Importez vos cookies Facebook ci-dessous</div>';
+        statusText.textContent = '✗ Inactive';
+        fbLoginForm.style.display = 'block';
+        sessionCard.style.display = 'none';
+    }
+    
+    // Load recent posts
+    try {
         const historyRes = await fetch('/api/history');
         const historyData = await historyRes.json();
         if (historyData.success) {
             document.getElementById('recentPosts').textContent = historyData.posts.length;
         }
+    } catch (_) {}
 
-        // Load scheduled count
-        try {
-            const schedRes = await fetch('/api/schedule');
-            const schedData = await schedRes.json();
-            if (schedData.success) {
-                document.getElementById('scheduledCount').textContent = (schedData.schedules || []).length;
-            }
-        } catch (_) {}
-    } catch (error) {
-        console.error('Failed to load stats:', error);
-    }
+    // Load scheduled count
+    try {
+        const schedRes = await fetch('/api/schedule');
+        const schedData = await schedRes.json();
+        if (schedData.success) {
+            document.getElementById('scheduledCount').textContent = (schedData.schedules || []).length;
+        }
+    } catch (_) {}
 }
 
 document.getElementById('manualLoginBtn').addEventListener('click', async () => {
@@ -1184,7 +1142,8 @@ document.head.appendChild(styleSheet);
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     showQuickSetupIfNeeded();
-    checkFacebookSession();
+    loadDashboardStats();
+    loadSchedules();
     loadChartJs();
 });
 </script>
