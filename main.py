@@ -357,11 +357,22 @@ class FacebookGroupSpam:
                 logger.info(f"Warmup complete - URL: {current_url}")
                 logger.info(f"Warmup complete - Title: {page_title}")
                 
-                # Check if we're logged in by looking for login elements
-                if 'login' in current_url.lower() or '/login' in current_url:
-                    logger.warning("Session warmup: Redirected to login page - cookies may be expired")
+                # Check if we're logged in - multiple indicators
+                # 1. URL contains login
+                # 2. Page title indicates login page (multiple languages)
+                login_titles = ['connexion', 'inscription', 'log in', 'sign up', 'login', 'تسجيل الدخول']
+                title_lower = page_title.lower()
+                is_login_page = (
+                    'login' in current_url.lower() or 
+                    '/login' in current_url or
+                    any(lt in title_lower for lt in login_titles)
+                )
+                
+                if is_login_page:
+                    logger.warning("⚠️ SESSION EXPIRED - Facebook showing login page. Please upload fresh cookies!")
+                    logger.warning(f"Title indicates login: {page_title}")
                 else:
-                    logger.info("Session warmup: Successfully loaded Facebook (not on login page)")
+                    logger.info("✓ Session warmup: Successfully loaded Facebook (logged in)")
             except Exception as e:
                 logger.warning(f"Session warmup failed: {e}")
         else:
