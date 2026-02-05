@@ -676,15 +676,100 @@ class FacebookGroupSpam:
                                 time.sleep(3)
                                 
                                 # Step 3: Handle media files if any
-                                if self.media_files:
+                                if self.media_files and len(self.media_files) > 0:
+                                    logger.info(f"=== UPLOADING {len(self.media_files)} MEDIA FILES ===")
+                                    
+                                    media_uploaded = False
+                                    
+                                    # Method 1: Click Photo/Video button first to reveal file input
+                                    try:
+                                        # Look for Photo/Video button in the composer dialog
+                                        photo_button_selectors = [
+                                            # French
+                                            'div[aria-label="Photo/vidéo"]',
+                                            'span:has-text("Photo/vidéo")',
+                                            '[aria-label*="Photo"]',
+                                            # English  
+                                            'div[aria-label="Photo/video"]',
+                                            'span:has-text("Photo/video")',
+                                            'div[aria-label="Photo/Video"]',
+                                            # Icon-based (green camera icon)
+                                            'div[style*="background-position: 0px -25px"]',  # Photo icon
+                                            'i[style*="background-position"][style*="-25px"]',
+                                            # Arabic
+                                            'div[aria-label*="صورة"]',
+                                        ]
+                                        
+                                        for selector in photo_button_selectors:
+                                            try:
+                                                photo_btn = self.page.locator(selector).first
+                                                if photo_btn.is_visible(timeout=2000):
+                                                    photo_btn.click()
+                                                    logger.info(f"✓ Clicked photo button: {selector}")
+                                                    time.sleep(2)
+                                                    break
+                                            except:
+                                                continue
+                                    except Exception as e:
+                                        logger.debug(f"Photo button click attempt: {e}")
+                                    
+                                    # Method 2: Try to find and use file input (may be hidden)
                                     for media_file in self.media_files:
+                                        if not os.path.exists(media_file):
+                                            logger.warning(f"Media file not found: {media_file}")
+                                            continue
+                                            
                                         try:
-                                            file_input = self.page.locator('input[type="file"]').first
-                                            file_input.set_input_files(media_file)
-                                            logger.info(f"Uploaded: {media_file}")
-                                            time.sleep(3)
+                                            # Try multiple selectors for file input
+                                            file_input_selectors = [
+                                                'input[type="file"][accept*="image"]',
+                                                'input[type="file"][accept*="video"]',
+                                                'input[type="file"][accept*="image/"][accept*="video/"]',
+                                                'input[type="file"][multiple]',
+                                                'input[type="file"]',
+                                            ]
+                                            
+                                            file_uploaded = False
+                                            for selector in file_input_selectors:
+                                                try:
+                                                    file_input = self.page.locator(selector).first
+                                                    # File inputs are usually hidden, use force
+                                                    file_input.set_input_files(media_file, timeout=5000)
+                                                    file_uploaded = True
+                                                    media_uploaded = True
+                                                    logger.info(f"✓ Uploaded media via {selector}: {os.path.basename(media_file)}")
+                                                    time.sleep(3)
+                                                    break
+                                                except Exception as e:
+                                                    logger.debug(f"File input {selector} failed: {e}")
+                                                    continue
+                                            
+                                            if not file_uploaded:
+                                                # Method 3: Try using page.set_input_files with all file inputs
+                                                try:
+                                                    all_inputs = self.page.locator('input[type="file"]').all()
+                                                    for idx_input, inp in enumerate(all_inputs):
+                                                        try:
+                                                            inp.set_input_files(media_file, timeout=3000)
+                                                            logger.info(f"✓ Uploaded via input #{idx_input}: {os.path.basename(media_file)}")
+                                                            file_uploaded = True
+                                                            media_uploaded = True
+                                                            time.sleep(3)
+                                                            break
+                                                        except:
+                                                            continue
+                                                except Exception as e:
+                                                    logger.debug(f"All inputs method failed: {e}")
+                                                    
                                         except Exception as e:
-                                            logger.warning(f"Media upload failed: {e}")
+                                            logger.warning(f"Media upload failed for {media_file}: {e}")
+                                    
+                                    if media_uploaded:
+                                        # Wait for media to process/thumbnail to appear
+                                        logger.info("Waiting for media to process...")
+                                        time.sleep(5)
+                                    else:
+                                        logger.warning("Could not upload media files - posting text only")
                                 
                                 # Step 4: Click Post button
                                 posted = False
