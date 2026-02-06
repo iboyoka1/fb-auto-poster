@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, make_response, Response
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, make_response, Response, send_from_directory
 from datetime import datetime
 import json
 import os
@@ -2263,6 +2263,25 @@ def post_with_image():
                 else:
                     logger.error(f"[POST-IMAGE] ✗ Failed to save: {file_path}")
         
+        # Handle library media IDs
+        library_media_ids = request.form.get('library_media_ids')
+        if library_media_ids:
+            try:
+                ids = json.loads(library_media_ids)
+                logger.info(f"[POST-IMAGE] Received {len(ids)} library media IDs")
+                if media_lib:
+                    for file_id in ids:
+                        file_path = media_lib.get_file_path(file_id)
+                        if file_path:
+                            media_files.append(file_path)
+                            logger.info(f"[POST-IMAGE] ✓ Library media: {file_path}")
+                        else:
+                            logger.warning(f"[POST-IMAGE] ✗ Library media not found: {file_id}")
+                else:
+                    logger.warning("[POST-IMAGE] Media library not enabled, skipping library media")
+            except json.JSONDecodeError as e:
+                logger.error(f"[POST-IMAGE] Failed to parse library_media_ids: {e}")
+        
         logger.info(f"[POST-IMAGE] Total media files ready: {len(media_files)}")
         
         # Load groups
@@ -2984,6 +3003,14 @@ def delete_media_collection(name):
         return jsonify({'success': success})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/media_library/<path:filename>')
+@login_required
+def serve_media_library_file(filename):
+    """Serve files from media library"""
+    media_library_dir = os.path.join(PROJECT_ROOT, 'media_library')
+    return send_from_directory(media_library_dir, filename)
 
 
 # Multi-Account API

@@ -117,12 +117,35 @@ Exemple : {Salut|Bonjour} tout le monde ! Découvrez notre {incroyable|superbe} 
                         </div>
                     </div>
                     
+                    <!-- MEDIA SECTION - Upload or Select from Library -->
                     <div class="form-group" style="border: 2px dashed #1877f2; padding: 24px; border-radius: 12px; background: linear-gradient(135deg, #f0f8ff 0%, #e8f4fd 100%);">
-                        <label for="postMedia" style="font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <label style="font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                             <span style="font-size: 24px;">📸🎥</span>
-                            Importer des Médias (Images/Vidéos)
+                            Ajouter des Médias (Images/Vidéos)
                         </label>
-                        <input type="file" id="postMedia" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/quicktime,video/webm,video/x-msvideo,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.avi" multiple onchange="previewMedia(event)" style="padding: 12px; border: 2px solid #1877f2; border-radius: 8px; width: 100%; background: white; cursor: pointer;">
+                        
+                        <!-- Two options: Upload or Select from Library -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                            <button type="button" onclick="document.getElementById('postMedia').click()" style="flex: 1; min-width: 200px; padding: 16px 20px; background: white; border: 2px solid #1877f2; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; color: #1877f2; transition: all 0.2s;" onmouseover="this.style.background='#e8f4fd'" onmouseout="this.style.background='white'">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Importer un Fichier
+                            </button>
+                            <button type="button" onclick="openMediaLibrary()" style="flex: 1; min-width: 200px; padding: 16px 20px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; color: white; transition: all 0.2s; box-shadow: 0 2px 8px rgba(16,185,129,0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                                Choisir de la Bibliothèque
+                            </button>
+                        </div>
+                        
+                        <input type="file" id="postMedia" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/quicktime,video/webm,video/x-msvideo,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.avi" multiple onchange="previewMedia(event)" style="display: none;">
+                        
                         <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
                             <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ JPG</span>
                             <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ PNG</span>
@@ -131,8 +154,13 @@ Exemple : {Salut|Bonjour} tout le monde ! Découvrez notre {incroyable|superbe} 
                             <span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ MOV</span>
                             <span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;">✓ WEBM</span>
                         </div>
+                        
+                        <!-- Selected Media Preview -->
                         <div id="mediaPreview" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
                             <!-- Media previews will appear here -->
+                        </div>
+                        <div id="libraryMediaPreview" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
+                            <!-- Library media previews will appear here -->
                         </div>
                         <button type="button" onclick="clearAllMedia()" style="margin-top: 12px; padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; display: none; font-weight: 500;" id="clearMediaBtn">🗑️ Tout Effacer</button>
                     </div>
@@ -308,9 +336,210 @@ Exemple : {Salut|Bonjour} tout le monde ! Découvrez notre {incroyable|superbe} 
     </main>
 </div>
 
+<!-- Media Library Selection Modal -->
+<div id="mediaLibraryModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:800px;max-height:80vh;">
+        <div class="modal-header">
+            <h3>Choisir de la Bibliothèque Média</h3>
+            <button class="modal-close" onclick="closeMediaLibraryModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="overflow-y:auto;max-height:60vh;">
+            <div id="libraryGrid" class="library-grid">
+                <!-- Media items will be loaded here -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <span id="librarySelectionCount" style="flex:1;color:#666;"></span>
+            <button class="btn btn-secondary" onclick="closeMediaLibraryModal()">Annuler</button>
+            <button class="btn btn-primary" onclick="confirmLibrarySelection()">Confirmer la Sélection</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Media Library Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--card-bg, #fff);
+    border-radius: 12px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border, #eee);
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border, #eee);
+    align-items: center;
+}
+
+.library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.library-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.library-item:hover {
+    transform: scale(1.02);
+}
+
+.library-item.selected {
+    border-color: var(--primary, #1877f2);
+}
+
+.library-item img,
+.library-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.library-item .item-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.5rem;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    color: #fff;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.library-item .check-mark {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 24px;
+    height: 24px;
+    background: var(--primary, #1877f2);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.library-item .video-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+}
+
+/* Library Preview in Post Form */
+#libraryMediaPreview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.library-preview-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.library-preview-item img,
+.library-preview-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.library-preview-item .remove-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.9);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.library-preview-item .video-badge {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    padding: 2px 4px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border-radius: 3px;
+    font-size: 0.6rem;
+}
+</style>
+
 <script>
 let groups = [];
 let selectedMedia = [];
+let selectedLibraryMedia = [];  // Media selected from library (file IDs)
 
 function toggleSchedule() {
     const checkbox = document.getElementById('schedulePost');
@@ -764,8 +993,8 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         return;
     }
     
-    // Post with media if selected
-    if (selectedMedia.length > 0) {
+    // Post with media if selected (either uploaded or from library)
+    if (selectedMedia.length > 0 || selectedLibraryMedia.length > 0) {
         // Get selected groups for media post
         const mediaSelectedGroups = [];
         document.querySelectorAll('.group-checkbox input:checked').forEach(cb => {
@@ -782,11 +1011,17 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         selectedMedia.forEach(file => {
             formData.append('media', file);
         });
+        // Add library media IDs
+        if (selectedLibraryMedia.length > 0) {
+            const libraryIds = selectedLibraryMedia.map(m => m.id);
+            formData.append('library_media_ids', JSON.stringify(libraryIds));
+        }
         formData.append('groups', JSON.stringify(mediaSelectedGroups));
         
+        const totalMedia = selectedMedia.length + selectedLibraryMedia.length;
         const btn = document.getElementById('postBtn');
         btn.disabled = true;
-        btn.innerHTML = `<span class="spinner"></span> Posting to ${mediaSelectedGroups.length} group(s) with ${selectedMedia.length} media file(s)...`;
+        btn.innerHTML = `<span class="spinner"></span> Posting to ${mediaSelectedGroups.length} group(s) with ${totalMedia} media file(s)...`;
         
         try {
             const response = await fbAutoPoster.csrfFetch('/api/post-with-image', {
@@ -795,9 +1030,11 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
             });
             const data = await response.json();
             if (data.success) {
-                alert(`✓ Publication lancée avec succès !\n\n${data.posted_to} groupe(s) avec ${data.media_count || selectedMedia.length} fichier(s) média.\n\nVérifiez l'historique pour les détails.`);
+                alert(`✓ Publication lancée avec succès !\n\n${data.posted_to} groupe(s) avec ${data.media_count || totalMedia} fichier(s) média.\n\nVérifiez l'historique pour les détails.`);
                 textarea.value = '';
                 clearAllMedia();
+                selectedLibraryMedia = [];
+                updateLibraryMediaPreview();
                 updatePreview();
             } else {
                 alert('Failed: ' + data.error);
@@ -888,6 +1125,141 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// ===== Media Library Functions =====
+
+async function openMediaLibrary() {
+    const modal = document.getElementById('mediaLibraryModal');
+    modal.style.display = 'flex';
+    await loadLibraryMedia();
+}
+
+function closeMediaLibraryModal() {
+    document.getElementById('mediaLibraryModal').style.display = 'none';
+}
+
+async function loadLibraryMedia() {
+    const grid = document.getElementById('libraryGrid');
+    grid.innerHTML = '<p style="text-align:center;color:#666;">Chargement...</p>';
+    
+    try {
+        const response = await fbAutoPoster.csrfFetch('/api/media');
+        const data = await response.json();
+        
+        if (data.success && data.files && data.files.length > 0) {
+            grid.innerHTML = '';
+            data.files.forEach(item => {
+                const isSelected = selectedLibraryMedia.some(m => m.id === item.id);
+                const div = document.createElement('div');
+                div.className = 'library-item' + (isSelected ? ' selected' : '');
+                div.dataset.id = item.id;
+                
+                // Construct URL based on media type
+                const subdir = item.media_type === 'image' ? 'images' : 'videos';
+                const url = `/media_library/${subdir}/${item.filename}`;
+                const itemWithUrl = {...item, url: url, type: item.media_type};
+                
+                div.onclick = () => toggleLibrarySelection(itemWithUrl);
+                
+                if (item.media_type === 'image') {
+                    div.innerHTML = `
+                        <img src="${url}" alt="${item.name}">
+                        <span class="item-name">${item.name}</span>
+                        ${isSelected ? '<span class="check-mark">✓</span>' : ''}
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <video src="${url}" muted></video>
+                        <span class="item-name">${item.name}</span>
+                        <span class="video-badge">VIDEO</span>
+                        ${isSelected ? '<span class="check-mark">✓</span>' : ''}
+                    `;
+                }
+                grid.appendChild(div);
+            });
+        } else {
+            grid.innerHTML = `
+                <p style="text-align:center;color:#666;grid-column:1/-1;">
+                    Aucun média trouvé.<br>
+                    <a href="/media" style="color:var(--primary);">Allez à la bibliothèque média</a> pour en ajouter.
+                </p>
+            `;
+        }
+    } catch (error) {
+        grid.innerHTML = '<p style="text-align:center;color:#dc3545;">Erreur de chargement</p>';
+        console.error(error);
+    }
+}
+
+function toggleLibrarySelection(item) {
+    const existingIndex = selectedLibraryMedia.findIndex(m => m.id === item.id);
+    
+    if (existingIndex >= 0) {
+        selectedLibraryMedia.splice(existingIndex, 1);
+    } else {
+        selectedLibraryMedia.push(item);
+    }
+    
+    // Update the grid visually
+    const gridItem = document.querySelector(`.library-item[data-id="${item.id}"]`);
+    if (gridItem) {
+        gridItem.classList.toggle('selected');
+        const checkMark = gridItem.querySelector('.check-mark');
+        if (existingIndex >= 0) {
+            if (checkMark) checkMark.remove();
+        } else {
+            const mark = document.createElement('span');
+            mark.className = 'check-mark';
+            mark.textContent = '✓';
+            gridItem.appendChild(mark);
+        }
+    }
+    
+    updateLibrarySelectionCount();
+}
+
+function updateLibrarySelectionCount() {
+    const countEl = document.getElementById('librarySelectionCount');
+    if (countEl) {
+        countEl.textContent = selectedLibraryMedia.length > 0 
+            ? `${selectedLibraryMedia.length} fichier(s) sélectionné(s)` 
+            : '';
+    }
+}
+
+function confirmLibrarySelection() {
+    updateLibraryMediaPreview();
+    closeMediaLibraryModal();
+}
+
+function updateLibraryMediaPreview() {
+    const preview = document.getElementById('libraryMediaPreview');
+    preview.innerHTML = '';
+    
+    selectedLibraryMedia.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'library-preview-item';
+        
+        if (item.type === 'image') {
+            div.innerHTML = `
+                <img src="${item.url}" alt="${item.name}">
+                <button class="remove-btn" onclick="removeLibraryMedia(${index})">&times;</button>
+            `;
+        } else {
+            div.innerHTML = `
+                <video src="${item.url}" muted></video>
+                <span class="video-badge">VIDEO</span>
+                <button class="remove-btn" onclick="removeLibraryMedia(${index})">&times;</button>
+            `;
+        }
+        preview.appendChild(div);
+    });
+}
+
+function removeLibraryMedia(index) {
+    selectedLibraryMedia.splice(index, 1);
+    updateLibraryMediaPreview();
 }
 
 loadGroups();
