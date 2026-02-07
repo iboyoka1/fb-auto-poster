@@ -741,56 +741,79 @@ class FacebookGroupSpam:
                                         except:
                                             pass
                                         
-                                        # STRATEGY 1: First, try to find existing file input (sometimes already present)
-                                        existing_input = None
-                                        try:
-                                            inputs = self.page.locator('input[type="file"]').all()
-                                            logger.info(f"Found {len(inputs)} existing file inputs")
-                                            if inputs:
-                                                existing_input = inputs[0]
-                                        except:
-                                            pass
+                                        # CRITICAL: Must click Photo/Video button FIRST to activate correct file input
+                                        # Facebook has multiple file inputs - only one is for post media
+                                        photo_button_selectors = [
+                                            # In dialog - toolbar icons (most common)
+                                            'div[role="dialog"] div[aria-label="Photo/vidéo"]',
+                                            'div[role="dialog"] div[aria-label="Photo/video"]',  
+                                            'div[role="dialog"] div[aria-label="Photo/Video"]',
+                                            'div[role="dialog"] [aria-label*="Photo"][role="button"]',
+                                            'div[role="dialog"] [aria-label*="photo"][role="button"]',
+                                            # French variations
+                                            '[aria-label="Photo/vidéo"]',
+                                            '[aria-label="Ajouter des photos/vidéos"]',
+                                            '[aria-label="Ajouter des photos ou des vidéos"]',
+                                            # English variations
+                                            '[aria-label="Photo/video"]',
+                                            '[aria-label="Add Photos/Videos"]',
+                                            '[aria-label="Add photos/videos"]',
+                                            # Arabic variations
+                                            '[aria-label*="صورة"]',
+                                            '[aria-label*="فيديو"]',
+                                            # Try by icon/image in the toolbar at bottom of dialog
+                                            'div[role="dialog"] div[role="button"]:has(img[alt*="photo" i])',
+                                            'div[role="dialog"] div[role="button"]:has(img[alt*="Photo" i])',
+                                            # Green/colorful icon buttons at bottom
+                                            'div[role="dialog"] div[style*="background-color"]',
+                                        ]
                                         
-                                        # STRATEGY 2: Click Photo/Video button to reveal file input
-                                        if not existing_input:
-                                            photo_button_selectors = [
-                                                # In dialog - toolbar icons (most common)
-                                                'div[role="dialog"] div[aria-label="Photo/vidéo"]',
-                                                'div[role="dialog"] div[aria-label="Photo/video"]',  
-                                                'div[role="dialog"] div[aria-label="Photo/Video"]',
-                                                'div[role="dialog"] [aria-label*="Photo"][role="button"]',
-                                                'div[role="dialog"] [aria-label*="photo"][role="button"]',
-                                                # French
-                                                '[aria-label="Photo/vidéo"]',
-                                                '[aria-label="Ajouter des photos/vidéos"]',
-                                                # English
-                                                '[aria-label="Photo/video"]',
-                                                '[aria-label="Add Photos/Videos"]',
-                                                '[aria-label="Add photos/videos"]',
-                                                # Generic - image icon in toolbar
-                                                'div[role="dialog"] svg[width="24"]',
-                                            ]
-                                            
-                                            logger.info("Looking for Photo/Video button...")
-                                            photo_clicked = False
-                                            
-                                            for selector in photo_button_selectors:
-                                                try:
-                                                    element = self.page.locator(selector).first
-                                                    if element.is_visible(timeout=2000):
-                                                        element.click()
-                                                        photo_clicked = True
-                                                        logger.info(f"✓ Clicked photo button: {selector}")
-                                                        time.sleep(3)  # Wait for file dialog or input to appear
-                                                        break
-                                                except Exception as e:
-                                                    logger.debug(f"Selector failed: {selector}")
-                                                    continue
-                                            
-                                            if not photo_clicked:
-                                                logger.warning("Could not click Photo button - trying file inputs directly")
+                                        logger.info("MUST click Photo/Video button first...")
+                                        photo_clicked = False
                                         
-                                        # Wait a moment for any file inputs to appear
+                                        for selector in photo_button_selectors:
+                                            try:
+                                                elements = self.page.locator(selector).all()
+                                                for element in elements:
+                                                    try:
+                                                        if element.is_visible(timeout=1000):
+                                                            element.click()
+                                                            photo_clicked = True
+                                                            logger.info(f"✓ Clicked photo button: {selector}")
+                                                            time.sleep(3)  # Wait for file input to become active
+                                                            break
+                                                    except:
+                                                        continue
+                                                if photo_clicked:
+                                                    break
+                                            except Exception as e:
+                                                logger.debug(f"Selector failed: {selector}")
+                                                continue
+                                        
+                                        if not photo_clicked:
+                                            # Try clicking by position - Photo button is usually in bottom toolbar
+                                            logger.warning("Could not find Photo button by selector, trying toolbar buttons...")
+                                            try:
+                                                # Find buttons in the dialog footer/toolbar area
+                                                toolbar_buttons = self.page.locator('div[role="dialog"] div[role="button"]').all()
+                                                logger.info(f"Found {len(toolbar_buttons)} buttons in dialog")
+                                                # Photo button is usually one of the first few colorful icons
+                                                for btn in toolbar_buttons[:5]:
+                                                    try:
+                                                        # Check if it might be a Photo button (has an image icon)
+                                                        btn.click()
+                                                        time.sleep(2)
+                                                        # Check if a new interface appeared (like photo upload area)
+                                                        if self.page.locator('input[type="file"][accept*="image"]').count() > 0:
+                                                            photo_clicked = True
+                                                            logger.info("✓ Clicked toolbar button that revealed file input")
+                                                            break
+                                                    except:
+                                                        continue
+                                            except Exception as e:
+                                                logger.debug(f"Toolbar button approach failed: {e}")
+                                        
+                                        # Wait for file input to be ready
                                         time.sleep(2)
                                         
                                         # Now try to upload files
@@ -799,19 +822,18 @@ class FacebookGroupSpam:
                                             abs_path = os.path.abspath(media_file)
                                             logger.info(f"Attempting upload: {abs_path}")
                                             
-                                            # Try multiple approaches to find/use file input
+                                            # After clicking Photo button, look for the active file input
                                             approaches = [
-                                                # Approach A: Standard file input selectors
+                                                # Most specific - image/video accept in dialog
+                                                ('div[role="dialog"] input[type="file"][accept*="image"]', 'dialog image input'),
+                                                ('div[role="dialog"] input[type="file"][accept*="video"]', 'dialog video input'),
+                                                ('div[role="dialog"] input[type="file"]', 'dialog any input'),
+                                                # General selectors
                                                 ('input[type="file"][accept*="image"]', 'image accept'),
                                                 ('input[type="file"][accept*="video"]', 'video accept'),
                                                 ('input[type="file"][accept="image/*,video/*"]', 'image+video accept'),
                                                 ('input[type="file"][multiple]', 'multiple'),
                                                 ('input[type="file"]', 'any file input'),
-                                                # Approach B: Form-specific
-                                                ('form input[type="file"]', 'form input'),
-                                                # Approach C: Hidden inputs
-                                                ('input[type="file"][style*="display: none"]', 'hidden input'),
-                                                ('input[type="file"][class*="hidden"]', 'class hidden'),
                                             ]
                                             
                                             for selector, desc in approaches:
