@@ -446,7 +446,7 @@ class FacebookGroupSpam:
             try:
                 logger.info(f"Posting to group: {group_name} (ID: {group_id})")
                 
-                # Navigate to group
+                # Navigate to group - use discussion page URL to avoid /about redirect
                 group_url = f"https://www.facebook.com/groups/{group_id}"
                 self.page.goto(group_url, timeout=120000)  # 2 minutes timeout
                 self.page.wait_for_load_state('networkidle', timeout=60000)
@@ -456,6 +456,32 @@ class FacebookGroupSpam:
                 
                 # Wait for dynamic content to fully load
                 time.sleep(3)
+                
+                current_url = self.page.url
+                logger.info(f"Current URL after load: {current_url}")
+                
+                # Check if redirected to /about page - need to go to discussion instead
+                if '/about' in current_url or '/about/' in current_url:
+                    logger.warning(f"Redirected to /about page, navigating to discussion page...")
+                    # Navigate directly to discussion/feed
+                    discussion_url = f"https://www.facebook.com/groups/{group_id}/"
+                    self.page.goto(discussion_url, timeout=60000)
+                    self.page.wait_for_load_state('networkidle', timeout=30000)
+                    time.sleep(3)
+                    current_url = self.page.url
+                    logger.info(f"After redirect fix: {current_url}")
+                    
+                    # If still on /about, try clicking "Discussion" tab
+                    if '/about' in current_url:
+                        try:
+                            # Try clicking Discussion tab
+                            discussion_tab = self.page.locator('a[href*="/discussion"], [role="tab"]:has-text("Discussion"), span:has-text("Discussion")').first
+                            if discussion_tab.is_visible(timeout=3000):
+                                discussion_tab.click()
+                                time.sleep(3)
+                                logger.info("Clicked Discussion tab")
+                        except:
+                            pass
                 
                 # Scroll down a bit to trigger lazy loading, then back up
                 self.page.evaluate("window.scrollBy(0, 300)")
