@@ -298,8 +298,8 @@ def inject_csrf():
 def enforce_csrf():
     # Enforce CSRF for state-changing methods
     if request.method in ("POST", "PUT", "DELETE"):
-        # Exempt API endpoints, login, and static files from CSRF
-        if request.endpoint and (request.endpoint.startswith('static') or request.path.startswith('/api/') or request.path == '/login'):
+        # Exempt API endpoints, login, register, and static files from CSRF
+        if request.endpoint and (request.endpoint.startswith('static') or request.path.startswith('/api/') or request.path == '/login' or request.path == '/register'):
             return
         token_header = request.headers.get('X-CSRF-Token')
         expected = session.get('csrf_token')
@@ -682,57 +682,46 @@ def login():
             
             print(f"[LOGIN] Attempt: identifier='{email_or_username}', password length={len(password)}")
             
-            # First try MongoDB user authentication if connected
-            if is_mongodb_connected():
-                # Try to find user by email or username
-                user = verify_user_password(email_or_username, password)
-                if not user:
-                    # Also try by username
-                    user_by_username = get_user_by_username(email_or_username)
-                    if user_by_username:
-                        user = verify_user_password(user_by_username.get('email', ''), password)
+            # Check if MongoDB is connected
+            if not is_mongodb_connected():
+                print("[LOGIN] MongoDB not connected")
+                return jsonify({'success': False, 'error': 'Database not available. Please try again later.'}), 200
+            
+            # Check if any users exist - if not, redirect to register
+            if count_users() == 0:
+                print("[LOGIN] No users exist, redirecting to register")
+                return jsonify({'success': False, 'error': 'No accounts exist yet. Please create an account first.', 'redirect': url_for('register')}), 200
+            
+            # Try to find user by email or username
+            user = verify_user_password(email_or_username, password)
+            if not user:
+                # Also try by username
+                user_by_username = get_user_by_username(email_or_username)
+                if user_by_username:
+                    user = verify_user_password(user_by_username.get('email', ''), password)
+            
+            if user:
+                session['logged_in'] = True
+                session['user_id'] = user.get('user_id')
+                session['username'] = user.get('username', 'User')
+                session['email'] = user.get('email', '')
+                session['role'] = user.get('role', 'user')
+                session.permanent = True
+                session.modified = True
                 
-                if user:
-                    session['logged_in'] = True
-                    session['user_id'] = user.get('user_id')
-                    session['username'] = user.get('username', 'User')
-                    session['email'] = user.get('email', '')
-                    session['role'] = user.get('role', 'user')
-                    session.permanent = True
-                    session.modified = True
-                    
-                    print(f"[LOGIN] Success via MongoDB - user: {user.get('username')}, role: {user.get('role')}")
-                    return jsonify({'success': True, 'redirect': url_for('dashboard')}), 200
-                
-                # Check if any users exist - if not, allow fallback to config
-                if count_users() > 0:
-                    print(f"[LOGIN] Failed - invalid credentials (MongoDB)")
-                    return jsonify({'success': False, 'error': 'Invalid email or password'}), 200
+                print(f"[LOGIN] Success - user: {user.get('username')}, role: {user.get('role')}")
+                return jsonify({'success': True, 'redirect': url_for('dashboard')}), 200
             
-            # Fallback to config-based auth (for initial setup or if no users exist)
-            expected_username = DASHBOARD_USERNAME or 'admin'
-            expected_password = DASHBOARD_PASSWORD or 'password123'
+            print(f"[LOGIN] Failed - invalid credentials")
+            return jsonify({'success': False, 'error': 'Invalid email or password'}), 200
             
-            print(f"[LOGIN] Trying config fallback: expected='{expected_username}'")
-            
-            password_valid = (password == expected_password) or (not expected_password and not password)
-            if email_or_username != expected_username or not password_valid:
-                print(f"[LOGIN] Failed - credentials mismatch")
-                return jsonify({'success': False, 'error': 'Invalid credentials'}), 200
-            
-            # Set session for config-based login
-            session['logged_in'] = True
-            session['user_id'] = 'admin'  # Config admin uses 'admin' as user_id
-            session['username'] = expected_username
-            session['role'] = 'admin'
-            session.permanent = True
-            session.modified = True
-            
-            print(f"[LOGIN] Success via config - username: {expected_username}")
-            return jsonify({'success': True, 'redirect': url_for('dashboard')}), 200
         except Exception as e:
             print(f"[LOGIN] Error: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 200
+    
+    # For GET requests, check if users exist - if not, redirect to register
+    if is_mongodb_connected() and count_users() == 0:
+        return redirect(url_for('register'))
     
     # Ensure CSRF cookie is set via template context
     resp = make_response(render_template('login.html'))

@@ -34,14 +34,11 @@
         
         <!-- Dashboard Login Tab -->
         <div id="tab-dashboard" class="login-tab-content active">
-            <div class="alert alert-info" style="margin-bottom: 20px; border-radius: 8px; background-color: #e7f3ff; border-left: 4px solid #1877f2;">
-                <strong>💡 Identifiants par défaut :</strong> Utilisez <code style="background: white; padding: 2px 6px; border-radius: 3px;">admin</code> / <code style="background: white; padding: 2px 6px; border-radius: 3px;">password123</code>
-            </div>
             <div id="dashboardErrorMsg" class="alert alert-danger" style="display: none; margin-bottom: 15px;"></div>
             <div class="login-form">
                 <div class="form-group">
                     <label for="username">Email ou Nom d'utilisateur</label>
-                    <input type="text" id="username" placeholder="email@example.com ou admin" required>
+                    <input type="text" id="username" placeholder="email@example.com ou nom d'utilisateur" required>
                 </div>
                 
                 <div class="form-group">
@@ -342,6 +339,12 @@ async function handleDashboardLogin() {
             console.log('Login successful, redirecting to:', data.redirect);
             window.location.href = data.redirect || '/dashboard';
         } else {
+            // Check if should redirect to register
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+            
             // Show error message
             errorMsg.textContent = data.error || 'Login failed';
             errorMsg.style.display = 'block';
