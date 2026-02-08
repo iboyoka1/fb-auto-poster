@@ -151,6 +151,34 @@ function renderHistory(posts) {
         const statusClass = post.status === 'posted' ? 'badge-success' : 
                            post.status === 'posting' ? 'badge-warning' : 'badge-danger';
         
+        // Render media thumbnails if present
+        let mediaThumbnails = '';
+        if (post.media && post.media.length > 0) {
+            mediaThumbnails = `
+                <div class="history-media" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
+                    ${post.media.map((url, idx) => {
+                        const isVideo = url.match(/\.(mp4|mov|webm|avi)$/i);
+                        if (isVideo) {
+                            return `
+                                <div class="media-thumb" style="position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; cursor: pointer; background: #1a1a2e;" onclick="openMediaLightbox('${url}', true)">
+                                    <video src="${url}" style="width: 100%; height: 100%; object-fit: cover;"></video>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.6); border-radius: 50%; padding: 8px;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            return `
+                                <div class="media-thumb" style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; cursor: pointer;" onclick="openMediaLightbox('${url}', false)">
+                                    <img src="${url}" alt="Media ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                            `;
+                        }
+                    }).join('')}
+                </div>
+            `;
+        }
+        
         return `
             <div class="history-card">
                 <div class="history-header">
@@ -162,6 +190,7 @@ function renderHistory(posts) {
                 </div>
                 <div class="history-content">
                     <p>${escapeHtml(post.content).replace(/\n/g, '<br>')}</p>
+                    ${mediaThumbnails}
                 </div>
                 <div class="history-footer">
                     <div class="posted-groups">
@@ -172,6 +201,42 @@ function renderHistory(posts) {
             </div>
         `;
     }).join('');
+}
+
+// Lightbox for viewing media full size
+function openMediaLightbox(url, isVideo) {
+    const existing = document.getElementById('mediaLightbox');
+    if (existing) existing.remove();
+    
+    const lightbox = document.createElement('div');
+    lightbox.id = 'mediaLightbox';
+    lightbox.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; cursor: pointer;';
+    lightbox.onclick = () => lightbox.remove();
+    
+    let content;
+    if (isVideo) {
+        content = document.createElement('video');
+        content.src = url;
+        content.controls = true;
+        content.autoplay = true;
+        content.style.cssText = 'max-width: 90%; max-height: 90%; border-radius: 8px;';
+    } else {
+        content = document.createElement('img');
+        content.src = url;
+        content.style.cssText = 'max-width: 90%; max-height: 90%; border-radius: 8px; object-fit: contain;';
+    }
+    content.onclick = (e) => e.stopPropagation();
+    
+    lightbox.appendChild(content);
+    document.body.appendChild(lightbox);
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function handler(e) {
+        if (e.key === 'Escape') {
+            lightbox.remove();
+            document.removeEventListener('keydown', handler);
+        }
+    });
 }
 
 function formatDate(date) {

@@ -165,6 +165,57 @@ Exemple : {Salut|Bonjour} tout le monde ! Découvrez notre {incroyable|superbe} 
                         <button type="button" onclick="clearAllMedia()" style="margin-top: 12px; padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; display: none; font-weight: 500;" id="clearMediaBtn">🗑️ Tout Effacer</button>
                     </div>
                     
+                    <!-- TEST MODE Section -->
+                    <div class="form-group" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 16px; border: 2px solid #f59e0b;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label style="font-weight:600; font-size: 15px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="testMode" onchange="toggleTestMode()" style="width: 20px; height: 20px; accent-color: #f59e0b;"> 
+                                <span style="display: flex; align-items: center; gap: 8px;">
+                                    🧪 <span>Mode Test (Simulation)</span>
+                                </span>
+                            </label>
+                            <span class="badge" style="background: #f59e0b; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px;">SANS PUBLICATION RÉELLE</span>
+                        </div>
+                        <div id="testModeInfo" style="margin-top: 12px; padding: 12px; background: white; border-radius: 8px; display: none;">
+                            <p style="margin: 0; font-size: 13px; color: #92400e;">
+                                ⚠️ <strong>Mode Test activé :</strong> Le bot naviguera vers chaque groupe, remplira le texte et les médias, mais <strong>ne cliquera PAS</strong> sur le bouton Publier. Des captures d'écran seront enregistrées pour vérification.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- DELAY CONFIGURATION Section -->
+                    <div class="form-group" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 20px; border-radius: 16px; border: 2px solid #10b981;">
+                        <label style="font-weight:600; font-size: 15px; display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                            <span style="font-size: 20px;">⏱️</span>
+                            Délai entre les Publications
+                            <span class="badge" style="background: #10b981; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px;">CONFIGURABLE</span>
+                        </label>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <label style="display: block; font-size: 13px; color: #065f46; margin-bottom: 8px; font-weight: 500;">
+                                    Délai Minimum: <strong id="minDelayValue">30</strong> secondes
+                                </label>
+                                <input type="range" id="minDelay" min="10" max="300" value="30" 
+                                    style="width: 100%; accent-color: #10b981;" 
+                                    oninput="updateDelayValue('min')">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 13px; color: #065f46; margin-bottom: 8px; font-weight: 500;">
+                                    Délai Maximum: <strong id="maxDelayValue">120</strong> secondes
+                                </label>
+                                <input type="range" id="maxDelay" min="30" max="600" value="120" 
+                                    style="width: 100%; accent-color: #10b981;" 
+                                    oninput="updateDelayValue('max')">
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 8px;">
+                            <p style="margin: 0; font-size: 12px; color: #065f46;">
+                                💡 <strong>Conseil :</strong> Un délai plus long réduit le risque de détection. Le bot utilise une distribution Gaussienne pour des pauses naturelles.
+                            </p>
+                        </div>
+                    </div>
+                    
                     <!-- Improved Schedule Section -->
                     <div class="form-group schedule-section" style="background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%); padding: 20px; border-radius: 16px; border: 2px solid #e0e7ff;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
@@ -540,6 +591,29 @@ Exemple : {Salut|Bonjour} tout le monde ! Découvrez notre {incroyable|superbe} 
 let groups = [];
 let selectedMedia = [];
 let selectedLibraryMedia = [];  // Media selected from library (file IDs)
+
+function toggleTestMode() {
+    const checkbox = document.getElementById('testMode');
+    const info = document.getElementById('testModeInfo');
+    info.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function updateDelayValue(type) {
+    const minSlider = document.getElementById('minDelay');
+    const maxSlider = document.getElementById('maxDelay');
+    const minValue = parseInt(minSlider.value);
+    const maxValue = parseInt(maxSlider.value);
+    
+    // Ensure min is always less than max
+    if (type === 'min' && minValue >= maxValue) {
+        maxSlider.value = minValue + 30;
+    } else if (type === 'max' && maxValue <= minValue) {
+        minSlider.value = maxValue - 30;
+    }
+    
+    document.getElementById('minDelayValue').textContent = minSlider.value;
+    document.getElementById('maxDelayValue').textContent = maxSlider.value;
+}
 
 function toggleSchedule() {
     const checkbox = document.getElementById('schedulePost');
@@ -1018,10 +1092,16 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         }
         formData.append('groups', JSON.stringify(mediaSelectedGroups));
         
+        // Add delay and test mode settings
+        formData.append('min_delay', document.getElementById('minDelay').value);
+        formData.append('max_delay', document.getElementById('maxDelay').value);
+        formData.append('test_mode', document.getElementById('testMode').checked ? 'true' : 'false');
+        
         const totalMedia = selectedMedia.length + selectedLibraryMedia.length;
+        const testModeLabel = document.getElementById('testMode').checked ? ' [MODE TEST]' : '';
         const btn = document.getElementById('postBtn');
         btn.disabled = true;
-        btn.innerHTML = `<span class="spinner"></span> Posting to ${mediaSelectedGroups.length} group(s) with ${totalMedia} media file(s)...`;
+        btn.innerHTML = `<span class="spinner"></span> Posting to ${mediaSelectedGroups.length} group(s) with ${totalMedia} media file(s)${testModeLabel}...`;
         
         try {
             const response = await fbAutoPoster.csrfFetch('/api/post-with-image', {
@@ -1060,15 +1140,21 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         return;
     }
     
-    if (!confirm(`Post this content to ${selectedGroupUsernames.length} group(s)?`)) {
+    const testModeEnabled = document.getElementById('testMode').checked;
+    const confirmMsg = testModeEnabled 
+        ? `[MODE TEST] Simuler une publication vers ${selectedGroupUsernames.length} groupe(s) ? (Aucune publication réelle)`
+        : `Publier ce contenu vers ${selectedGroupUsernames.length} groupe(s) ?`;
+    
+    if (!confirm(confirmMsg)) {
         return;
     }
     
+    const testModeLabel = testModeEnabled ? ' [MODE TEST]' : '';
     const btn = document.getElementById('postBtn');
     btn.disabled = true;
     btn.innerHTML = `
         <span class="spinner"></span>
-        Posting to ${selectedGroupUsernames.length} group(s)...
+        Posting to ${selectedGroupUsernames.length} group(s)${testModeLabel}...
     `;
     
     try {
@@ -1087,6 +1173,11 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
             }
         }
         
+        // Add delay and test mode settings
+        formData.append('min_delay', document.getElementById('minDelay').value);
+        formData.append('max_delay', document.getElementById('maxDelay').value);
+        formData.append('test_mode', document.getElementById('testMode').checked ? 'true' : 'false');
+        
         const response = await fbAutoPoster.csrfFetch('/api/post', {
             method: 'POST',
             body: formData  // Don't set Content-Type header, browser will set it automatically with boundary
@@ -1095,7 +1186,10 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         const data = await response.json();
         
         if (data.success) {
-            alert('Post created successfully! Check History for details.');
+            const successMsg = data.test_mode 
+                ? 'Simulation terminée ! Vérifiez les captures d\'écran dans logs/playwright/test-mode/'
+                : 'Publication créée ! Vérifiez l\'historique pour les détails.';
+            alert(successMsg);
             textarea.value = '';
             updatePreview();
             charCount.textContent = '0';

@@ -208,9 +208,15 @@ def init_db():
             content TEXT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             status TEXT DEFAULT 'pending',
-            groups_posted TEXT
+            groups_posted TEXT,
+            media_paths TEXT
         )
     ''')
+    # Add media_paths column if it doesn't exist (migration for existing databases)
+    try:
+        c.execute('ALTER TABLE posts ADD COLUMN media_paths TEXT')
+    except sqlite3.OperationalError:
+        pass  # Column already exists
     c.execute('''
         CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1495,12 +1501,18 @@ def create_post():
             content = data.get('content', '')
             selected_groups = data.get('groups', [])
             media_files = []
-            logger.info(f"[POST] JSON request - groups received: {selected_groups}")
+            min_delay = data.get('min_delay', 30)
+            max_delay = data.get('max_delay', 120)
+            test_mode = data.get('test_mode', False)
+            logger.info(f"[POST] JSON request - groups received: {selected_groups}, delay: {min_delay}-{max_delay}s, test_mode: {test_mode}")
         else:
             # Handle file uploads
             content = request.form.get('content', '')
             selected_groups = request.form.getlist('groups[]')
-            logger.info(f"[POST] Form request - groups[] received: {selected_groups}")
+            min_delay = int(request.form.get('min_delay', 30))
+            max_delay = int(request.form.get('max_delay', 120))
+            test_mode = request.form.get('test_mode', 'false').lower() == 'true'
+            logger.info(f"[POST] Form request - groups[] received: {selected_groups}, delay: {min_delay}-{max_delay}s, test_mode: {test_mode}")
             # Keep as strings - usernames can be numeric IDs or alphanumeric names
             
             # Handle uploaded files
@@ -1517,10 +1529,13 @@ def create_post():
                         file.save(filepath)
                         media_files.append(filepath)
         
-        # Save to database
+        # Save to database with media paths
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-        c.execute('INSERT INTO posts (content, status, groups_posted) VALUES (?, ?, ?)', (content, 'posting', json.dumps([])))
+        # Store media paths as JSON array of filenames (not full paths for portability)
+        media_filenames = [os.path.basename(f) for f in media_files] if media_files else []
+        c.execute('INSERT INTO posts (content, status, groups_posted, media_paths) VALUES (?, ?, ?, ?)', 
+                  (content, 'posting', json.dumps([]), json.dumps(media_filenames)))
         post_id = c.lastrowid
         conn.commit()
         conn.close()
@@ -1565,11 +1580,11 @@ def create_post():
         # Post in background to hide bot movement
         import threading
         cookie_path = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
-        def do_post_background(post_id_arg: int, content_arg: str, groups_arg: list, media_files_arg: list, cookie_path_arg: str):
+        def do_post_background(post_id_arg: int, content_arg: str, groups_arg: list, media_files_arg: list, cookie_path_arg: str, min_delay_arg: int, max_delay_arg: int, test_mode_arg: bool):
             try:
                 from main import FacebookGroupSpam
                 # Use non-persistent mode to avoid browser lock issues
-                poster = FacebookGroupSpam(post_content=content_arg, headless=True, media_files=media_files_arg if media_files_arg else None, use_persistent=False)
+                poster = FacebookGroupSpam(post_content=content_arg, headless=True, media_files=media_files_arg if media_files_arg else None, use_persistent=False, min_delay=min_delay_arg, max_delay=max_delay_arg, test_mode=test_mode_arg)
                 poster.start_browser()
                 poster.load_cookie(cookie_path_arg)
                 # Init active post tracking
@@ -1582,6 +1597,7 @@ def create_post():
                     'last_group': None,
                     'groups': [{'name': g.get('name'), 'username': g.get('username'), 'status': 'pending'} for g in groups_arg],
                     'cancel': False,
+                    'test_mode': test_mode_arg,
                 }
                 def _progress(ev: Dict):
                     try:
@@ -1660,11 +1676,11 @@ def create_post():
                     pass
                 ACTIVE_POSTS.pop(post_id_arg, None)
 
-        thread = threading.Thread(target=do_post_background, args=(post_id, content, groups_to_post, media_files, cookie_path))
+        thread = threading.Thread(target=do_post_background, args=(post_id, content, groups_to_post, media_files, cookie_path, min_delay, max_delay, test_mode))
         thread.daemon = True
         thread.start()
 
-        return jsonify({'success': True, 'message': 'Posting started', 'post_id': post_id})
+        return jsonify({'success': True, 'message': 'Posting started', 'post_id': post_id, 'test_mode': test_mode})
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -1675,18 +1691,23 @@ def get_history():
     try:
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-        c.execute('SELECT id, content, timestamp, status, groups_posted FROM posts ORDER BY timestamp DESC LIMIT 50')
+        c.execute('SELECT id, content, timestamp, status, groups_posted, media_paths FROM posts ORDER BY timestamp DESC LIMIT 50')
         rows = c.fetchall()
         conn.close()
         
         posts = []
         for row in rows:
+            # Parse media paths and convert to URLs
+            media_paths = json.loads(row[5]) if row[5] else []
+            media_urls = [f'/uploads/{filename}' for filename in media_paths] if media_paths else []
+            
             posts.append({
                 'id': row[0],
                 'content': row[1],
                 'timestamp': row[2],
                 'status': row[3],
-                'groups': json.loads(row[4]) if row[4] else []
+                'groups': json.loads(row[4]) if row[4] else [],
+                'media': media_urls
             })
         
         return jsonify({'success': True, 'posts': posts})
@@ -2239,6 +2260,10 @@ def post_with_image():
     try:
         content = request.form.get('content', '')
         selected_groups = json.loads(request.form.get('groups', '[]'))
+        min_delay = int(request.form.get('min_delay', 30))
+        max_delay = int(request.form.get('max_delay', 120))
+        test_mode = request.form.get('test_mode', 'false').lower() == 'true'
+        logger.info(f"[POST-IMAGE] delay: {min_delay}-{max_delay}s, test_mode: {test_mode}")
         
         # Handle multiple file uploads
         media_files = []
@@ -2299,25 +2324,27 @@ def post_with_image():
         
         logger.info(f"[POST-IMAGE] Posting to {len(groups_to_post)} groups with {len(media_files)} media files")
         
-        # Save to database first (like regular /api/post does)
+        # Save to database first with media paths
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-        c.execute('INSERT INTO posts (content, status, groups_posted) VALUES (?, ?, ?)', (content, 'posting', json.dumps([])))
+        media_filenames = [os.path.basename(f) for f in media_files] if media_files else []
+        c.execute('INSERT INTO posts (content, status, groups_posted, media_paths) VALUES (?, ?, ?, ?)', 
+                  (content, 'posting', json.dumps([]), json.dumps(media_filenames)))
         post_id = c.lastrowid
         conn.commit()
         conn.close()
-        logger.info(f"[POST-IMAGE] Created post record with ID: {post_id}")
+        logger.info(f"[POST-IMAGE] Created post record with ID: {post_id}, media: {media_filenames}")
         
         # Background posting with media to hide bot movement
         import threading
         cookie_path = os.path.join(PROJECT_ROOT, 'sessions', 'facebook-cookies.json')
         
-        def do_post_media_bg(post_id_arg: int, content_arg: str, groups_arg: list, media_files_arg: list, cookie_path_arg: str):
+        def do_post_media_bg(post_id_arg: int, content_arg: str, groups_arg: list, media_files_arg: list, cookie_path_arg: str, min_delay_arg: int, max_delay_arg: int, test_mode_arg: bool):
             try:
                 from main import FacebookGroupSpam
-                logger.info(f"[POST-IMAGE-BG] Starting background post {post_id_arg}")
+                logger.info(f"[POST-IMAGE-BG] Starting background post {post_id_arg}, delay: {min_delay_arg}-{max_delay_arg}s, test_mode: {test_mode_arg}")
                 # Use non-persistent mode to avoid browser lock issues
-                poster = FacebookGroupSpam(post_content=content_arg, media_files=media_files_arg, headless=True, use_persistent=False)
+                poster = FacebookGroupSpam(post_content=content_arg, media_files=media_files_arg, headless=True, use_persistent=False, min_delay=min_delay_arg, max_delay=max_delay_arg, test_mode=test_mode_arg)
                 poster.start_browser()
                 poster.load_cookie(cookie_path_arg)
                 
@@ -2331,6 +2358,7 @@ def post_with_image():
                     'last_group': None,
                     'groups': [{'name': g.get('name'), 'username': g.get('username'), 'status': 'pending'} for g in groups_arg],
                     'cancel': False,
+                    'test_mode': test_mode_arg,
                 }
                 
                 def _progress(ev: Dict):
@@ -2420,13 +2448,14 @@ def post_with_image():
                     except:
                         pass
                         
-        thread = threading.Thread(target=do_post_media_bg, args=(post_id, content, groups_to_post, media_files, cookie_path))
+        thread = threading.Thread(target=do_post_media_bg, args=(post_id, content, groups_to_post, media_files, cookie_path, min_delay, max_delay, test_mode))
         thread.daemon = True
         thread.start()
 
         return jsonify({
             'success': True, 
             'message': 'Posting with media started',
+            'test_mode': test_mode,
             'post_id': post_id,
             'posted_to': len(groups_to_post),
             'media_count': len(media_files)
@@ -3011,6 +3040,14 @@ def serve_media_library_file(filename):
     """Serve files from media library"""
     media_library_dir = os.path.join(PROJECT_ROOT, 'media_library')
     return send_from_directory(media_library_dir, filename)
+
+
+@app.route('/uploads/<path:filename>')
+@login_required
+def serve_upload_file(filename):
+    """Serve files from uploads directory (for history thumbnails)"""
+    uploads_dir = os.path.join(PROJECT_ROOT, 'uploads')
+    return send_from_directory(uploads_dir, filename)
 
 
 # Multi-Account API

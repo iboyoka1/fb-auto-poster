@@ -3,6 +3,7 @@ import os
 import json
 import time
 import logging
+from rate_limiter import get_smart_delay
 
 logger = logging.getLogger('fb_auto_poster.main')
 
@@ -10,11 +11,14 @@ logger = logging.getLogger('fb_auto_poster.main')
 BROWSER_PROFILE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'browser_profile')
 
 class FacebookGroupSpam:
-    def __init__(self, post_content=None, headless=True, media_files=None, use_persistent=True):
+    def __init__(self, post_content=None, headless=True, media_files=None, use_persistent=True, min_delay=30, max_delay=120, test_mode=False):
         self.post_content = post_content
         self.headless = headless
         self.media_files = media_files
         self.use_persistent = use_persistent  # Use persistent browser profile
+        self.min_delay = min_delay  # Minimum delay between posts (seconds)
+        self.max_delay = max_delay  # Maximum delay between posts (seconds)
+        self.test_mode = test_mode  # If True, simulate posting without actually clicking Post
         self.browser = None
         self.context = None
         self.page = None
@@ -929,67 +933,82 @@ class FacebookGroupSpam:
                                         except:
                                             pass
                                 
-                                # Step 4: Click Post button
-                                posted = False
-                                
-                                # Method 1: French "Publier" (for French FB)
-                                try:
-                                    self.page.click('div[aria-label="Publier"]', timeout=5000)
-                                    posted = True
-                                    logger.info("✓ Clicked 'Publier' button (French)")
-                                except:
-                                    pass
-                                
-                                # Method 2: English "Post"
-                                if not posted:
-                                    try:
-                                        self.page.click('div[aria-label="Post"]', timeout=5000)
-                                        posted = True
-                                        logger.info("✓ Clicked 'Post' button (English)")
-                                    except:
-                                        pass
-                                
-                                # Method 3: Get by role (French)
-                                if not posted:
-                                    try:
-                                        self.page.get_by_role("button", name="Publier").click()
-                                        posted = True
-                                        logger.info("✓ Clicked Publier button (role)")
-                                    except:
-                                        pass
-                                
-                                # Method 4: Get by role (English)
-                                if not posted:
-                                    try:
-                                        self.page.get_by_role("button", name="Post").click()
-                                        posted = True
-                                        logger.info("✓ Clicked Post button (role)")
-                                    except:
-                                        pass
-                                
-                                # Method 5: Keyboard shortcut
-                                if not posted:
-                                    try:
-                                        self.page.keyboard.press('Control+Enter')
-                                        posted = True
-                                        logger.info("Submitted via Ctrl+Enter")
-                                    except:
-                                        pass
-                                
-                                if posted:
-                                    time.sleep(4)
+                                # Step 4: Click Post button (skip in test mode)
+                                if self.test_mode:
+                                    # Test mode: simulate success without actually posting
                                     result['success'] = True
-                                    logger.info(f"Successfully posted to {group_name}")
-                                else:
-                                    result['error'] = 'Could not find Post button'
-                                    # Save debug screenshot
+                                    result['test_mode'] = True
+                                    logger.info(f"[TEST MODE] Simulated successful post to {group_name} - Post button NOT clicked")
+                                    # Save screenshot for verification
                                     try:
-                                        debug_path = os.path.join('logs', 'playwright', f'post-fail-{int(time.time())}.png')
-                                        os.makedirs(os.path.dirname(debug_path), exist_ok=True)
+                                        debug_dir = os.path.join('logs', 'playwright', 'test-mode')
+                                        os.makedirs(debug_dir, exist_ok=True)
+                                        debug_path = os.path.join(debug_dir, f'test-{group_id}-{int(time.time())}.png')
                                         self.page.screenshot(path=debug_path)
-                                        logger.info(f"Saved debug screenshot: {debug_path}")
+                                        logger.info(f"[TEST MODE] Saved verification screenshot: {debug_path}")
                                     except:
                                         pass
+                                else:
+                                    posted = False
+                                    
+                                    # Method 1: French "Publier" (for French FB)
+                                    try:
+                                        self.page.click('div[aria-label="Publier"]', timeout=5000)
+                                        posted = True
+                                        logger.info("✓ Clicked 'Publier' button (French)")
+                                    except:
+                                        pass
+                                    
+                                    # Method 2: English "Post"
+                                    if not posted:
+                                        try:
+                                            self.page.click('div[aria-label="Post"]', timeout=5000)
+                                            posted = True
+                                            logger.info("✓ Clicked 'Post' button (English)")
+                                        except:
+                                            pass
+                                    
+                                    # Method 3: Get by role (French)
+                                    if not posted:
+                                        try:
+                                            self.page.get_by_role("button", name="Publier").click()
+                                            posted = True
+                                            logger.info("✓ Clicked Publier button (role)")
+                                        except:
+                                            pass
+                                    
+                                    # Method 4: Get by role (English)
+                                    if not posted:
+                                        try:
+                                            self.page.get_by_role("button", name="Post").click()
+                                            posted = True
+                                            logger.info("✓ Clicked Post button (role)")
+                                        except:
+                                            pass
+                                    
+                                    # Method 5: Keyboard shortcut
+                                    if not posted:
+                                        try:
+                                            self.page.keyboard.press('Control+Enter')
+                                            posted = True
+                                            logger.info("Submitted via Ctrl+Enter")
+                                        except:
+                                            pass
+                                    
+                                    if posted:
+                                        time.sleep(4)
+                                        result['success'] = True
+                                        logger.info(f"Successfully posted to {group_name}")
+                                    else:
+                                        result['error'] = 'Could not find Post button'
+                                        # Save debug screenshot
+                                        try:
+                                            debug_path = os.path.join('logs', 'playwright', f'post-fail-{int(time.time())}.png')
+                                            os.makedirs(os.path.dirname(debug_path), exist_ok=True)
+                                            self.page.screenshot(path=debug_path)
+                                            logger.info(f"Saved debug screenshot: {debug_path}")
+                                        except:
+                                            pass
                                         
                     except Exception as e:
                         result['error'] = str(e)
@@ -1009,9 +1028,11 @@ class FacebookGroupSpam:
                 elapsed = int((time.time() - start_time) * 1000)
                 progress_callback({'index': idx, 'result': result, 'elapsed_ms': elapsed})
             
-            # Delay between posts
+            # Smart delay between posts using configurable range
             if idx < len(groups) - 1:
-                time.sleep(5)
+                delay = get_smart_delay(self.min_delay, self.max_delay)
+                logger.info(f"Waiting {delay:.1f} seconds before next post...")
+                time.sleep(delay)
         
         return results
 
