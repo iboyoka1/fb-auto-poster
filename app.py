@@ -100,7 +100,7 @@ except ImportError:
 # MongoDB Database Module
 try:
     from database import (
-        is_mongodb_connected, get_mongodb_status,
+        is_mongodb_connected, get_mongodb_status, is_using_local_storage,
         save_cookies_to_db, load_cookies_from_db, delete_cookies_from_db, delete_all_cookies_from_db,
         save_groups_to_db, load_groups_from_db, add_group_to_db, update_group_in_db, delete_group_from_db,
         save_accounts_to_db, load_accounts_from_db, delete_all_accounts_from_db,
@@ -113,6 +113,7 @@ try:
 except ImportError as e:
     print(f"[MongoDB] Database module not available: {e}")
     is_mongodb_connected = lambda: False
+    is_using_local_storage = lambda: True
     get_mongodb_status = lambda: {'connected': False}
     save_cookies_to_db = lambda *a, **k: False
     load_cookies_from_db = lambda *a, **k: None
@@ -296,6 +297,7 @@ def inject_csrf():
 
 @app.before_request
 def enforce_csrf():
+    
     # Enforce CSRF for state-changing methods
     if request.method in ("POST", "PUT", "DELETE"):
         # Exempt API endpoints, login, register, and static files from CSRF
@@ -682,9 +684,9 @@ def login():
             
             print(f"[LOGIN] Attempt: identifier='{email_or_username}', password length={len(password)}")
             
-            # Check if MongoDB is connected
-            if not is_mongodb_connected():
-                print("[LOGIN] MongoDB not connected")
+            # Check if database is available (MongoDB or local storage)
+            if not is_mongodb_connected() and not is_using_local_storage():
+                print("[LOGIN] Database not available")
                 return jsonify({'success': False, 'error': 'Database not available. Please try again later.'}), 200
             
             # Check if any users exist - if not, redirect to register
@@ -720,7 +722,7 @@ def login():
             return jsonify({'success': False, 'error': str(e)}), 200
     
     # For GET requests, check if users exist - if not, redirect to register
-    if is_mongodb_connected() and count_users() == 0:
+    if (is_mongodb_connected() or is_using_local_storage()) and count_users() == 0:
         return redirect(url_for('register'))
     
     # Ensure CSRF cookie is set via template context
@@ -733,11 +735,15 @@ def register():
     """User registration page"""
     if request.method == 'POST':
         try:
+            print(f"[REGISTER] POST request received")
             data = request.get_json(silent=True) or {}
+            print(f"[REGISTER] Data: {data}")
             username = (data.get('username') or '').strip().lower()
             email = (data.get('email') or '').strip().lower()
             password = data.get('password') or ''
             confirm_password = data.get('confirm_password') or ''
+            
+            print(f"[REGISTER] username={username}, email={email}, pw_len={len(password)}")
             
             # Validation
             if not username or len(username) < 3:
@@ -752,8 +758,11 @@ def register():
             if password != confirm_password:
                 return jsonify({'success': False, 'error': 'Passwords do not match'}), 200
             
-            # Check MongoDB connection
-            if not is_mongodb_connected():
+            # Check database availability (MongoDB or local storage)
+            mongo_connected = is_mongodb_connected()
+            local_storage = is_using_local_storage()
+            
+            if not mongo_connected and not local_storage:
                 return jsonify({'success': False, 'error': 'Database not available. Please try again later.'}), 200
             
             # Check if email already exists
