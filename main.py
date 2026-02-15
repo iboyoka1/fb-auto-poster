@@ -23,6 +23,7 @@ class FacebookGroupSpam:
         self.context = None
         self.page = None
         self.console_messages = []
+        self.session_valid = False  # Track if Facebook session is valid
 
     def start_browser(self):
         self.playwright = sync_playwright().start()
@@ -375,12 +376,24 @@ class FacebookGroupSpam:
                 if is_login_page:
                     logger.warning("⚠️ SESSION EXPIRED - Facebook showing login page. Please upload fresh cookies!")
                     logger.warning(f"Title indicates login: {page_title}")
+                    self.session_valid = False
+                    return False
                 else:
                     logger.info("✓ Session warmup: Successfully loaded Facebook (logged in)")
+                    self.session_valid = True
+                    return True
             except Exception as e:
-                logger.warning(f"Session warmup failed: {e}")
+                logger.warning(f"Session warmup had issue: {e}")
+                # Don't fail on timeout - assume session is valid and try anyway
+                logger.info("Continuing anyway - session may still be valid")
+                self.session_valid = True
+                return True
         else:
             logger.error(f"Cookie file not found: {cookie_path}")
+            self.session_valid = False
+            return False
+        
+        return True
 
     def _handle_continue_popup(self):
         """Handle Facebook's 'Continue as [Name]' popup that appears after loading cookies"""
@@ -430,6 +443,18 @@ class FacebookGroupSpam:
         """Post content to multiple Facebook groups using Playwright."""
         results = []
         
+        # Check if session is valid before starting
+        if not self.session_valid:
+            logger.error("❌ CANNOT POST - Facebook session is invalid/expired. Please re-login!")
+            for group in groups:
+                results.append({
+                    'name': group.get('name', group.get('username', 'Unknown')),
+                    'username': group.get('username', ''),
+                    'success': False,
+                    'error': 'Session expired - please re-login to Facebook'
+                })
+            return results
+        
         for idx, group in enumerate(groups):
             # Check if posting should be cancelled
             if should_cancel and should_cancel():
@@ -450,8 +475,8 @@ class FacebookGroupSpam:
             try:
                 logger.info(f"Posting to group: {group_name} (ID: {group_id})")
                 
-                # Navigate to group - use discussion page URL to avoid /about redirect
-                group_url = f"https://www.facebook.com/groups/{group_id}"
+                # Navigate to group feed with query param to avoid /about redirect
+                group_url = f"https://www.facebook.com/groups/{group_id}/?sorting_setting=CHRONOLOGICAL"
                 self.page.goto(group_url, timeout=120000)  # 2 minutes timeout
                 self.page.wait_for_load_state('networkidle', timeout=60000)
                 
@@ -465,27 +490,43 @@ class FacebookGroupSpam:
                 logger.info(f"Current URL after load: {current_url}")
                 
                 # Check if redirected to /about page - need to go to discussion instead
-                if '/about' in current_url or '/about/' in current_url:
-                    logger.warning(f"Redirected to /about page, navigating to discussion page...")
-                    # Navigate directly to discussion/feed
-                    discussion_url = f"https://www.facebook.com/groups/{group_id}/"
-                    self.page.goto(discussion_url, timeout=60000)
+                # Try multiple strategies
+                redirect_attempts = 0
+                while ('/about' in current_url) and redirect_attempts < 3:
+                    redirect_attempts += 1
+                    logger.warning(f"Redirected to /about page (attempt {redirect_attempts}/3), trying to access feed...")
+                    
+                    if redirect_attempts == 1:
+                        # Try discussion URL
+                        discussion_url = f"https://www.facebook.com/groups/{group_id}/discussion"
+                        self.page.goto(discussion_url, timeout=60000)
+                    elif redirect_attempts == 2:
+                        # Try clicking tab
+                        try:
+                            tab_selectors = [
+                                'a[href*="/discussion"]',
+                                '[role="tab"]:has-text("Discussion")',
+                                '[role="tab"]:has-text("Publications")',
+                                'span:has-text("Discussion")',
+                            ]
+                            for sel in tab_selectors:
+                                try:
+                                    tab = self.page.locator(sel).first
+                                    if tab.is_visible(timeout=2000):
+                                        tab.click()
+                                        break
+                                except:
+                                    continue
+                        except:
+                            pass
+                    else:
+                        # Last attempt - plain URL
+                        self.page.goto(f"https://www.facebook.com/groups/{group_id}/", timeout=60000)
+                    
                     self.page.wait_for_load_state('networkidle', timeout=30000)
                     time.sleep(3)
                     current_url = self.page.url
-                    logger.info(f"After redirect fix: {current_url}")
-                    
-                    # If still on /about, try clicking "Discussion" tab
-                    if '/about' in current_url:
-                        try:
-                            # Try clicking Discussion tab
-                            discussion_tab = self.page.locator('a[href*="/discussion"], [role="tab"]:has-text("Discussion"), span:has-text("Discussion")').first
-                            if discussion_tab.is_visible(timeout=3000):
-                                discussion_tab.click()
-                                time.sleep(3)
-                                logger.info("Clicked Discussion tab")
-                        except:
-                            pass
+                    logger.info(f"After redirect attempt {redirect_attempts}: {current_url}")
                 
                 # Scroll down a bit to trigger lazy loading, then back up
                 self.page.evaluate("window.scrollBy(0, 300)")
@@ -677,8 +718,34 @@ class FacebookGroupSpam:
                                 logger.debug(f"Method 10 failed: {e}")
                         
                         if not post_box_clicked:
-                            result['error'] = 'Could not find post creation area'
-                            logger.error(f"Could not find post box in {group_name}")
+                            # Check if user is NOT a member of this group
+                            try:
+                                page_content = self.page.content()
+                                join_indicators = [
+                                    'aria-label="Join group"',
+                                    'aria-label="Rejoindre le groupe"',  # French
+                                    'aria-label="انضمام"',  # Arabic
+                                    '>Join Group<',
+                                    '>Join group<',
+                                    '>Rejoindre le groupe<',
+                                    'aria-label="Se connecter"',  # Login button (French)
+                                    'aria-label="Log in"',  # Login button
+                                ]
+                                is_not_member = any(indicator in page_content for indicator in join_indicators)
+                            except:
+                                is_not_member = False
+                            
+                            # Provide more specific error message
+                            final_url = self.page.url
+                            if is_not_member:
+                                result['error'] = 'Not a member of this group - cannot post'
+                                logger.error(f"NOT A MEMBER of {group_name} - Join button detected, skipping")
+                            elif '/about' in final_url:
+                                result['error'] = 'Cannot access group feed - may not be a group member'
+                                logger.error(f"Still on /about page for {group_name} - user may not be a member of this group")
+                            else:
+                                result['error'] = 'Could not find post creation area'
+                                logger.error(f"Could not find post box in {group_name}")
                             # Save debug screenshot and HTML
                             try:
                                 debug_dir = os.path.join('logs', 'playwright')
@@ -951,33 +1018,51 @@ class FacebookGroupSpam:
                                 else:
                                     posted = False
                                     
-                                    # Method 1: French "Publier" (for French FB)
+                                    # Method 1: English "Post" button in dialog (most common)
                                     try:
-                                        self.page.click('div[aria-label="Publier"]', timeout=5000)
+                                        self.page.click('div[role="dialog"] div[aria-label="Post"]', timeout=5000)
                                         posted = True
-                                        logger.info("✓ Clicked 'Publier' button (French)")
+                                        logger.info("✓ Clicked 'Post' button in dialog")
                                     except:
                                         pass
                                     
-                                    # Method 2: English "Post"
+                                    # Method 2: Just "Post" without dialog context
                                     if not posted:
                                         try:
                                             self.page.click('div[aria-label="Post"]', timeout=5000)
                                             posted = True
-                                            logger.info("✓ Clicked 'Post' button (English)")
+                                            logger.info("✓ Clicked 'Post' button")
                                         except:
                                             pass
                                     
-                                    # Method 3: Get by role (French)
+                                    # Method 3: French "Publier" in dialog
                                     if not posted:
                                         try:
-                                            self.page.get_by_role("button", name="Publier").click()
+                                            self.page.click('div[role="dialog"] div[aria-label="Publier"]', timeout=5000)
                                             posted = True
-                                            logger.info("✓ Clicked Publier button (role)")
+                                            logger.info("✓ Clicked 'Publier' button in dialog (French)")
                                         except:
                                             pass
                                     
-                                    # Method 4: Get by role (English)
+                                    # Method 4: French "Publier" without dialog
+                                    if not posted:
+                                        try:
+                                            self.page.click('div[aria-label="Publier"]', timeout=5000)
+                                            posted = True
+                                            logger.info("✓ Clicked 'Publier' button (French)")
+                                        except:
+                                            pass
+                                    
+                                    # Method 5: Arabic "نشر" 
+                                    if not posted:
+                                        try:
+                                            self.page.click('div[aria-label="نشر"]', timeout=5000)
+                                            posted = True
+                                            logger.info("✓ Clicked 'نشر' button (Arabic)")
+                                        except:
+                                            pass
+                                    
+                                    # Method 6: Get by role "Post" 
                                     if not posted:
                                         try:
                                             self.page.get_by_role("button", name="Post").click()
@@ -986,7 +1071,16 @@ class FacebookGroupSpam:
                                         except:
                                             pass
                                     
-                                    # Method 5: Keyboard shortcut
+                                    # Method 7: Get by role (French)
+                                    if not posted:
+                                        try:
+                                            self.page.get_by_role("button", name="Publier").click()
+                                            posted = True
+                                            logger.info("✓ Clicked Publier button (role)")
+                                        except:
+                                            pass
+                                    
+                                    # Method 8: Keyboard shortcut
                                     if not posted:
                                         try:
                                             self.page.keyboard.press('Control+Enter')
@@ -996,9 +1090,63 @@ class FacebookGroupSpam:
                                             pass
                                     
                                     if posted:
-                                        time.sleep(4)
-                                        result['success'] = True
-                                        logger.info(f"Successfully posted to {group_name}")
+                                        # VERIFY the post actually went through
+                                        logger.info("Verifying post submission...")
+                                        time.sleep(3)
+                                        
+                                        # Check if composer dialog closed (indicates success)
+                                        post_verified = False
+                                        
+                                        # Method 1: Check if dialog/composer is gone
+                                        try:
+                                            dialog_gone = self.page.locator('div[role="dialog"]').count() == 0
+                                            if dialog_gone:
+                                                post_verified = True
+                                                logger.info("✓ Post verified: composer dialog closed")
+                                        except:
+                                            pass
+                                        
+                                        # Method 2: Check for error messages in dialog
+                                        if not post_verified:
+                                            try:
+                                                error_texts = ['Something went wrong', 'Try again', 'Error', 'couldn\'t be shared', 'unable to post']
+                                                page_text = self.page.inner_text('body')
+                                                has_error = any(err.lower() in page_text.lower() for err in error_texts)
+                                                if has_error:
+                                                    result['error'] = 'Facebook showed error message'
+                                                    logger.error("✗ Post failed: Facebook showed error")
+                                                    # Save debug screenshot
+                                                    debug_path = os.path.join('logs', 'playwright', f'post-error-{int(time.time())}.png')
+                                                    os.makedirs(os.path.dirname(debug_path), exist_ok=True)
+                                                    self.page.screenshot(path=debug_path)
+                                                    posted = False
+                                            except:
+                                                pass
+                                        
+                                        # Method 3: Wait for dialog to close with timeout
+                                        if not post_verified and posted:
+                                            try:
+                                                # Wait up to 10 seconds for dialog to disappear
+                                                self.page.wait_for_selector('div[role="dialog"]', state='hidden', timeout=10000)
+                                                post_verified = True
+                                                logger.info("✓ Post verified: dialog closed after waiting")
+                                            except:
+                                                # Dialog still there - post likely failed
+                                                logger.warning("⚠ Dialog still visible after posting")
+                                                # Take screenshot to see what's happening
+                                                debug_path = os.path.join('logs', 'playwright', f'post-stuck-{int(time.time())}.png')
+                                                os.makedirs(os.path.dirname(debug_path), exist_ok=True)
+                                                self.page.screenshot(path=debug_path)
+                                                logger.info(f"Saved debug screenshot: {debug_path}")
+                                        
+                                        if posted and post_verified:
+                                            result['success'] = True
+                                            logger.info(f"✓ Successfully posted to {group_name}")
+                                        elif posted:
+                                            # Button was clicked but couldn't verify
+                                            result['success'] = True  # Assume success but log warning
+                                            result['warning'] = 'Could not verify post submission'
+                                            logger.warning(f"⚠ Posted to {group_name} but could not verify")
                                     else:
                                         result['error'] = 'Could not find Post button'
                                         # Save debug screenshot

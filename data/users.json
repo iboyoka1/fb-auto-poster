@@ -1,0 +1,62 @@
+{
+  "1daba7da-15de-4dd5-9eff-b64055655400": {
+    "user_id": "1daba7da-15de-4dd5-9eff-b64055655400",
+    "username": "admin",
+    "email": "admin@example.com",
+    "password_hash": "$2b$12$1JKZdF7B6PDzHr8Gqo7UU.HREndjCs6Zg71pu2Xr6CbW2sDxJCk5.",
+    "role": "admin",
+    "created_at": "2026-02-09T21:31:54.114316",
+    "last_login": "2026-02-15T13:52:43.777770",
+    "is_active": true
+  },
+  "bfc69c7e-7600-4a65-8e5e-9e9a7a2eb0ea": {
+    "user_id": "bfc69c7e-7600-4a65-8e5e-9e9a7a2eb0ea",
+    "username": "testuser",
+    "email": "test@example.com",
+    "password_hash": "$2b$12$yWJ81Klz6xM/D2Pn9QJ3C.8KgdfGNldaEK4Zhz2xh8oeXzxvK0W9e",
+    "role": "user",
+    "created_at": "2026-02-10T02:18:37.454269",
+    "last_login": "2026-02-10T02:19:57.539540",
+    "is_active": true
+  },
+  "6eb1bacc-e86e-4d0d-a2fb-ab961d38575e": {
+    "user_id": "6eb1bacc-e86e-4d0d-a2fb-ab961d38575e",
+    "username": "newuser",
+    "email": "new@example.com",
+    "password_hash": "$2b$12$HoydrqeiGe4p7M2a8QAeU.9.qhqHBRz0AXGgLelnIAOl6.QT3d0pm",
+    "role": "user",
+    "created_at": "2026-02-10T12:09:18.560920",
+    "last_login": null,
+    "is_active": true
+  },
+  "a37b4740-9ef9-45df-9ca3-8bd16b93e41d": {
+    "user_id": "a37b4740-9ef9-45df-9ca3-8bd16b93e41d",
+    "username": "newuser2",
+    "email": "new2@example.com",
+    "password_hash": "$2b$12$C2GsljQsVzjlX95eI.2uuun.HtcRPBx5k62rjdOpept2y53aDEJDq",
+    "role": "user",
+    "created_at": "2026-02-10T12:10:34.994630",
+    "last_login": null,
+    "is_active": true
+  },
+  "444156cb-9641-4dcc-8a0f-5359387337ff": {
+    "user_id": "444156cb-9641-4dcc-8a0f-5359387337ff",
+    "username": "newuser3",
+    "email": "new3@example.com",
+    "password_hash": "$2b$12$TD/mYAZ6fYmST7xAvbn.yeo2W0dYlAzjmbfWB5YfJqkd2rHBJJF32",
+    "role": "user",
+    "created_at": "2026-02-10T12:13:05.346712",
+    "last_login": null,
+    "is_active": true
+  },
+  "002849ce-fb15-4314-9ed7-2503d0a21872": {
+    "user_id": "002849ce-fb15-4314-9ed7-2503d0a21872",
+    "username": "admin88",
+    "email": "abdelkaderbennejma@gmail.com",
+    "password_hash": "$2b$12$DvbG9iUCAv8W9D5HVUTFUOta1StssRuUS3NRJ7qtE9OBPBAtlqh5e",
+    "role": "user",
+    "created_at": "2026-02-15T14:27:49.108679",
+    "last_login": "2026-02-15T16:59:35.182538",
+    "is_active": true
+  }
+}

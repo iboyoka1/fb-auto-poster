@@ -1582,6 +1582,7 @@ def create_post():
             try:
                 from main import FacebookGroupSpam
                 # Use non-persistent mode to avoid browser lock issues
+                # headless=True for production (invisible browser)
                 poster = FacebookGroupSpam(post_content=content_arg, headless=True, media_files=media_files_arg if media_files_arg else None, use_persistent=False, min_delay=min_delay_arg, max_delay=max_delay_arg, test_mode=test_mode_arg)
                 poster.start_browser()
                 poster.load_cookie(cookie_path_arg)
@@ -1756,7 +1757,7 @@ def fb_manual_login():
         def run_manual_login():
             # Open browser WITHOUT persistent profile for manual login
             # Persistent profile can have lock issues - use regular browser + save cookies
-            poster = FacebookGroupSpam(headless=False, use_persistent=False)
+            poster = FacebookGroupSpam(headless=True, use_persistent=False)
             try:
                 poster.start_browser()
                 logger.info("Manual login: browser opened for manual login")
@@ -2101,7 +2102,7 @@ def fb_auto_login():
             try:
                 # Don't set FB_DEBUG - it opens DevTools
                 # Fast login with minimal overhead
-                poster = FacebookGroupSpam(headless=False)
+                poster = FacebookGroupSpam(headless=True)
                 poster.start_browser()
                 
                 # Execute login
@@ -2342,6 +2343,7 @@ def post_with_image():
                 from main import FacebookGroupSpam
                 logger.info(f"[POST-IMAGE-BG] Starting background post {post_id_arg}, delay: {min_delay_arg}-{max_delay_arg}s, test_mode: {test_mode_arg}")
                 # Use non-persistent mode to avoid browser lock issues
+                # headless=True for production (invisible browser)
                 poster = FacebookGroupSpam(post_content=content_arg, media_files=media_files_arg, headless=True, use_persistent=False, min_delay=min_delay_arg, max_delay=max_delay_arg, test_mode=test_mode_arg)
                 poster.start_browser()
                 poster.load_cookie(cookie_path_arg)
@@ -2438,13 +2440,7 @@ def post_with_image():
                 except:
                     pass
                 ACTIVE_POSTS.pop(post_id_arg, None)
-            finally:
-                # Cleanup uploaded media files
-                for file_path in media_files_arg:
-                    try:
-                        os.remove(file_path)
-                    except:
-                        pass
+            # NOTE: We no longer delete uploaded media files so they can be displayed in history
                         
         thread = threading.Thread(target=do_post_media_bg, args=(post_id, content, groups_to_post, media_files, cookie_path, min_delay, max_delay, test_mode))
         thread.daemon = True

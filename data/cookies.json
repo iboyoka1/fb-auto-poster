@@ -1,0 +1,151 @@
+{
+  "002849ce-fb15-4314-9ed7-2503d0a21872_default": {
+    "account_id": "default",
+    "user_id": "002849ce-fb15-4314-9ed7-2503d0a21872",
+    "cookies": [
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1800974901.028135,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "datr",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "2irqaNpJW-NRIGVC2AXBXTGB"
+      },
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1805732804.323533,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "sb",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "6irqaG8qZGUet4ZPKQsQmS6K"
+      },
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1794737574.52019,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "ps_l",
+        "path": "/",
+        "sameSite": "lax",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "1"
+      },
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1794737574.52094,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "ps_n",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "1"
+      },
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1794934449.988282,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "oo",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "v1"
+      },
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1771777607,
+        "hostOnly": false,
+        "httpOnly": false,
+        "name": "dpr",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "1.5"
+      },
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1771777607,
+        "hostOnly": false,
+        "httpOnly": false,
+        "name": "wd",
+        "path": "/",
+        "sameSite": "lax",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "1280x559"
+      },
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1802710531.055184,
+        "hostOnly": false,
+        "httpOnly": false,
+        "name": "c_user",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "61579165445792"
+      },
+      {
+        "domain": ".facebook.com",
+        "hostOnly": false,
+        "httpOnly": false,
+        "name": "presence",
+        "path": "/",
+        "sameSite": "unspecified",
+        "secure": true,
+        "session": true,
+        "storeId": "0",
+        "value": "C%7B%22t3%22%3A%5B%5D%2C%22utc3%22%3A1771172810101%2C%22v%22%3A1%7D"
+      },
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1778950531.055436,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "fr",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "1LukercwfbosnSgxt.AWfsSVoOwWiDaMDxpGJJa2zBB9O2c4bB2vnIgmpdPTgHd2XbKl4.BpkfqD..AAA.0.0.BpkfqD.AWfVz8M6uYpPMV3kPTYOkgC6F6Q"
+      },
+      {
+        "domain": ".facebook.com",
+        "expirationDate": 1802710531.055992,
+        "hostOnly": false,
+        "httpOnly": true,
+        "name": "xs",
+        "path": "/",
+        "sameSite": "no_restriction",
+        "secure": true,
+        "session": false,
+        "storeId": "0",
+        "value": "13%3AI_RNHcoNrmNzTQ%3A2%3A1771172801%3A-1%3A-1%3A%3AAcz7fnaGq6i7aCR7Wap4o6EcCMQCh8nlHd5P8Bfu9g"
+      }
+    ],
+    "updated_at": "2026-02-15T16:59:58.014178"
+  }
+}
