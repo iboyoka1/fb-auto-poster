@@ -271,6 +271,55 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, m => map[m]);
 }
 
+// Prevent concurrent fetches
+let isPolling = false;
+let pollIntervalId = null;
+
+async function pollHistory() {
+    // Skip if already fetching
+    if (isPolling) return;
+    isPolling = true;
+    
+    try {
+        const response = await fetch('/api/history');
+        
+        // Check for auth redirect (session expired)
+        if (response.redirected || response.status === 401 || response.status === 403) {
+            // Stop polling on auth failure - don't reload
+            if (pollIntervalId) {
+                clearInterval(pollIntervalId);
+                pollIntervalId = null;
+            }
+            console.warn('Session may have expired. Stopped history polling.');
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            renderHistory(data.posts);
+        }
+        // On failure, just keep existing content - don't reload
+    } catch (error) {
+        // Network error - just log, don't reload page
+        console.error('History poll failed:', error.message);
+    } finally {
+        isPolling = false;
+    }
+}
+
+// Initial load (not full page reload)
 loadHistory();
+
+// Safe polling every 10 seconds - only updates data, never reloads page
+pollIntervalId = setInterval(pollHistory, 10000);
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (pollIntervalId) {
+        clearInterval(pollIntervalId);
+        pollIntervalId = null;
+    }
+});
 </script>
 {% endblock %}
