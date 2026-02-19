@@ -192,6 +192,14 @@ if api_docs:
 DATABASE = f"{PROJECT_ROOT}/posts.db"
 ACTIVE_POSTS: Dict[int, Dict] = {}
 
+# Session status notification system
+SESSION_STATUS: Dict[str, any] = {
+    'valid': True,
+    'expired_at': None,
+    'error_message': None,
+    'acknowledged': False  # User has seen the notification
+}
+
 # Ensure required directories exist for local usage
 try:
     os.makedirs(f"{PROJECT_ROOT}/sessions", exist_ok=True)
@@ -1649,6 +1657,15 @@ def create_post():
                 def _should_cancel():
                     return bool(ACTIVE_POSTS.get(post_id_arg, {}).get('cancel'))
                 results = poster.post_to_groups(groups_arg, progress_callback=_progress, should_cancel=_should_cancel)
+                
+                # Check if session expired during posting
+                if getattr(poster, 'session_expired', False):
+                    SESSION_STATUS['valid'] = False
+                    SESSION_STATUS['expired_at'] = time.strftime('%Y-%m-%d %H:%M:%S')
+                    SESSION_STATUS['error_message'] = 'Facebook session expired during posting. Please re-login.'
+                    SESSION_STATUS['acknowledged'] = False
+                    logger.error("\u26a0\ufe0f SESSION EXPIRED - Notification set for user")
+                
                 poster.close_browser()
 
                 successful_groups = [r['name'] for r in results if r['success']]
@@ -1683,6 +1700,35 @@ def create_post():
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/session-status', methods=['GET'])
+@login_required
+def get_session_status():
+    """Check Facebook session status - returns notification if session expired"""
+    return jsonify({
+        'valid': SESSION_STATUS['valid'],
+        'expired_at': SESSION_STATUS['expired_at'],
+        'error_message': SESSION_STATUS['error_message'],
+        'acknowledged': SESSION_STATUS['acknowledged'],
+        'needs_attention': not SESSION_STATUS['valid'] and not SESSION_STATUS['acknowledged']
+    })
+
+@app.route('/api/session-status/acknowledge', methods=['POST'])
+@login_required
+def acknowledge_session_status():
+    """Mark session expiry notification as acknowledged"""
+    SESSION_STATUS['acknowledged'] = True
+    return jsonify({'success': True})
+
+@app.route('/api/session-status/reset', methods=['POST'])
+@login_required
+def reset_session_status():
+    """Reset session status after successful re-login"""
+    SESSION_STATUS['valid'] = True
+    SESSION_STATUS['expired_at'] = None
+    SESSION_STATUS['error_message'] = None
+    SESSION_STATUS['acknowledged'] = False
+    return jsonify({'success': True})
 
 @app.route('/api/history', methods=['GET'])
 @login_required
@@ -2411,6 +2457,15 @@ def post_with_image():
                     return bool(ACTIVE_POSTS.get(post_id_arg, {}).get('cancel'))
                 
                 results = poster.post_to_groups(groups_arg, progress_callback=_progress, should_cancel=_should_cancel)
+                
+                # Check if session expired during posting
+                if getattr(poster, 'session_expired', False):
+                    SESSION_STATUS['valid'] = False
+                    SESSION_STATUS['expired_at'] = time.strftime('%Y-%m-%d %H:%M:%S')
+                    SESSION_STATUS['error_message'] = 'Facebook session expired during posting. Please re-login.'
+                    SESSION_STATUS['acknowledged'] = False
+                    logger.error("\u26a0\ufe0f SESSION EXPIRED - Notification set for user")
+                
                 poster.close_browser()
                 
                 successful_groups = [r['name'] for r in results if r['success']]

@@ -443,9 +443,13 @@ class FacebookGroupSpam:
         """Post content to multiple Facebook groups using Playwright."""
         results = []
         
+        # Initialize session_expired flag
+        self.session_expired = getattr(self, 'session_expired', False)
+        
         # Check if session is valid before starting
         if not self.session_valid:
             logger.error("❌ CANNOT POST - Facebook session is invalid/expired. Please re-login!")
+            self.session_expired = True
             for group in groups:
                 results.append({
                     'name': group.get('name', group.get('username', 'Unknown')),
@@ -539,8 +543,15 @@ class FacebookGroupSpam:
                 
                 # Check if redirected to login
                 if 'login' in current_url.lower() or '/login' in current_url:
-                    result['error'] = 'Not logged in'
+                    result['error'] = 'Session expired - please re-login to Facebook'
                     logger.error(f"Session expired - login required. Redirected to: {current_url}")
+                    logger.error("⛔ STOPPING ALL POSTING - Session has expired!")
+                    # Mark session as invalid to stop further attempts
+                    self.session_valid = False
+                    self.session_expired = True  # New flag for notification
+                    # Return immediately - don't try other groups
+                    results.append(result)
+                    return results
                 elif 'checkpoint' in current_url.lower():
                     result['error'] = 'Security checkpoint'
                     logger.error(f"Facebook security checkpoint triggered. URL: {current_url}")
