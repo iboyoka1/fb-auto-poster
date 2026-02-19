@@ -1166,8 +1166,40 @@ class FacebookGroupSpam:
                 result['error'] = f'Timeout: {e}'
                 logger.error(f"Timeout for group {group_name}")
             except Exception as e:
-                result['error'] = str(e)
+                error_msg = str(e)
+                result['error'] = error_msg
                 logger.error(f"Error with group {group_name}: {e}")
+                
+                # Check if browser crashed - try to recover
+                if 'Target page, context or browser has been closed' in error_msg or 'Browser has been closed' in error_msg:
+                    logger.warning("Browser crashed! Attempting to restart...")
+                    try:
+                        # Try to close any remaining browser resources
+                        try:
+                            if hasattr(self, 'context') and self.context:
+                                self.context.close()
+                        except:
+                            pass
+                        try:
+                            if hasattr(self, 'browser') and self.browser:
+                                self.browser.close()
+                        except:
+                            pass
+                        
+                        # Restart the browser
+                        self.start_browser()
+                        
+                        # Reload cookies from file
+                        cookie_path = os.path.join('sessions', 'facebook-cookies.json')
+                        if os.path.exists(cookie_path):
+                            self.load_cookie(cookie_path)
+                            logger.info("✓ Browser recovered and session reloaded")
+                        else:
+                            logger.error("Cannot recover - no cookie file found")
+                            self.session_valid = False
+                    except Exception as restart_err:
+                        logger.error(f"Failed to restart browser: {restart_err}")
+                        self.session_valid = False
             
             results.append(result)
             
