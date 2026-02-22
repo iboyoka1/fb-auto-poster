@@ -826,20 +826,28 @@ class FacebookGroupSpam:
                                         # CRITICAL: Must click Photo/Video button FIRST to activate correct file input
                                         # Facebook has multiple file inputs - only one is for post media
                                         photo_button_selectors = [
+                                            # PRIORITY: Exact matches found in Facebook HTML
+                                            'div[role="dialog"] [aria-label="Attach a photo or video"]',
+                                            '[aria-label="Attach a photo or video"]',
+                                            'div[role="dialog"] [aria-label="Photo/video"]',
+                                            '[aria-label="Photo/video"]',
                                             # In dialog - toolbar icons (most common)
                                             'div[role="dialog"] div[aria-label="Photo/vidéo"]',
                                             'div[role="dialog"] div[aria-label="Photo/video"]',  
                                             'div[role="dialog"] div[aria-label="Photo/Video"]',
                                             'div[role="dialog"] [aria-label*="Photo"][role="button"]',
                                             'div[role="dialog"] [aria-label*="photo"][role="button"]',
+                                            'div[role="dialog"] [aria-label*="Attach"][role="button"]',
                                             # French variations
                                             '[aria-label="Photo/vidéo"]',
                                             '[aria-label="Ajouter des photos/vidéos"]',
                                             '[aria-label="Ajouter des photos ou des vidéos"]',
+                                            '[aria-label="Joindre une photo ou une vidéo"]',
                                             # English variations
                                             '[aria-label="Photo/video"]',
                                             '[aria-label="Add Photos/Videos"]',
                                             '[aria-label="Add photos/videos"]',
+                                            '[aria-label="Attach a photo"]',
                                             # Arabic variations
                                             '[aria-label*="صورة"]',
                                             '[aria-label*="فيديو"]',
@@ -894,6 +902,35 @@ class FacebookGroupSpam:
                                                         continue
                                             except Exception as e:
                                                 logger.debug(f"Toolbar button approach failed: {e}")
+                                        
+                                        # Extra fallback: Try aria-label partial matches
+                                        if not photo_clicked:
+                                            logger.warning("Still no photo button - trying partial aria-label matches...")
+                                            try:
+                                                # Try various partial matches
+                                                partial_selectors = [
+                                                    '[aria-label*="photo" i]',
+                                                    '[aria-label*="video" i]',
+                                                    '[aria-label*="attach" i]',
+                                                    '[aria-label*="joindre" i]',
+                                                ]
+                                                for sel in partial_selectors:
+                                                    try:
+                                                        elements = self.page.locator(f'div[role="dialog"] {sel}').all()
+                                                        for elem in elements:
+                                                            if elem.is_visible(timeout=1000):
+                                                                elem.click()
+                                                                time.sleep(2)
+                                                                if self.page.locator('input[type="file"]').count() > 0:
+                                                                    photo_clicked = True
+                                                                    logger.info(f"✓ Clicked via partial match: {sel}")
+                                                                    break
+                                                        if photo_clicked:
+                                                            break
+                                                    except:
+                                                        continue
+                                            except Exception as e:
+                                                logger.debug(f"Partial match approach failed: {e}")
                                         
                                         # Wait for file input to be ready
                                         time.sleep(2)

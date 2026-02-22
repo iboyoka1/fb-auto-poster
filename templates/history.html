@@ -65,7 +65,18 @@
                     Historique
                 </a>
             </li>
-            <!-- Hidden: Templates, Media Library, Analytics -->
+            <li class="nav-item">
+                <a href="/templates">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Scripts Prêts
+                </a>
+            </li>
             <li class="nav-item">
                 <a href="/accounts">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -194,13 +205,90 @@ function renderHistory(posts) {
                 </div>
                 <div class="history-footer">
                     <div class="posted-groups">
-                        <strong>Posted to ${post.groups.length} group(s):</strong>
-                        ${post.groups.map(g => `<span class="group-tag">${escapeHtml(g)}</span>`).join('')}
+                        <strong>Posté dans ${post.groups.length} groupe(s)</strong>
+                        <button onclick="showGroupDetails(${post.id})" class="btn btn-sm" style="margin-left: 10px; background: #1877f2; color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                            📊 Voir Détails
+                        </button>
                     </div>
+                    <div id="details-${post.id}" style="display: none; margin-top: 12px;"></div>
                 </div>
             </div>
         `;
     }).join('');
+}
+
+// Show per-group posting details
+async function showGroupDetails(postId) {
+    const detailsDiv = document.getElementById('details-' + postId);
+    
+    // Toggle visibility
+    if (detailsDiv.style.display === 'block') {
+        detailsDiv.style.display = 'none';
+        return;
+    }
+    
+    detailsDiv.innerHTML = '<div style="padding: 10px; color: #666;">Chargement...</div>';
+    detailsDiv.style.display = 'block';
+    
+    try {
+        const response = await fetch('/api/history/' + postId + '/details');
+        const data = await response.json();
+        
+        if (!data.success) {
+            detailsDiv.innerHTML = '<div style="padding: 10px; color: #dc2626;">Erreur: ' + (data.error || 'Impossible de charger') + '</div>';
+            return;
+        }
+        
+        if (!data.groups || data.groups.length === 0) {
+            detailsDiv.innerHTML = '<div style="padding: 10px; color: #666;">Aucun détail disponible</div>';
+            return;
+        }
+        
+        let html = `
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-top: 10px;">
+                <div style="display: flex; gap: 20px; margin-bottom: 12px; flex-wrap: wrap;">
+                    <span style="background: #10b981; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px;">
+                        ✓ ${data.successful} Réussi
+                    </span>
+                    <span style="background: #ef4444; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px;">
+                        ✗ ${data.failed} Échoué
+                    </span>
+                    <span style="background: #6b7280; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px;">
+                        Total: ${data.total_groups}
+                    </span>
+                </div>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #e5e7eb; text-align: left;">
+                                <th style="padding: 8px; border-radius: 4px 0 0 4px;">Groupe</th>
+                                <th style="padding: 8px;">Heure</th>
+                                <th style="padding: 8px; border-radius: 0 4px 4px 0;">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.groups.map(g => `
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(g.name)}</td>
+                                    <td style="padding: 8px; white-space: nowrap;">${new Date(g.posted_at).toLocaleTimeString('fr-FR')}</td>
+                                    <td style="padding: 8px;">
+                                        ${g.success 
+                                            ? '<span style="color: #10b981; font-weight: 600;">✓ OK</span>' 
+                                            : '<span style="color: #ef4444; font-weight: 600;" title="' + escapeHtml(g.error || 'Erreur') + '">✗ Échoué</span>'
+                                        }
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        detailsDiv.innerHTML = html;
+    } catch (error) {
+        detailsDiv.innerHTML = '<div style="padding: 10px; color: #dc2626;">Erreur: ' + error.message + '</div>';
+    }
 }
 
 // Lightbox for viewing media full size

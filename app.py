@@ -1742,9 +1742,14 @@ def get_history():
         
         posts = []
         for row in rows:
-            # Parse media paths and convert to URLs
+            # Parse media paths and convert to URLs - only include existing files
             media_paths = json.loads(row[5]) if row[5] else []
-            media_urls = [f'/uploads/{filename}' for filename in media_paths] if media_paths else []
+            media_urls = []
+            for filename in media_paths:
+                # Check if file actually exists
+                file_path = os.path.join(APP_DIR, 'uploads', filename)
+                if os.path.exists(file_path):
+                    media_urls.append(f'/uploads/{filename}')
             
             posts.append({
                 'id': row[0],
@@ -1758,6 +1763,56 @@ def get_history():
         return jsonify({'success': True, 'posts': posts})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/history/<int:post_id>/details', methods=['GET'])
+@login_required
+def get_post_details(post_id):
+    """Get per-group posting details for a specific post"""
+    try:
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        # Get post info
+        c.execute('SELECT id, content, timestamp, status, groups_posted FROM posts WHERE id = ?', (post_id,))
+        post_row = c.fetchone()
+        
+        if not post_row:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Post not found'})
+        
+        # Get per-group analytics
+        c.execute('''
+            SELECT group_name, posted_at, success, error_message 
+            FROM post_analytics 
+            WHERE post_id = ? 
+            ORDER BY posted_at ASC
+        ''', (post_id,))
+        analytics_rows = c.fetchall()
+        conn.close()
+        
+        groups_detail = []
+        for row in analytics_rows:
+            groups_detail.append({
+                'name': row[0],
+                'posted_at': row[1],
+                'success': bool(row[2]),
+                'error': row[3] if row[3] else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'post_id': post_id,
+            'timestamp': post_row[2],
+            'status': post_row[3],
+            'total_groups': len(groups_detail),
+            'successful': sum(1 for g in groups_detail if g['success']),
+            'failed': sum(1 for g in groups_detail if not g['success']),
+            'groups': groups_detail
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 
 @app.route('/api/fb-login', methods=['POST'])
 @login_required

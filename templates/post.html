@@ -65,7 +65,18 @@
                     Historique
                 </a>
             </li>
-            <!-- Hidden: Templates, Media Library, Analytics -->
+            <li class="nav-item">
+                <a href="/templates">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Scripts Prêts
+                </a>
+            </li>
             <li class="nav-item">
                 <a href="/accounts">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -93,6 +104,34 @@
         <header class="content-header">
             <h2>Créer une Nouvelle Publication</h2>
         </header>
+        
+        <!-- Template Quick Actions Bar -->
+        <div class="template-bar" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; border: 1px solid #dee2e6;">
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 250px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6c757d" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <select id="templateSelect" onchange="loadSelectedTemplate()" style="flex: 1; padding: 10px 14px; border: 2px solid #dee2e6; border-radius: 8px; font-size: 14px; background: white; cursor: pointer;">
+                    <option value="">📁 Charger un Script Prêt...</option>
+                </select>
+            </div>
+            <button type="button" onclick="saveAsTemplate()" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Sauvegarder comme Script
+            </button>
+            <a href="/templates" style="padding: 10px 20px; background: #f8f9fa; color: #495057; border: 2px solid #dee2e6; border-radius: 8px; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.borderColor='#1877f2';this.style.color='#1877f2'" onmouseout="this.style.borderColor='#dee2e6';this.style.color='#495057'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33"></path>
+                </svg>
+                Gérer Scripts
+            </a>
+        </div>
         
         <div class="post-creator">
             <div class="post-form-container">
@@ -191,12 +230,25 @@ Exemple : {Salut|Bonjour} tout le monde ! Découvrez notre {incroyable|superbe} 
                             <span class="badge" style="background: #10b981; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px;">CONFIGURABLE</span>
                         </label>
                         
+                        <!-- Speed Presets -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+                            <button type="button" onclick="setSpeedPreset('fast')" class="speed-btn" id="speedFast" style="flex: 1; min-width: 100px; padding: 10px; border: 2px solid #f59e0b; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 10px; cursor: pointer; font-weight: 600; color: #b45309;">
+                                ⚡ Rapide<br><small style="font-weight: normal;">5-15s</small>
+                            </button>
+                            <button type="button" onclick="setSpeedPreset('normal')" class="speed-btn active" id="speedNormal" style="flex: 1; min-width: 100px; padding: 10px; border: 2px solid #10b981; background: linear-gradient(135deg, #d1fae5, #a7f3d0); border-radius: 10px; cursor: pointer; font-weight: 600; color: #065f46;">
+                                🚀 Normal<br><small style="font-weight: normal;">30-120s</small>
+                            </button>
+                            <button type="button" onclick="setSpeedPreset('safe')" class="speed-btn" id="speedSafe" style="flex: 1; min-width: 100px; padding: 10px; border: 2px solid #3b82f6; background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-radius: 10px; cursor: pointer; font-weight: 600; color: #1e40af;">
+                                🛡️ Sécurisé<br><small style="font-weight: normal;">120-300s</small>
+                            </button>
+                        </div>
+                        
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div>
                                 <label style="display: block; font-size: 13px; color: #065f46; margin-bottom: 8px; font-weight: 500;">
                                     Délai Minimum: <strong id="minDelayValue">30</strong> secondes
                                 </label>
-                                <input type="range" id="minDelay" min="10" max="300" value="30" 
+                                <input type="range" id="minDelay" min="5" max="300" value="30" 
                                     style="width: 100%; accent-color: #10b981;" 
                                     oninput="updateDelayValue('min')">
                             </div>
@@ -204,14 +256,14 @@ Exemple : {Salut|Bonjour} tout le monde ! Découvrez notre {incroyable|superbe} 
                                 <label style="display: block; font-size: 13px; color: #065f46; margin-bottom: 8px; font-weight: 500;">
                                     Délai Maximum: <strong id="maxDelayValue">120</strong> secondes
                                 </label>
-                                <input type="range" id="maxDelay" min="30" max="600" value="120" 
+                                <input type="range" id="maxDelay" min="10" max="600" value="120" 
                                     style="width: 100%; accent-color: #10b981;" 
                                     oninput="updateDelayValue('max')">
                             </div>
                         </div>
                         <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 8px;">
                             <p style="margin: 0; font-size: 12px; color: #065f46;">
-                                💡 <strong>Conseil :</strong> Un délai plus long réduit le risque de détection. Le bot utilise une distribution Gaussienne pour des pauses naturelles.
+                                ⚠️ <strong>Attention :</strong> Le mode Rapide augmente le risque de détection par Facebook. Utilisez-le avec précaution.
                             </p>
                         </div>
                     </div>
@@ -598,6 +650,43 @@ function toggleTestMode() {
     info.style.display = checkbox.checked ? 'block' : 'none';
 }
 
+// Speed presets for posting
+function setSpeedPreset(preset) {
+    const minSlider = document.getElementById('minDelay');
+    const maxSlider = document.getElementById('maxDelay');
+    
+    // Remove active class from all speed buttons
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.style.opacity = '0.6';
+        btn.style.transform = 'scale(0.95)';
+    });
+    
+    // Set values based on preset
+    switch(preset) {
+        case 'fast':
+            minSlider.value = 5;
+            maxSlider.value = 15;
+            document.getElementById('speedFast').style.opacity = '1';
+            document.getElementById('speedFast').style.transform = 'scale(1)';
+            break;
+        case 'normal':
+            minSlider.value = 30;
+            maxSlider.value = 120;
+            document.getElementById('speedNormal').style.opacity = '1';
+            document.getElementById('speedNormal').style.transform = 'scale(1)';
+            break;
+        case 'safe':
+            minSlider.value = 120;
+            maxSlider.value = 300;
+            document.getElementById('speedSafe').style.opacity = '1';
+            document.getElementById('speedSafe').style.transform = 'scale(1)';
+            break;
+    }
+    
+    document.getElementById('minDelayValue').textContent = minSlider.value;
+    document.getElementById('maxDelayValue').textContent = maxSlider.value;
+}
+
 function updateDelayValue(type) {
     const minSlider = document.getElementById('minDelay');
     const maxSlider = document.getElementById('maxDelay');
@@ -606,13 +695,19 @@ function updateDelayValue(type) {
     
     // Ensure min is always less than max
     if (type === 'min' && minValue >= maxValue) {
-        maxSlider.value = minValue + 30;
+        maxSlider.value = minValue + 10;
     } else if (type === 'max' && maxValue <= minValue) {
-        minSlider.value = maxValue - 30;
+        minSlider.value = Math.max(5, maxValue - 10);
     }
     
     document.getElementById('minDelayValue').textContent = minSlider.value;
     document.getElementById('maxDelayValue').textContent = maxSlider.value;
+    
+    // Remove active state from presets when manually adjusted
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.style.opacity = '0.6';
+        btn.style.transform = 'scale(0.95)';
+    });
 }
 
 function toggleSchedule() {
@@ -1355,6 +1450,149 @@ function removeLibraryMedia(index) {
     selectedLibraryMedia.splice(index, 1);
     updateLibraryMediaPreview();
 }
+
+// ========== TEMPLATE FUNCTIONS ==========
+
+// Load templates list on page load
+async function loadTemplatesList() {
+    const select = document.getElementById('templateSelect');
+    if (!select) return;
+    
+    try {
+        const response = await fetch('/api/templates');
+        const data = await response.json();
+        
+        // Clear existing options except first
+        select.innerHTML = '<option value="">📁 Charger un Script Prêt...</option>';
+        
+        if (data.success && data.templates && data.templates.length > 0) {
+            data.templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = `📝 ${template.name}${template.category ? ' (' + template.category + ')' : ''}`;
+                option.dataset.content = template.content || '';
+                select.appendChild(option);
+            });
+        } else {
+            const option = document.createElement('option');
+            option.value = '';
+            option.disabled = true;
+            option.textContent = '-- Aucun script sauvegardé --';
+            select.appendChild(option);
+        }
+    } catch (error) {
+        console.error('Failed to load templates:', error);
+    }
+}
+
+// Load selected template into the form
+async function loadSelectedTemplate() {
+    const select = document.getElementById('templateSelect');
+    const templateId = select.value;
+    
+    if (!templateId) return;
+    
+    try {
+        const response = await fetch('/api/templates');
+        const data = await response.json();
+        
+        if (data.success && data.templates) {
+            const template = data.templates.find(t => t.id == templateId);
+            if (template) {
+                // Fill in the content
+                document.getElementById('postContent').value = template.content || '';
+                
+                // Update character count
+                document.getElementById('charCount').textContent = (template.content || '').length;
+                
+                // Show success toast
+                showToast('✓ Script chargé: ' + template.name, 'success');
+                
+                // Reset select
+                setTimeout(() => { select.value = ''; }, 100);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load template:', error);
+        showToast('Erreur lors du chargement', 'error');
+    }
+}
+
+// Save current content as a new template
+async function saveAsTemplate() {
+    const content = document.getElementById('postContent').value.trim();
+    
+    if (!content) {
+        showToast('Veuillez d\'abord écrire du contenu', 'error');
+        return;
+    }
+    
+    // Prompt for template name
+    const name = prompt('Nom du script:', 'Mon Script ' + new Date().toLocaleDateString('fr-FR'));
+    
+    if (!name) return; // User cancelled
+    
+    try {
+        const response = await fetch('/api/templates', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': window.csrfToken || ''
+            },
+            body: JSON.stringify({
+                name: name,
+                content: content,
+                category: 'saved'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('✓ Script sauvegardé: ' + name, 'success');
+            // Reload templates list
+            loadTemplatesList();
+        } else {
+            showToast('Erreur: ' + (data.error || 'Échec de la sauvegarde'), 'error');
+        }
+    } catch (error) {
+        console.error('Failed to save template:', error);
+        showToast('Erreur lors de la sauvegarde', 'error');
+    }
+}
+
+// Simple toast notification
+function showToast(message, type = 'info') {
+    // Remove existing toast
+    const existing = document.querySelector('.toast-notification');
+    if (existing) existing.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        z-index: 10000;
+        font-weight: 500;
+        animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Load templates on page load
+loadTemplatesList();
 
 loadGroups();
 </script>
